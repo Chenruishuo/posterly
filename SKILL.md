@@ -127,16 +127,16 @@ python <skill>/tools/poster_check.py measure poster.html
 Targets (defaults; configurable via flags):
 - **`spread < 5 px`** across the last-card-bottoms of all columns (+ any hero panel). Aim `< 3 px`.
 - **`gap to footer-strip/footer ∈ [30, 50] px`** — card shadow visible but cards don't float.
-- **`canvas-fill ∈ [95 %, 101 %]`** in both dimensions — `[data-measure-role="poster"]` must occupy almost the entire print viewport. Catches the silent failure where a poster forgets `@media print { :root { --u: 1mm } }` and renders at screen scale (~42 % of canvas), or where the poster's CSS width / height exceeds `@page`. Defaults asymmetric on purpose: undershoot up to 5 % can come from borders / rounding, but a 5 % overshoot would visibly clip the print page. Tune via `--min-canvas-fill` / `--max-canvas-fill`.
-- **`position align ≤ 2 px`** from the page's origin — the poster's bounding box must sit at `(0, 0)` to `(viewport_w, viewport_h)` within `--position-tol-px`. Catches `transform: translate*`, mis-positioned `position: absolute`, and stray body margin in print.
+- **`position align ≤ 2 px`** (authoritative) — the `[data-measure-role="poster"]` bounding box must sit at `(0, 0)` to `(viewport_w, viewport_h)` within `--position-tol-px`. This IS the full-canvas requirement: a poster whose bbox aligns to the page is necessarily full-bleed. Catches `transform: translate*`, mis-positioned `position: absolute`, stray body margin in print, and CSS source-order cascade bugs where a screen rule wins over a print override.
+- **`canvas-fill ∈ [95 %, 101 %]`** (coarse early diagnostic) — `[data-measure-role="poster"]` width/height ratio against the print viewport. Fires before the position check when the ratio is FAR off, with a more diagnostic error message that points at the common `@media print { :root { --u: 1mm } }` omission (renders at ~42 %) or hardcoded `width > @page` (renders at >100 %). For borderline 95–99 % cases, position-align is the truth. Tune via `--min-canvas-fill` / `--max-canvas-fill`. **Safe-area design** belongs as internal padding on a full-bleed `.poster`, NOT as a smaller poster — a smaller poster fails position-align.
 
 **This gate is non-negotiable.** If `measure` exits non-zero, fix the layout — do NOT continue to render. Common fixes:
 - spread > 5: shrink the column with the lowest last-card by reducing a paragraph's `margin-bottom` by 1u, trimming one line, or shrinking a fixed-height figure by 5u.
 - gap > 50 everywhere: body-grid is too tall; grow a card or accept whitespace.
 - gap < 30 anywhere: banner/header outgrew its slot; check `.framework-banner` rendered height.
-- canvas-fill < 95 %: add `@media print { :root { --u: 1mm } }` so the poster scales to the print canvas.
-- canvas-fill > 101 %: a hardcoded `width: 1600px` (or similar non-`--u`-based size) exceeds `@page`. Replace with `calc(N * var(--u))`.
-- position misaligned: drop the `transform: translate*` or stray `margin`; check `html, body { margin: 0; padding: 0 }` in the print media query.
+- position misaligned (the usual full-canvas failure): make `.poster` full-bleed (`width: 100%; height: 100%; margin: 0; padding: 0` in `@media print`); remove any `transform: translate*` or `position: absolute` offsets; ensure `html, body { margin: 0; padding: 0 }` in the print media query; and check that the print `@media` block comes AFTER the screen `.poster` rule so source-order cascade resolves the print override winning.
+- canvas-fill < 95 % (diagnostic fired first): poster forgot `@media print { :root { --u: 1mm } }` so it renders at screen scale. Add the override.
+- canvas-fill > 101 % (diagnostic fired first): hardcoded `width: 1600px` (or similar non-`--u`-based size) exceeds `@page`. Replace with `calc(N * var(--u))`.
 
 `poster_check.py measure` also has these safety nets (so a false PASS shouldn't happen):
 - Missing `[data-measure-role="poster"]` = hard fail.

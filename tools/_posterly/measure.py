@@ -161,12 +161,17 @@ def cmd_measure(args: argparse.Namespace) -> int:
         )
     if pos_problems:
         _eprint(
-            "FAIL: [data-measure-role=\"poster\"] is not aligned to "
-            "the page origin (tolerance ±"
-            f"{tol:.1f} px): " + ", ".join(pos_problems)
-            + ". Likely cause: a `transform: translate*`, a `position: "
-            "absolute; left: …`, or non-zero `body` / `html` margin "
-            "leaking into print."
+            "FAIL: [data-measure-role=\"poster\"] is not aligned to the "
+            f"page (tolerance ±{tol:.1f} px): "
+            + ", ".join(pos_problems) + ".\n"
+            "Fix: make `.poster` full-bleed in print — "
+            "`@media print { .poster { width: 100%; height: 100%; "
+            "margin: 0; padding: 0 } html, body { margin: 0; padding: 0 } }`. "
+            "Then drop any `transform: translate*` / `position: absolute` "
+            "offsets, and verify the `@media print` block comes AFTER the "
+            "screen `.poster` rule in the stylesheet (otherwise CSS "
+            "source-order cascade resolves the screen rule winning even "
+            "in print mode)."
         )
         return 1
 

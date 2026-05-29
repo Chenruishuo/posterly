@@ -30,9 +30,8 @@ dev = [
 ]
 
 [project.urls]
-# TODO: replace <your-github> with the actual GitHub user/org after `gh repo create`.
-Homepage = "https://github.com/<your-github>/posterly"
-Issues   = "https://github.com/<your-github>/posterly/issues"
+Homepage = "https://github.com/Chenruishuo/posterly"
+Issues   = "https://github.com/Chenruishuo/posterly/issues"
 
 # NOTE: posterly is distributed as a Claude Code skill (clone the repo
 # under ~/.claude/skills/posterly/), NOT as a pip-installable Python

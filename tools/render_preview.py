@@ -105,11 +105,21 @@ def main() -> int:
         browser, _ctx, page = _render.open_print_emulated_page(
             p_, viewport
         )
-        page.goto(html_path.as_uri())
-        # Soft path: a hung CDN (blocked MathJax fetch, unreachable web
-        # font) must not hard-crash render. settle_page has its own
-        # bounded waits; let it surface MathJax issues as warnings,
-        # not tracebacks.
+        # Soft path: a hung CDN (blocked MathJax fetch, unreachable
+        # web font) must not hard-crash render. Playwright's default
+        # `page.goto` waits for `load` (all subresources), which can
+        # block ~30s on a single blocked CDN. settle_page below has
+        # its own bounded waits; let it surface MathJax issues as
+        # warnings, not tracebacks.
+        try:
+            page.goto(html_path.as_uri(), timeout=args.mathjax_timeout_ms)
+        except PWTimeoutError:
+            _eprint(
+                f"[render_preview] WARN: page.goto did not reach `load` "
+                f"within {args.mathjax_timeout_ms} ms; continuing with "
+                f"whatever has loaded (a CDN or external resource is "
+                f"likely blocked)."
+            )
         try:
             page.wait_for_load_state(
                 "networkidle", timeout=args.mathjax_timeout_ms,
