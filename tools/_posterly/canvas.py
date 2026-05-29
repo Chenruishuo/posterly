@@ -53,28 +53,52 @@ def _extract_style_css(html_text: str) -> str:
 
 
 def read_canvas_from_html(html_path: Path) -> tuple[float, float] | None:
-    """Parse ``@page { size: W H }`` from ``<style>`` blocks.
+    """Parse ``@page { size: ... }`` from ``<style>`` blocks.
 
-    Supports ``in`` / ``mm`` / ``cm`` / ``pt`` units (mixable across the
-    two dimensions) and named pages (``@page poster { … }``). Returns
+    Supports both numeric and named-size forms:
+
+      - ``@page { size: 60in 36in; }`` (numeric, `in`/`mm`/`cm`/`pt`)
+      - ``@page { size: A0 portrait; }`` / ``A1 landscape`` (CSS named
+        page sizes — same set as ``parse_canvas_arg``)
+
+    Numeric dimensions may mix units (``24in 914mm``). Named pages
+    (``@page poster { size: ... }``) are recognised too. Returns
     ``(width_in, height_in)`` or ``None`` on parse failure — callers
     must either require ``--canvas`` or exit non-zero. We refuse to
     silently fall back to a hardcoded default.
     """
     txt = html_path.read_text(encoding="utf-8", errors="ignore")
     css = _extract_style_css(txt)
-    m = re.search(
+
+    # Numeric form first — most posters use it explicitly.
+    m_num = re.search(
         r"@page(?:\s+[A-Za-z_-][\w:-]*)?\s*\{[^}]*size\s*:\s*"
         r"([\d.]+)\s*(in|mm|cm|pt)\s+"
         r"([\d.]+)\s*(in|mm|cm|pt)",
         css,
         re.IGNORECASE,
     )
-    if not m:
-        return None
-    w = float(m.group(1)) * UNIT_TO_IN[m.group(2).lower()]
-    h = float(m.group(3)) * UNIT_TO_IN[m.group(4).lower()]
-    return w, h
+    if m_num:
+        w = float(m_num.group(1)) * UNIT_TO_IN[m_num.group(2).lower()]
+        h = float(m_num.group(3)) * UNIT_TO_IN[m_num.group(4).lower()]
+        return w, h
+
+    # Named-size form (CSS Paged Media): `size: <name> [portrait|landscape]?`.
+    m_name = re.search(
+        r"@page(?:\s+[A-Za-z_-][\w:-]*)?\s*\{[^}]*size\s*:\s*"
+        r"(A[0-4])(?:\s+(portrait|landscape))?\s*[;}]",
+        css,
+        re.IGNORECASE,
+    )
+    if m_name:
+        name = m_name.group(1).upper()
+        orient = (m_name.group(2) or "portrait").lower()
+        w_mm, h_mm = NAMED_SIZES_MM[name]
+        if orient == "landscape":
+            w_mm, h_mm = h_mm, w_mm
+        return w_mm / 25.4, h_mm / 25.4
+
+    return None
 
 
 def parse_canvas_arg(s: str) -> tuple[float, float]:

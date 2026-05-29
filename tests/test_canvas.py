@@ -117,6 +117,42 @@ def test_read_canvas_named_page(tmp_path) -> None:
     assert canvas.read_canvas_from_html(p) == pytest.approx((36.0, 47.0))
 
 
+def test_read_canvas_named_size(tmp_path) -> None:
+    """CSS Paged Media named-size form must work in the HTML too —
+    earlier the parser supported it only on the `--canvas` CLI arg."""
+    p = _write(tmp_path, "a.html", """
+        <html><head><style>
+          @page { size: A1 portrait; margin: 0; }
+        </style></head></html>
+    """)
+    w, h = canvas.read_canvas_from_html(p)
+    assert w == pytest.approx(594 / 25.4)
+    assert h == pytest.approx(841 / 25.4)
+
+
+def test_read_canvas_named_size_landscape(tmp_path) -> None:
+    p = _write(tmp_path, "a.html", """
+        <html><head><style>
+          @page { size: A0 landscape; }
+        </style></head></html>
+    """)
+    w, h = canvas.read_canvas_from_html(p)
+    assert w == pytest.approx(1189 / 25.4)
+    assert h == pytest.approx(841 / 25.4)
+
+
+def test_read_canvas_named_size_defaults_portrait(tmp_path) -> None:
+    """`size: A0;` (no explicit orientation) → portrait."""
+    p = _write(tmp_path, "a.html", """
+        <html><head><style>
+          @page { size: A0; }
+        </style></head></html>
+    """)
+    w, h = canvas.read_canvas_from_html(p)
+    assert w == pytest.approx(841 / 25.4)
+    assert h == pytest.approx(1189 / 25.4)
+
+
 def test_read_canvas_returns_none_when_missing(tmp_path) -> None:
     p = _write(tmp_path, "a.html",
                "<html><head><style>body { color: red }</style></head></html>")

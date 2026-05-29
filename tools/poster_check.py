@@ -93,6 +93,14 @@ def build_parser() -> argparse.ArgumentParser:
              "exceeding it FAILS the gate, not warns",
     )
     pm.add_argument(
+        "--min-canvas-fill", type=float, default=0.95,
+        help="hard gate: [data-measure-role='poster'] must fill at least "
+             "this fraction of the print viewport in BOTH dimensions "
+             "(default 0.95). Catches the silent 'forgot the print "
+             "media-query unit override' bug where the poster renders "
+             "at screen scale into a much bigger print page.",
+    )
+    pm.add_argument(
         "--json-out", default=None,
         help="dump raw measurement to JSON",
     )

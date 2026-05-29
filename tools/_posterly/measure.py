@@ -100,6 +100,27 @@ def cmd_measure(args: argparse.Namespace) -> int:
         )
         print(f"[measure] raw data → {args.json_out}")
 
+    # Canvas-fill gate: if the .poster element doesn't roughly fill the
+    # print viewport, the poster CSS has the wrong unit scale (typically
+    # missing `@media print { :root { --u: 1mm } }`). The column-spread
+    # gate would still pass on the shrunken poster, but the printed PDF
+    # would show the poster at a tiny scale with a giant gray margin.
+    poster_box = next((el for el in data if el["role"] == "poster"), None)
+    if poster_box is not None:
+        vw, vh = viewport
+        fill_w = poster_box["w"] / vw
+        fill_h = poster_box["h"] / vh
+        if fill_w < args.min_canvas_fill or fill_h < args.min_canvas_fill:
+            _eprint(
+                f"FAIL: [data-measure-role=\"poster\"] fills only "
+                f"{fill_w * 100:.0f}% × {fill_h * 100:.0f}% of the print "
+                f"viewport (need >= {args.min_canvas_fill * 100:.0f}%). "
+                f"Likely cause: missing "
+                f"`@media print {{ :root {{ --u: 1mm }} }}` so the "
+                f"poster keeps the screen-mode unit scale in print."
+            )
+            return 1
+
     columns: dict[int, dict[str, Any]] = {}
     heros: list[dict[str, Any]] = []
     footer_strips: list[dict[str, Any]] = []

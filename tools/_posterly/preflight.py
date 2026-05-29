@@ -163,10 +163,23 @@ def cmd_preflight(args: argparse.Namespace) -> int:
 
     # 2) Raw '<' inside math segments. The common HTML-parse failure
     #    case is `a<b` / `x<y`. We catch '<' even after a letter/digit.
-    #    Suppressed only when it's an escape `\<` or part of `<=`/`</`/`<!`.
+    #    Suppressed only when it's an escape `\<` or part of `</` / `<!`
+    #    (HTML constructs MathJax never sees) or `<=` (a single MathJax
+    #    token that is parsed atomically and does NOT trip the HTML
+    #    tokenizer's tag-start lookahead).
     for s, e, mbody in find_math_segments(body):
+        # Compute the math body's offset inside the original segment so
+        # multi-line `$$ … \n a < b \n … $$` reports the `<`'s line,
+        # not the segment-start line. find_math_segments hands back the
+        # full `(start, end, body)` of the segment; the body's first
+        # char is at `body[s + (segment_text_len - body_len)]` — easier
+        # to recompute via `body.find(mbody, s)`.
+        body_offset_in_body = body.find(mbody, s)
+        if body_offset_in_body == -1:
+            body_offset_in_body = s  # fallback shouldn't happen
         for m in re.finditer(r"(?<!\\)<(?![=/!])", mbody):
-            ln = body[: s].count("\n") + 1
+            abs_offset = body_offset_in_body + m.start()
+            ln = body[: abs_offset].count("\n") + 1
             label = _delim_label(body[s:e], body[s:e])
             problems.append(
                 f"L{ln}: raw '<' inside {label} "

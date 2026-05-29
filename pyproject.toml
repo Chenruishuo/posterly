@@ -34,16 +34,18 @@ dev = [
 Homepage = "https://github.com/<your-github>/posterly"
 Issues   = "https://github.com/<your-github>/posterly/issues"
 
-[build-system]
-requires = ["setuptools>=68"]
-build-backend = "setuptools.build_meta"
-
-[tool.setuptools]
-# Skill ships HTML templates + Python tools; nothing here is meant to be
-# imported as a library by other projects (yet). We deliberately do NOT
-# declare packages so `pip install .` is a no-op for now — install
-# Playwright via requirements + use the skill from ~/.claude/skills/posterly/.
-py-modules = []
+# NOTE: posterly is distributed as a Claude Code skill (clone the repo
+# under ~/.claude/skills/posterly/), NOT as a pip-installable Python
+# package. This file exists ONLY to:
+#   1. Declare runtime + dev Python dependencies in a single canonical
+#      place that `pip install "playwright>=1.40"` and `pytest` agree on.
+#   2. Configure pytest's testpaths/pythonpath so the test suite Just
+#      Works from a fresh clone with `python -m pytest`.
+#   3. Carry project metadata (name, author, license, URLs) for the
+#      eventual GitHub release page.
+# We intentionally do NOT publish to PyPI, declare console_scripts, or
+# package the templates as package data — invoking the skill goes
+# through Claude Code (`/posterly`) or direct `python tools/...` calls.
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

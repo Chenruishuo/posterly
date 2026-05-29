@@ -35,6 +35,35 @@ def test_bracket_display_math() -> None:
     assert "\\int_0^1 x\\,dx" in _math_bodies(text)
 
 
+def test_raw_lt_in_multiline_display_math_reports_correct_line(tmp_path) -> None:
+    """Codex regression: previously the line-number was taken from the
+    segment start, so `$$\\n  a < b\\n$$` reported L1 when `<` was on L2.
+    Now it must report the actual line of the `<`."""
+    import argparse as _ap
+    p = tmp_path / "p.html"
+    p.write_text(
+        '<html><body>\n'                                  # L1
+        '  <div data-measure-role="poster">\n'            # L2
+        '    <p>before</p>\n'                              # L3
+        '    $$\n'                                         # L4
+        '      a < b\n'                                    # L5  ← `<` here
+        '    $$\n'                                         # L6
+        '  </div>\n'                                      # L7
+        '</body></html>\n',                                # L8
+        encoding="utf-8",
+    )
+    import io, contextlib
+    args = _ap.Namespace(html=str(p))
+    err = io.StringIO()
+    with contextlib.redirect_stderr(err):
+        preflight.cmd_preflight(args)
+    err_text = err.getvalue()
+    assert "L5:" in err_text, (
+        f"expected the raw-'<' error to point at L5 (the line "
+        f"with `a < b`), got stderr: {err_text!r}"
+    )
+
+
 def test_nested_inline_inside_display_not_double_counted() -> None:
     """``$$a$b$$`` should produce ONE segment, not three. (Inline
     ``$...$`` lookahead skips ranges already covered by ``$$...$$``.)"""

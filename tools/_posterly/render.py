@@ -143,19 +143,23 @@ def settle_page(
     page.wait_for_timeout(settle_ms)
 
     # 4) Sanity check for the silent-fail case: page has TeX in body
-    #    text but no rendered mjx-container. Covers $...$ and $$...$$
-    #    AND the \(...\) / \[...\] delimiters the templates enable.
+    #    text but no rendered mjx-container. Covers all four delimiter
+    #    pairs the templates configure (`$...$`, `$$...$$`, `\(...\)`,
+    #    `\[...\]`). Length bound is generous (1500 chars per segment,
+    #    multi-line allowed for display math) — a real raw-TeX paste
+    #    can easily exceed the old 200-char limit and slip through.
     try:
         sanity = page.evaluate(
             "() => {"
             "  const has_mjx = "
             "    document.querySelectorAll('mjx-container').length > 0;"
             "  const txt = document.body && document.body.innerText || '';"
-            "  const has_dollar = /\\$[^$\\n]{1,200}\\$/.test(txt);"
-            "  const has_paren  = /\\\\\\([^\\n]{1,200}?\\\\\\)/.test(txt);"
-            "  const has_brack  = /\\\\\\[[^\\n]{1,500}?\\\\\\]/.test(txt);"
-            "  return {has_mjx, has_tex: has_dollar || has_paren "
-            "                          || has_brack};"
+            "  const has_dollar  = /\\$[^$\\n]{1,1500}\\$/.test(txt);"
+            "  const has_ddollar = /\\$\\$[\\s\\S]{1,1500}?\\$\\$/.test(txt);"
+            "  const has_paren   = /\\\\\\([\\s\\S]{1,1500}?\\\\\\)/.test(txt);"
+            "  const has_brack   = /\\\\\\[[\\s\\S]{1,1500}?\\\\\\]/.test(txt);"
+            "  return {has_mjx, has_tex: has_dollar || has_ddollar "
+            "                          || has_paren  || has_brack};"
             "}"
         )
         tex_without_mathjax = bool(

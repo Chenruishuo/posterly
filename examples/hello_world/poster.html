@@ -4,12 +4,14 @@
   posterly — Hello World example
   PURPOSE: smallest poster that passes all four gates
            (preflight, measure, polish --strict, verify-final).
-  CANVAS:  A1 portrait (594 × 841 mm), single column, no MathJax,
-           no external images — renders fully offline.
+  CANVAS:  A2 portrait (420 × 594 mm), single card, no MathJax,
+           no external images — renders fully offline, single
+           page, fills the canvas.
 
-  We use a single column on purpose so alignment is trivially
-  spread = 0 — the goal is install verification. For multi-column
-  layouts with banner / hero / takeaways strips see templates/.
+  The example is deliberately small (one card filling the body
+  row) so it's robust to font / Chromium revision drift: any
+  multi-card alignment headache is the gallery in templates/'s
+  problem, not the install-verification fixture's.
 
   Use:
     cd examples/hello_world
@@ -18,7 +20,7 @@
     python ../../tools/poster_check.py polish      poster.html --strict
     python ../../tools/render_preview.py           poster.html
     python ../../tools/poster_check.py verify-final poster_preview.pdf --from-html poster.html
-  Expect 5 PASSes.
+  Expect five lines confirming success.
   ============================================================
 -->
 <html lang="en">
@@ -26,7 +28,7 @@
 <meta charset="UTF-8">
 <title>posterly — Hello World</title>
 <style>
-  @page { size: 594mm 841mm; margin: 0; }
+  @page { size: A2 portrait; margin: 0; }
 
   :root {
     --accent:        #2D5F8B;
@@ -45,16 +47,40 @@
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html, body { background: #2b2b2b; font-family: var(--font-serif); color: var(--text-primary); }
 
+  /* Print override: switch --u to 1mm so the poster fills the A2 print
+     canvas exactly (420 mm × 594 mm). Without this the poster keeps
+     the 1.6 px / unit screen scale and renders into ~42 % of the print
+     page — the column-spread gate would still pass on the shrunken
+     poster, but the printed PDF would have a giant gray border.
+     measure now also fails on `--min-canvas-fill` so this can't recur
+     silently in other posters either. */
+  @media print {
+    :root { --u: 1mm; }
+    /* Pin html + body to the page so Chromium can't round content
+       height past the @page boundary and emit a phantom second page
+       (a well-known print-emulation quirk). */
+    html, body {
+      background: white;
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+    }
+    .poster { margin: 0; box-shadow: none; page-break-after: avoid; }
+  }
+
   .poster {
-    width: calc(594 * var(--u));
-    height: calc(841 * var(--u));
+    width: calc(420 * var(--u));
+    height: calc(594 * var(--u));
     background: var(--bg-page);
     margin: 20px auto;
-    padding: calc(10 * var(--u)) calc(14 * var(--u));
+    padding: calc(8 * var(--u)) calc(12 * var(--u));
     display: grid;
     grid-template-rows: auto 1fr auto auto;
-    /* 22u (~35 px) row gap → gap-to-footer-strip lands in [30, 50] px. */
-    gap: calc(22 * var(--u));
+    /* 10 mm row-gap → 38 px in print mode (--u: 1mm), comfortably inside
+       the [30, 50] px target for measure's gap-to-footer-strip gate. */
+    gap: calc(10 * var(--u));
     box-shadow: 0 0 40px rgba(0,0,0,0.4);
     position: relative;
     overflow: hidden;
@@ -62,7 +88,7 @@
   .poster::before {
     content: "";
     position: absolute; top: 0; left: 0; right: 0;
-    height: calc(5 * var(--u));
+    height: calc(4 * var(--u));
     background: linear-gradient(90deg, var(--accent-deep), var(--accent), var(--gold));
   }
 
@@ -71,15 +97,15 @@
     display: grid;
     grid-template-columns: 1fr auto;
     align-items: center;
-    gap: calc(10 * var(--u));
-    padding: calc(3 * var(--u)) calc(2 * var(--u)) calc(5 * var(--u));
-    border-bottom: calc(1.5 * var(--u)) solid var(--accent);
+    gap: calc(8 * var(--u));
+    padding: calc(2 * var(--u)) calc(2 * var(--u)) calc(4 * var(--u));
+    border-bottom: calc(1 * var(--u)) solid var(--accent);
   }
   .title-block { min-width: 0; }
   .title {
     font-family: var(--font-sans);
     font-weight: 800;
-    font-size: calc(28 * var(--u));
+    font-size: calc(20 * var(--u));
     line-height: 1.08;
     color: var(--accent-deep);
     letter-spacing: -0.4px;
@@ -87,29 +113,29 @@
   .title .accent { color: var(--gold); }
   .subtitle {
     font-family: var(--font-sans);
-    font-size: calc(12 * var(--u));
+    font-size: calc(9 * var(--u));
     color: var(--text-muted);
-    margin-top: calc(2 * var(--u));
+    margin-top: calc(1 * var(--u));
   }
   .authors {
     font-family: var(--font-sans);
-    font-size: calc(11 * var(--u));
+    font-size: calc(8 * var(--u));
     color: var(--accent);
     font-weight: 600;
-    margin-top: calc(3 * var(--u));
+    margin-top: calc(2 * var(--u));
   }
   .qr-block { display: flex; flex-direction: column; align-items: center; gap: calc(1 * var(--u)); }
   .qr-block img {
-    width: calc(48 * var(--u));
-    height: calc(48 * var(--u));
-    border: calc(1 * var(--u)) solid var(--accent);
-    border-radius: calc(2 * var(--u));
+    width: calc(28 * var(--u));
+    height: calc(28 * var(--u));
+    border: calc(0.5 * var(--u)) solid var(--accent);
+    border-radius: calc(1.5 * var(--u));
     background: white;
-    padding: calc(1 * var(--u));
+    padding: calc(0.5 * var(--u));
   }
-  .qr-label { font-family: var(--font-sans); font-size: calc(8 * var(--u)); color: var(--accent); font-weight: 600; }
+  .qr-label { font-family: var(--font-sans); font-size: calc(6 * var(--u)); color: var(--accent); font-weight: 600; }
 
-  /* ---- body (single column) ---- */
+  /* ---- body (single column, single card filling the row) ---- */
   .body-grid {
     display: grid;
     grid-template-columns: 1fr;
@@ -118,64 +144,65 @@
   .column {
     display: flex;
     flex-direction: column;
-    justify-content: space-between;
-    gap: calc(10 * var(--u));
     min-height: 0;
   }
   .card {
     background: var(--bg-card);
-    border-radius: calc(3 * var(--u));
-    padding: calc(6 * var(--u)) calc(9 * var(--u));
-    border: calc(1 * var(--u)) solid var(--border-soft);
-    box-shadow: 0 calc(1 * var(--u)) calc(3 * var(--u)) rgba(0,0,0,0.04);
-  }
-  .card.highlight {
-    border-left: calc(4 * var(--u)) solid var(--accent);
-    background: linear-gradient(90deg, var(--accent-light), var(--bg-card) 30%);
+    border-radius: calc(2 * var(--u));
+    padding: calc(6 * var(--u)) calc(8 * var(--u));
+    border: calc(0.5 * var(--u)) solid var(--border-soft);
+    box-shadow: 0 calc(1 * var(--u)) calc(2 * var(--u)) rgba(0,0,0,0.04);
+    border-left: calc(3 * var(--u)) solid var(--accent);
+    flex: 1;
+    display: flex;
+    flex-direction: column;
   }
   .section-title {
     font-family: var(--font-sans);
     font-weight: 700;
-    font-size: calc(14 * var(--u));
+    font-size: calc(11 * var(--u));
     color: var(--accent-deep);
-    margin-bottom: calc(3 * var(--u));
+    margin-bottom: calc(2 * var(--u));
   }
   .body-text {
     font-family: var(--font-serif);
-    font-size: calc(10 * var(--u));
-    line-height: 1.34;
+    font-size: calc(7 * var(--u));
+    line-height: 1.35;
     color: var(--text-primary);
   }
-  .body-text + .body-text { margin-top: calc(2 * var(--u)); }
+  .body-text + .body-text { margin-top: calc(1.5 * var(--u)); }
   .keyword { color: var(--accent); font-weight: 700; }
-  .card ul { padding-left: calc(15 * var(--u)); margin-top: calc(1 * var(--u)); }
-  .card li { font-family: var(--font-serif); font-size: calc(10 * var(--u)); line-height: 1.34; }
+  .card ul { padding-left: calc(11 * var(--u)); margin-top: calc(1 * var(--u)); }
+  .card li { font-family: var(--font-serif); font-size: calc(7 * var(--u)); line-height: 1.35; margin-top: calc(0.5 * var(--u)); }
 
   .figure { margin-top: calc(3 * var(--u)); display: flex; flex-direction: column; align-items: center; }
-  .figure img { width: 82%; display: block; }
-  .figure .caption { font-family: var(--font-sans); font-size: calc(8 * var(--u)); color: var(--text-muted); margin-top: calc(2 * var(--u)); text-align: center; line-height: 1.25; }
+  /* 80% width on an AR=2 figure → tall figures would be too big, but
+     AR=2 wide fits comfortably AND satisfies polish Gate A's wide-min
+     ratio (must be >= 65% of card width). */
+  .figure img { width: 80%; display: block; max-height: calc(80 * var(--u)); }
+  .figure .caption { font-family: var(--font-sans); font-size: calc(6 * var(--u)); color: var(--text-muted); margin-top: calc(1 * var(--u)); text-align: center; line-height: 1.2; }
 
   /* ---- footer-strip ---- */
   .footer-strip {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: calc(6 * var(--u));
+    gap: calc(4 * var(--u));
     background: var(--accent-deep);
     color: white;
-    border-radius: calc(3 * var(--u));
-    padding: calc(5 * var(--u)) calc(8 * var(--u));
+    border-radius: calc(2 * var(--u));
+    padding: calc(3 * var(--u)) calc(5 * var(--u));
   }
-  .hs-stat { display: flex; flex-direction: column; align-items: center; gap: calc(1 * var(--u)); }
+  .hs-stat { display: flex; flex-direction: column; align-items: center; gap: calc(0.5 * var(--u)); }
   .hs-stat .num {
     font-family: var(--font-sans);
     font-weight: 800;
-    font-size: calc(18 * var(--u));
+    font-size: calc(12 * var(--u));
     color: var(--gold);
     white-space: nowrap;
   }
   .hs-stat .lbl {
     font-family: var(--font-sans);
-    font-size: calc(9 * var(--u));
+    font-size: calc(6 * var(--u));
     color: var(--accent-light);
     text-align: center;
   }
@@ -185,11 +212,11 @@
     display: grid;
     grid-template-columns: 1fr auto;
     align-items: center;
-    gap: calc(10 * var(--u));
+    gap: calc(8 * var(--u));
     font-family: var(--font-sans);
-    font-size: calc(8.5 * var(--u));
+    font-size: calc(6 * var(--u));
     color: var(--text-muted);
-    padding: calc(2 * var(--u));
+    padding: calc(1 * var(--u)) calc(2 * var(--u));
   }
   .footer .right { color: var(--accent); font-weight: 600; }
 </style>
@@ -205,8 +232,10 @@
       <div class="authors">A. Researcher &middot; B. Collaborator &middot; C. Author<sup>&#9993;</sup></div>
     </div>
     <div class="qr-block">
-      <!-- Inline SVG QR placeholder: zero network deps. Replace with a real QR
-           via `qrencode` or `python -m qrcode` when shipping a real poster. -->
+      <!-- Inline SVG QR placeholder so the template renders offline.
+           Replace with a real QR before printing:
+             $ qrencode -o qr.png -s 12 "<your-url>"
+             $ python -c "import qrcode; qrcode.make('<your-url>').save('qr.png')" -->
       <img src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%23fff'/><g fill='%23222'><rect x='4' y='4' width='26' height='26'/><rect x='70' y='4' width='26' height='26'/><rect x='4' y='70' width='26' height='26'/></g><g fill='%23fff'><rect x='10' y='10' width='14' height='14'/><rect x='76' y='10' width='14' height='14'/><rect x='10' y='76' width='14' height='14'/></g><g fill='%23222'><rect x='14' y='14' width='6' height='6'/><rect x='80' y='14' width='6' height='6'/><rect x='14' y='80' width='6' height='6'/><rect x='38' y='10' width='4' height='4'/><rect x='48' y='10' width='4' height='4'/><rect x='58' y='10' width='4' height='4'/><rect x='34' y='34' width='4' height='4'/><rect x='44' y='38' width='4' height='4'/><rect x='54' y='34' width='4' height='4'/><rect x='62' y='40' width='4' height='4'/><rect x='38' y='46' width='4' height='4'/><rect x='50' y='52' width='4' height='4'/><rect x='62' y='56' width='4' height='4'/><rect x='34' y='60' width='4' height='4'/><rect x='44' y='66' width='4' height='4'/><rect x='56' y='62' width='4' height='4'/><rect x='80' y='80' width='4' height='4'/><rect x='88' y='86' width='4' height='4'/></g><text x='50' y='54' text-anchor='middle' font-family='sans-serif' font-size='6' font-weight='bold' fill='%23888'>QR</text></svg>" alt="QR placeholder">
       <div class="qr-label">Paper</div>
     </div>
@@ -215,44 +244,27 @@
   <div class="body-grid" data-measure-role="body">
     <div class="column" data-measure-role="column">
 
-      <div class="card highlight" data-measure-role="card">
+      <div class="card" data-measure-role="card">
         <div class="section-title">What this is</div>
         <p class="body-text">
           <span class="keyword">posterly</span> is a Claude Code skill that builds academic conference posters as a single HTML/CSS file rendered to print-ready PDF via headless Chromium. You iterate by <em>measuring</em>, not eyeballing &mdash; the screen preview lies; only <code>emulate_media("print")</code> at the exact viewport tells the truth.
         </p>
-        <p class="body-text">
-          This hello-world example demonstrates every measurement role the gates look for: <span class="keyword">poster, header, body, column, card, footer-strip, footer</span>.
-        </p>
-      </div>
 
-      <div class="card" data-measure-role="card">
-        <div class="section-title">Demo figure (inline SVG)</div>
         <div class="figure">
-          <!-- Inline SVG so the example renders without any external image
-               files. Wide aspect ratio (240/120 = 2.0) and 82% card-width
-               so polish Gate A (figure-by-AR) passes the wide-min ratio. -->
           <img alt="A bar chart placeholder" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 240 120'><rect width='240' height='120' fill='%23F6F3F0'/><g fill='%232D5F8B'><rect x='15' y='80' width='28' height='30'/><rect x='55' y='55' width='28' height='55'/><rect x='95' y='35' width='28' height='75'/><rect x='135' y='25' width='28' height='85'/></g><g fill='%23C9A24A'><rect x='175' y='12' width='28' height='98'/></g><line x1='10' y1='110' x2='220' y2='110' stroke='%23555' stroke-width='1'/><text x='189' y='8' font-family='sans-serif' font-size='8' fill='%23C9A24A' font-weight='bold' text-anchor='middle'>ours</text></svg>">
-          <div class="caption">Hypothetical headline result. The last bar is &ldquo;ours&rdquo; in gold for visual emphasis.</div>
+          <div class="caption">Hypothetical headline result. Last bar is &ldquo;ours&rdquo; in gold.</div>
         </div>
-      </div>
 
-      <div class="card" data-measure-role="card">
-        <div class="section-title">How the gates work</div>
+        <div class="section-title" style="margin-top: calc(4 * var(--u))">How the gates work</div>
         <ul>
           <li><b>preflight</b> &mdash; static lint: LaTeX residue, raw <code>&lt;</code> inside math, missing local images, role validation.</li>
-          <li><b>measure</b> &mdash; print-emulated geometry: column-bottom spread (target &lt; 5 px) and gap to next strip (target [30, 50] px).</li>
+          <li><b>measure</b> &mdash; print-emulated geometry: column-bottom spread (&lt; 5 px), gap to next strip ([30, 50] px), poster canvas-fill (&ge; 95 %).</li>
           <li><b>polish</b> &mdash; soft visual checks: figure-AR sizing, typography orphans, space-between fill.</li>
           <li><b>verify-final</b> &mdash; <code>pdfinfo</code>-based PDF sanity: page count, dimensions, file size.</li>
         </ul>
-      </div>
 
-      <div class="card" data-measure-role="card">
-        <div class="section-title">Customize</div>
-        <p class="body-text">
-          Edit the <code>:root</code> design tokens for colors and fonts; replace the inline QR placeholder with a real QR generated by <code>qrencode</code> or Python&rsquo;s <code>qrcode</code>; drop figures into a sibling <code>images/</code> directory.
-        </p>
-        <p class="body-text">
-          For multi-column posters use a template from <code>templates/</code>. The same gates run there too.
+        <p class="body-text" style="margin-top: calc(3 * var(--u))">
+          This single-card example demonstrates every measurement role the gates look for: <span class="keyword">poster, header, body, column, card, footer-strip, footer</span>. For real multi-column posters, copy a template from <code>templates/</code> instead.
         </p>
       </div>
 

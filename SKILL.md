@@ -133,7 +133,7 @@ Targets (defaults; configurable via flags):
 `poster_check.py measure` also has these safety nets (so a false PASS shouldn't happen):
 - Empty columns = hard fail (override: `--allow-empty-column`).
 - Missing footer-strip AND footer = hard fail (override: `--allow-no-footer-gap`).
-- MathJax expected (page contains `$…$` in body) but no `<mjx-container>` rendered = hard fail (CDN block, script error).
+- MathJax intended (a `<script src="…mathjax…">` tag or `window.MathJax` config is present) but no `<mjx-container>` rendered, while TeX delimiters (`$…$` / `$$…$$` / `\(…\)` / `\[…\]`) remain in body text = hard fail (CDN block, script error). A page that just *describes* TeX syntax in prose without ever loading MathJax is NOT failed.
 - MathJax typeset timeout = hard fail (override: `--mathjax-timeout-ms`).
 - `@page` size missing AND no `--canvas` override = exit 2.
 

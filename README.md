@@ -31,7 +31,7 @@ git clone https://github.com/<your-github>/posterly ~/.claude/skills/posterly
 cd ~/.claude/skills/posterly
 
 # 2. Install Python deps
-python -m pip install -r <(echo "playwright>=1.40")
+python -m pip install "playwright>=1.40"
 python -m playwright install chromium
 
 # 3. System deps (for verify-final's pdfinfo)
@@ -48,7 +48,7 @@ python ../../tools/render_preview.py          poster.html
 python ../../tools/poster_check.py verify-final poster_preview.pdf --from-html poster.html
 ```
 
-If all five steps print `PASS`, your install works.
+The four `poster_check.py` steps print `PASS`; `render_preview.py` prints the PDF and PNG paths it wrote. If you see all four `PASS` lines and a `.pdf` / `.png` pair appear in the directory, your install works.
 
 From inside Claude Code, just type `/posterly` and the skill walks you through the workflow (venue lookup → template pick → content → renders).
 
@@ -129,12 +129,17 @@ All three thresholds are CLI-tunable.
 
 ## Development
 
+posterly ships as a clone-only Claude Code skill — `pyproject.toml` carries
+runtime + dev dependency declarations and pytest config, NOT package
+publishing. To run the tests:
+
 ```bash
-python -m pip install -e ".[dev]"
-pytest
+python -m pip install "playwright>=1.40" "pytest>=7"
+python -m playwright install chromium
+python -m pytest          # or: pytest -q
 ```
 
-`tests/` covers canvas parsing (incl. named sizes), preflight math-delimiter coverage, line-number preservation, polish role-validation, and `verify-final` parsing.
+`tests/` covers canvas parsing (incl. named sizes + `@page` extraction), preflight math-delimiter coverage, line-number preservation, polish role-validation, and the `verify-final` input gates (`--canvas` / `--from-html` mutual exclusion, missing files). The `pdfinfo` round-trip is exercised by the `examples/hello_world` smoke test rather than a unit test.
 
 ---
 
