@@ -33,6 +33,10 @@ def test_parse_numeric_dimensions(s: str, expected: tuple[float, float]) -> None
     ("A3 landscape", (420,  297)),
     ("a4 portrait",  (210,  297)),     # case-insensitive name
     ("A0",           (841,  1189)),    # orientation defaults to portrait
+    # CSS Paged Media also permits orientation BEFORE the name:
+    ("portrait A0",  (841,  1189)),
+    ("landscape A0", (1189, 841)),
+    ("LANDSCAPE a1", (841,  594)),     # case-insensitive both tokens
 ])
 def test_parse_named_sizes(s: str, exp_mm: tuple[float, float]) -> None:
     w, h = canvas.parse_canvas_arg(s)
@@ -151,6 +155,18 @@ def test_read_canvas_named_size_defaults_portrait(tmp_path) -> None:
     w, h = canvas.read_canvas_from_html(p)
     assert w == pytest.approx(841 / 25.4)
     assert h == pytest.approx(1189 / 25.4)
+
+
+def test_read_canvas_named_size_orientation_first(tmp_path) -> None:
+    """CSS lets `size: landscape A0;` write orientation before the name."""
+    p = _write(tmp_path, "a.html", """
+        <html><head><style>
+          @page { size: landscape A0; }
+        </style></head></html>
+    """)
+    w, h = canvas.read_canvas_from_html(p)
+    assert w == pytest.approx(1189 / 25.4)
+    assert h == pytest.approx(841 / 25.4)
 
 
 def test_read_canvas_returns_none_when_missing(tmp_path) -> None:

@@ -100,26 +100,41 @@ def cmd_measure(args: argparse.Namespace) -> int:
         )
         print(f"[measure] raw data → {args.json_out}")
 
-    # Canvas-fill gate: if the .poster element doesn't roughly fill the
-    # print viewport, the poster CSS has the wrong unit scale (typically
-    # missing `@media print { :root { --u: 1mm } }`). The column-spread
-    # gate would still pass on the shrunken poster, but the printed PDF
-    # would show the poster at a tiny scale with a giant gray margin.
+    # Canvas-fill gate. The `[data-measure-role="poster"]` box must:
+    #   (a) exist — otherwise measure has nothing to anchor the layout
+    #       against, and a silent PASS would be misleading;
+    #   (b) fill the print viewport in BOTH dimensions, within a
+    #       tolerance band of [min_canvas_fill, 1/min_canvas_fill]. The
+    #       low side catches the common bug where the poster forgets
+    #       the `@media print { :root { --u: 1mm } }` override and
+    #       renders at screen scale into ~42 % of canvas. The high
+    #       side catches the symmetric mistake where the poster CSS
+    #       declares dimensions larger than @page.
     poster_box = next((el for el in data if el["role"] == "poster"), None)
-    if poster_box is not None:
-        vw, vh = viewport
-        fill_w = poster_box["w"] / vw
-        fill_h = poster_box["h"] / vh
-        if fill_w < args.min_canvas_fill or fill_h < args.min_canvas_fill:
-            _eprint(
-                f"FAIL: [data-measure-role=\"poster\"] fills only "
-                f"{fill_w * 100:.0f}% × {fill_h * 100:.0f}% of the print "
-                f"viewport (need >= {args.min_canvas_fill * 100:.0f}%). "
-                f"Likely cause: missing "
-                f"`@media print {{ :root {{ --u: 1mm }} }}` so the "
-                f"poster keeps the screen-mode unit scale in print."
-            )
-            return 1
+    if poster_box is None:
+        _eprint(
+            "FAIL: no [data-measure-role=\"poster\"] element found on "
+            "the page. Add it to the root poster container — measure "
+            "needs it to verify the canvas-fill, and preflight already "
+            "rejects pages without it."
+        )
+        return 1
+    vw, vh = viewport
+    fill_w = poster_box["w"] / vw
+    fill_h = poster_box["h"] / vh
+    lo = args.min_canvas_fill
+    hi = 1.0 / lo if lo > 0 else float("inf")
+    if not (lo <= fill_w <= hi) or not (lo <= fill_h <= hi):
+        _eprint(
+            f"FAIL: [data-measure-role=\"poster\"] fills "
+            f"{fill_w * 100:.0f}% × {fill_h * 100:.0f}% of the print "
+            f"viewport (target {lo * 100:.0f}% – {hi * 100:.0f}% in "
+            f"BOTH dimensions). Common cause when too small: missing "
+            f"`@media print {{ :root {{ --u: 1mm }} }}` so the poster "
+            f"keeps the screen-mode unit scale in print. Common cause "
+            f"when too large: hardcoded `width` exceeds `@page size`."
+        )
+        return 1
 
     columns: dict[int, dict[str, Any]] = {}
     heros: list[dict[str, Any]] = []

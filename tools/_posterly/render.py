@@ -145,19 +145,20 @@ def settle_page(
     # 4) Sanity check for the silent-fail case: page has TeX in body
     #    text but no rendered mjx-container. Covers all four delimiter
     #    pairs the templates configure (`$...$`, `$$...$$`, `\(...\)`,
-    #    `\[...\]`). Length bound is generous (1500 chars per segment,
-    #    multi-line allowed for display math) — a real raw-TeX paste
-    #    can easily exceed the old 200-char limit and slip through.
+    #    `\[...\]`). No length bound — earlier `{1,1500}` regex limits
+    #    were Codex-flagged for letting long raw-TeX paste slip past.
+    #    `[^$\n]+` (inline) and `[\s\S]+?` (display, non-greedy) avoid
+    #    catastrophic backtracking even on multi-paragraph segments.
     try:
         sanity = page.evaluate(
             "() => {"
             "  const has_mjx = "
             "    document.querySelectorAll('mjx-container').length > 0;"
             "  const txt = document.body && document.body.innerText || '';"
-            "  const has_dollar  = /\\$[^$\\n]{1,1500}\\$/.test(txt);"
-            "  const has_ddollar = /\\$\\$[\\s\\S]{1,1500}?\\$\\$/.test(txt);"
-            "  const has_paren   = /\\\\\\([\\s\\S]{1,1500}?\\\\\\)/.test(txt);"
-            "  const has_brack   = /\\\\\\[[\\s\\S]{1,1500}?\\\\\\]/.test(txt);"
+            "  const has_dollar  = /\\$[^$\\n]+\\$/.test(txt);"
+            "  const has_ddollar = /\\$\\$[\\s\\S]+?\\$\\$/.test(txt);"
+            "  const has_paren   = /\\\\\\([\\s\\S]+?\\\\\\)/.test(txt);"
+            "  const has_brack   = /\\\\\\[[\\s\\S]+?\\\\\\]/.test(txt);"
             "  return {has_mjx, has_tex: has_dollar || has_ddollar "
             "                          || has_paren  || has_brack};"
             "}"

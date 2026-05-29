@@ -17,7 +17,9 @@ A poster is **one HTML file** styled for an exact print canvas, rendered to PDF 
      │
      ▼  data-measure-role tags identify columns/hero/footer-strip
      │
-     ├──→ tools/poster_check.py measure  (HARD GATE — spread < 5 px)
+     ├──→ tools/poster_check.py measure  (HARD GATE — spread < 5 px,
+     │                                    gap-to-strip ∈ [30,50] px,
+     │                                    canvas-fill ≥ 95 %)
      ├──→ tools/poster_check.py preflight  (LaTeX residue, math `<`, missing imgs)
      ├──→ tools/render_preview.py  (PDF + thumbnail)
      └──→ tools/poster_check.py verify-final  (PDF page count / dims / size)
@@ -124,13 +126,17 @@ python <skill>/tools/poster_check.py measure poster.html
 Targets (defaults; configurable via flags):
 - **`spread < 5 px`** across the last-card-bottoms of all columns (+ any hero panel). Aim `< 3 px`.
 - **`gap to footer-strip/footer ∈ [30, 50] px`** — card shadow visible but cards don't float.
+- **`canvas-fill ≥ 95 % AND ≤ 105 %`** in both dimensions — `[data-measure-role="poster"]` must occupy almost the entire print viewport. Catches the silent failure where a poster forgets `@media print { :root { --u: 1mm } }` and renders at screen scale (~42 % of canvas), or where the poster's CSS width / height exceeds `@page`. Tune via `--min-canvas-fill` (default 0.95, the band is `[N, 1/N]`).
 
 **This gate is non-negotiable.** If `measure` exits non-zero, fix the layout — do NOT continue to render. Common fixes:
 - spread > 5: shrink the column with the lowest last-card by reducing a paragraph's `margin-bottom` by 1u, trimming one line, or shrinking a fixed-height figure by 5u.
 - gap > 50 everywhere: body-grid is too tall; grow a card or accept whitespace.
 - gap < 30 anywhere: banner/header outgrew its slot; check `.framework-banner` rendered height.
+- canvas-fill < 95 %: add `@media print { :root { --u: 1mm } }` so the poster scales to the print canvas.
+- canvas-fill > 105 %: a hardcoded `width: 1600px` (or similar non-`--u`-based size) exceeds `@page`. Replace with `calc(N * var(--u))`.
 
 `poster_check.py measure` also has these safety nets (so a false PASS shouldn't happen):
+- Missing `[data-measure-role="poster"]` = hard fail.
 - Empty columns = hard fail (override: `--allow-empty-column`).
 - Missing footer-strip AND footer = hard fail (override: `--allow-no-footer-gap`).
 - MathJax intended (a `<script src="…mathjax…">` tag or `window.MathJax` config is present) but no `<mjx-container>` rendered, while TeX delimiters (`$…$` / `$$…$$` / `\(…\)` / `\[…\]`) remain in body text = hard fail (CDN block, script error). A page that just *describes* TeX syntax in prose without ever loading MathJax is NOT failed.
@@ -248,7 +254,7 @@ Concrete bad case (prior session): the SnipSnap Motivation column shipped with a
 
 ## Universal pitfalls (apply to all templates)
 
-1. **`<` raw in MathJax inline** → may be HTML-parsed before MathJax sees it (mode-dependent). Use `\lt` everywhere — it always renders correctly and preflight stops nagging. Preflight catches raw `<` inside `$…$` / `$$…$$` / `\(…\)` / `\[…\]`.
+1. **`<` raw in MathJax inline** → may be HTML-parsed before MathJax sees it (mode-dependent). Prefer `\lt` everywhere. Preflight catches `(?<!\\)<(?![=/!])` inside `$…$` / `$$…$$` / `\(…\)` / `\[…\]` — i.e. raw `<` NOT preceded by a backslash and NOT followed by `=` / `/` / `!`. The `<=` case is intentionally exempt (single MathJax token, parsed atomically — no HTML-tokenizer ambiguity); preflight stays quiet about it, but `\le` reads more naturally in print.
 2. **`\ ` (backslash-space) from LaTeX** → renders literally. Strip when porting from `.tex`. Preflight catches.
 3. **Screen-mode measurement is misleading.** Always use `tools/poster_check.py measure` — never eyeball the screen render.
 4. **Pre-compact `\\ ` and lone `<`** — preflight catches before render.

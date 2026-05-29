@@ -83,20 +83,20 @@ def read_canvas_from_html(html_path: Path) -> tuple[float, float] | None:
         h = float(m_num.group(3)) * UNIT_TO_IN[m_num.group(4).lower()]
         return w, h
 
-    # Named-size form (CSS Paged Media): `size: <name> [portrait|landscape]?`.
+    # Named-size form (CSS Paged Media): `size: <name> [portrait|landscape]?`
+    # OR `size: <portrait|landscape> <name>?`. The spec permits both
+    # orders, so we extract the raw value and feed it to parse_canvas_arg.
     m_name = re.search(
         r"@page(?:\s+[A-Za-z_-][\w:-]*)?\s*\{[^}]*size\s*:\s*"
-        r"(A[0-4])(?:\s+(portrait|landscape))?\s*[;}]",
+        r"([A-Za-z][\w\s]*?)\s*[;}]",
         css,
         re.IGNORECASE,
     )
     if m_name:
-        name = m_name.group(1).upper()
-        orient = (m_name.group(2) or "portrait").lower()
-        w_mm, h_mm = NAMED_SIZES_MM[name]
-        if orient == "landscape":
-            w_mm, h_mm = h_mm, w_mm
-        return w_mm / 25.4, h_mm / 25.4
+        try:
+            return parse_canvas_arg(m_name.group(1).strip())
+        except argparse.ArgumentTypeError:
+            return None
 
     return None
 
@@ -124,19 +124,28 @@ def parse_canvas_arg(s: str) -> tuple[float, float]:
         w = float(m.group(1)) * UNIT_TO_IN[unit]
         h = float(m.group(2)) * UNIT_TO_IN[unit]
         return w, h
-    # Form 2: <NamedSize> [portrait|landscape]
-    m = re.fullmatch(
-        r"(A[0-4])(?:\s+(portrait|landscape))?",
-        s,
-        re.IGNORECASE,
-    )
-    if m:
-        name = m.group(1).upper()
-        orient = (m.group(2) or "portrait").lower()
-        w_mm, h_mm = NAMED_SIZES_MM[name]
-        if orient == "landscape":
-            w_mm, h_mm = h_mm, w_mm
-        return w_mm / 25.4, h_mm / 25.4
+    # Form 2: CSS Paged Media value `<NamedSize> | <Orient> |
+    # <NamedSize> <Orient> | <Orient> <NamedSize>` (the spec lets
+    # orientation appear before OR after the size keyword).
+    parts = re.split(r"\s+", s)
+    if 1 <= len(parts) <= 2:
+        name_token = orient_token = None
+        for part in parts:
+            up = part.upper()
+            lo = part.lower()
+            if up in NAMED_SIZES_MM and name_token is None:
+                name_token = up
+            elif lo in ("portrait", "landscape") and orient_token is None:
+                orient_token = lo
+            else:
+                name_token = orient_token = None
+                break
+        if name_token is not None:
+            orient = orient_token or "portrait"
+            w_mm, h_mm = NAMED_SIZES_MM[name_token]
+            if orient == "landscape":
+                w_mm, h_mm = h_mm, w_mm
+            return w_mm / 25.4, h_mm / 25.4
     raise argparse.ArgumentTypeError(
         f"--canvas expects '<W>x<H><unit>' (e.g. '60x36in') or "
         f"'<NamedSize> [portrait|landscape]' (e.g. 'A0 portrait'); "
