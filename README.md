@@ -21,19 +21,19 @@ Three real conference posters — built with `posterly` from **publicly-availabl
 *Tooling: each was produced by **Claude Opus 4.7 / 4.8** (reasoning effort `xhigh`) driving `posterly`, with **GPT-5.5** (`xhigh`) as the secondary model for the paper-to-poster content audit.*
 
 <p align="center">
-  <a href="docs/showcase/powerflow_icml2026.pdf"><img src="docs/showcase/powerflow_icml2026.jpg" alt="PowerFlow — ICML 2026 poster" width="840"></a><br>
+  <a href="docs/showcase/powerflow_icml2026.pdf"><img src="docs/showcase/powerflow_icml2026.jpg" alt="PowerFlow — ICML 2026 poster" width="80%"></a><br>
   <b>PowerFlow: Unlocking the Dual Nature of LLMs via Principled Distribution Matching</b><br>
   ICML 2026 · Chen, Chen, Li, Huang (IIIS, Tsinghua) · <a href="https://arxiv.org/abs/2603.18363">arXiv</a> · <a href="https://github.com/Chenruishuo/PowerFlow">code</a> · <a href="examples/powerflow_icml2026/poster.html">source</a> · <a href="docs/showcase/powerflow_icml2026.pdf">PDF</a>
 </p>
 
 <p align="center">
-  <a href="docs/showcase/tdgfn_icml2026.pdf"><img src="docs/showcase/tdgfn_icml2026.jpg" alt="TD-GFN — ICML 2026 poster" width="840"></a><br>
+  <a href="docs/showcase/tdgfn_icml2026.pdf"><img src="docs/showcase/tdgfn_icml2026.jpg" alt="TD-GFN — ICML 2026 poster" width="80%"></a><br>
   <b>Beyond the Proxy: Trajectory-Distilled Guidance for Offline GFlowNet Training (TD-GFN)</b><br>
   ICML 2026 · Chen, Wang, Hu, Li, Huang (IIIS, Tsinghua) · <a href="https://arxiv.org/abs/2505.20110">arXiv</a> · <a href="https://github.com/Chenruishuo/TD-GFN">code</a> · <a href="examples/tdgfn_icml2026/poster.html">source</a> · <a href="docs/showcase/tdgfn_icml2026.pdf">PDF</a>
 </p>
 
 <p align="center">
-  <a href="docs/showcase/optail_neurips2024.pdf"><img src="docs/showcase/optail_neurips2024.jpg" alt="OPT-AIL — NeurIPS 2024 poster" width="840"></a><br>
+  <a href="docs/showcase/optail_neurips2024.pdf"><img src="docs/showcase/optail_neurips2024.jpg" alt="OPT-AIL — NeurIPS 2024 poster" width="80%"></a><br>
   <b>OPT-AIL: Provably &amp; Practically Efficient Adversarial Imitation Learning with General Function Approximation</b><br>
   NeurIPS 2024 · Xu, Zhang, Chen, Sun, Yu (Nanjing University · Polixir.ai) · <a href="https://arxiv.org/abs/2411.00610">arXiv</a> · <a href="https://github.com/LAMDA-RL/OPT-AIL">code</a> · <a href="examples/optail_neurips2024/poster.html">source</a> · <a href="docs/showcase/optail_neurips2024.pdf">PDF</a>
 </p>
