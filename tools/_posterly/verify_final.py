@@ -28,6 +28,7 @@ from pathlib import Path
 from typing import Any
 
 from . import canvas as _canvas
+from .textutil import ascii_safe
 
 
 def _eprint(*args: Any, **kw: Any) -> None:
@@ -113,7 +114,7 @@ def cmd_verify_final(args: argparse.Namespace) -> int:
     print(f"  expected canvas = {exp_w:.2f}in x {exp_h:.2f}in  "
           f"(from {src})")
     print(f"  pages           = {pages}")
-    print(f"  page size       = {page_size}")
+    print(f"  page size       = {ascii_safe(page_size)}")
     print(f"  page rot        = {page_rot}")
     print(f"  file size       = {file_size_mb:.2f} MB")
 
@@ -126,7 +127,7 @@ def cmd_verify_final(args: argparse.Namespace) -> int:
     m = re.search(r"([\d.]+)\s*x\s*([\d.]+)\s*pts", page_size)
     if not m:
         problems.append(
-            f"could not parse pdfinfo `Page size`: {page_size!r}"
+            f"could not parse pdfinfo `Page size`: {ascii_safe(page_size)!r}"
         )
     else:
         w_in = float(m.group(1)) / 72.0

@@ -40,6 +40,9 @@ from . import render as _render
 ORPHAN_GLYPHS = "↑↓↔×÷±§¶†‡*°%"
 
 
+from .textutil import ascii_safe
+
+
 def _eprint(*args: Any, **kw: Any) -> None:
     print(*args, file=sys.stderr, **kw)
 
@@ -213,26 +216,33 @@ def cmd_polish(args: argparse.Namespace) -> int:
         cw = float(f["card_w"])
         nw = float(f["natural_w"])
         nh = float(f["natural_h"])
-        if cw <= 0 or rw <= 0 or nh <= 0:
+        if nw <= 0 or nh <= 0:
+            warns.append(
+                f"FIG/BROKEN: '{ascii_safe(f['src'])}' has zero natural "
+                "size -- the image failed to load (missing file, 404, or "
+                "an unreachable remote URL); it will be blank in print."
+            )
+            continue
+        if cw <= 0 or rw <= 0:
             continue
         ar = nw / nh
         ratio = rw / cw
         if ar > 1.3 and ratio < args.wide_min_ratio:
             warns.append(
-                f"FIG/WIDE: '{f['src']}' (AR={ar:.2f}) at "
+                f"FIG/WIDE: '{ascii_safe(f['src'])}' (AR={ar:.2f}) at "
                 f"{ratio * 100:.0f}% of card width -- wide figures "
                 f"should sit >= {args.wide_min_ratio * 100:.0f}%. "
                 f"Enlarge, or drop the image-left/text-right wrapper."
             )
         elif ar < 0.8 and ratio > args.tall_max_ratio:
             warns.append(
-                f"FIG/TALL: '{f['src']}' (AR={ar:.2f}) at "
+                f"FIG/TALL: '{ascii_safe(f['src'])}' (AR={ar:.2f}) at "
                 f"{ratio * 100:.0f}% of card width -- tall figures "
                 f"usually pair better with text-right at 45-60%."
             )
         elif 0.8 <= ar <= 1.3 and ratio < args.square_min_ratio:
             warns.append(
-                f"FIG/SQUARE: '{f['src']}' (AR={ar:.2f}) at "
+                f"FIG/SQUARE: '{ascii_safe(f['src'])}' (AR={ar:.2f}) at "
                 f"{ratio * 100:.0f}% of card width -- square figures "
                 f"sit better at {args.square_min_ratio * 100:.0f}-75%."
             )
@@ -251,10 +261,10 @@ def cmd_polish(args: argparse.Namespace) -> int:
         if "nowrap" in ws or "pre" in ws:
             continue
         warns.append(
-            f"ORPHAN: <{n['tag']} class='{n['cls']}'> text "
-            f"'{txt[:48]}' ends with '{last}' and may wrap alone. "
-            f"Apply `white-space: nowrap` or use &nbsp; before the "
-            f"trailing glyph."
+            f"ORPHAN: <{ascii_safe(n['tag'])} class='{ascii_safe(n['cls'])}'> "
+            f"text '{ascii_safe(txt[:48])}' ends with '{ascii_safe(last)}' "
+            f"and may wrap alone. Apply `white-space: nowrap` or use &nbsp; "
+            f"before the trailing glyph."
         )
 
     # ---- Gate C: space-between fill ----

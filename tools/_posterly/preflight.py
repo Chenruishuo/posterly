@@ -52,6 +52,9 @@ LATEX_PATTERNS: list[tuple[str, str]] = [
 ]
 
 
+from .textutil import ascii_safe
+
+
 def _eprint(*args: Any, **kw: Any) -> None:
     print(*args, file=sys.stderr, **kw)
 
@@ -160,7 +163,7 @@ def cmd_preflight(args: argparse.Namespace) -> int:
     for pat, desc in LATEX_PATTERNS:
         for m in re.finditer(pat, body):
             ln = body[: m.start()].count("\n") + 1
-            problems.append(f"L{ln}: {desc} -> '{m.group(0)}'")
+            problems.append(f"L{ln}: {desc} -> '{ascii_safe(m.group(0))}'")
 
     # 2) Raw '<' inside math segments. The common HTML-parse failure
     #    case is `a<b` / `x<y`. We catch '<' even after a letter/digit.
@@ -184,7 +187,7 @@ def cmd_preflight(args: argparse.Namespace) -> int:
             label = _delim_label(body[s:e], body[s:e])
             problems.append(
                 f"L{ln}: raw '<' inside {label} "
-                f"'{mbody.strip()[:60]}' -- use \\lt"
+                f"'{ascii_safe(mbody.strip()[:60])}' -- use \\lt"
             )
 
     # 3) Image src: local must exist; remote http(s) warns. A print
@@ -198,7 +201,8 @@ def cmd_preflight(args: argparse.Namespace) -> int:
         if src.startswith(("http://", "https://", "//")):
             ln = body[: m.start()].count("\n") + 1
             warnings.append(
-                f"L{ln}: remote image '{src[:60]}' -- inline or localize "
+                f"L{ln}: remote image '{ascii_safe(src[:60])}' -- inline or "
+                "localize "
                 "it; a print poster should not depend on a CDN at render "
                 "time"
             )
@@ -206,7 +210,7 @@ def cmd_preflight(args: argparse.Namespace) -> int:
         candidate = (html_path.parent / src).resolve()
         if not candidate.exists():
             ln = body[: m.start()].count("\n") + 1
-            problems.append(f"L{ln}: missing local image '{src}'")
+            problems.append(f"L{ln}: missing local image '{ascii_safe(src)}'")
 
     # 4) data-measure-role="poster" required on the root.
     if not re.search(r'data-measure-role\s*=\s*["\']poster["\']', body):

@@ -1,11 +1,14 @@
 """verify-final tests: --canvas vs --from-html mutual-exclusion +
 missing-input behaviour, plus pdfinfo parsing / dimension-and-rotation
 logic via a monkeypatched pdfinfo (no Poppler needed). The end-to-end
-pdfinfo round-trip on a real PDF is covered by the hello_world smoke
-test."""
+pdfinfo round-trip on a real PDF is covered by a Poppler-gated
+integration test against the hello_world example."""
 from __future__ import annotations
 
 import argparse
+import shutil
+
+import pytest
 
 from _posterly import verify_final
 
@@ -186,3 +189,23 @@ def test_failure_output_is_ascii(tmp_path, monkeypatch, capsys) -> None:
     assert rc == 1
     out = capsys.readouterr()
     (out.out + out.err).encode("ascii")  # raises UnicodeEncodeError if not
+
+
+@pytest.mark.skipif(
+    shutil.which("pdfinfo") is None,
+    reason="poppler/pdfinfo not installed",
+)
+def test_hello_world_pdf_real_pdfinfo() -> None:
+    """Round-10: exercise the REAL pdfinfo round-trip on the shipped
+    example PDF (no monkeypatch) — this is the integration coverage the
+    README/docstring refer to. Skipped when poppler is absent."""
+    from pathlib import Path
+    root = Path(__file__).resolve().parent.parent
+    pdf = root / "examples" / "hello_world" / "poster_preview.pdf"
+    html = root / "examples" / "hello_world" / "poster.html"
+    assert pdf.exists(), f"example PDF missing at {pdf}"
+    assert html.exists(), f"example HTML missing at {html}"
+    rc = verify_final.cmd_verify_final(
+        _args(pdf=str(pdf), from_html=str(html))
+    )
+    assert rc == 0

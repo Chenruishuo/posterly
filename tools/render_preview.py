@@ -29,13 +29,14 @@ if _THIS_DIR not in sys.path:
 
 from _posterly import canvas as _canvas  # noqa: E402
 from _posterly import render as _render  # noqa: E402
+from _posterly.textutil import ascii_safe  # noqa: E402
 
 
 def _eprint(*args: object, **kw: object) -> None:
     print(*args, file=sys.stderr, **kw)  # type: ignore[arg-type]
 
 
-def main() -> int:
+def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
         description=(__doc__ or "").splitlines()[0]
     )
@@ -62,7 +63,11 @@ def main() -> int:
         help="override canvas (e.g. '60x36in' / 'A0 portrait'); "
              "by default we parse @page from the HTML",
     )
-    args = p.parse_args()
+    return p
+
+
+def main() -> int:
+    args = build_parser().parse_args()
 
     html_path = Path(args.html).resolve()
     if not html_path.exists():
@@ -146,7 +151,7 @@ def main() -> int:
         elif settle.mathjax_status == "error":
             _eprint(
                 f"[render_preview] WARN: MathJax error: "
-                f"{settle.mathjax_error}"
+                f"{ascii_safe(settle.mathjax_error)}"
             )
         if settle.mathjax_intended and settle.tex_without_mathjax:
             _eprint(
