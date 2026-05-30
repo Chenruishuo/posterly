@@ -154,6 +154,7 @@ def cmd_preflight(args: argparse.Namespace) -> int:
     body = strip_for_lint(raw)
 
     problems: list[str] = []
+    warnings: list[str] = []
 
     # 1) LaTeX residue.
     for pat, desc in LATEX_PATTERNS:
@@ -186,10 +187,21 @@ def cmd_preflight(args: argparse.Namespace) -> int:
                 f"'{mbody.strip()[:60]}' -- use \\lt"
             )
 
-    # 3) Local image src="..." that doesn't exist.
+    # 3) Image src: local must exist; remote http(s) warns. A print
+    #    poster should be self-contained -- a CDN image that 404s or is
+    #    slow at render time silently breaks the figure, and the render
+    #    gates can't see a missing remote image. data: URIs are inline.
     for m in re.finditer(r'src\s*=\s*["\']([^"\']+)["\']', body):
         src = m.group(1)
-        if src.startswith(("http://", "https://", "data:", "//")):
+        if src.startswith("data:"):
+            continue
+        if src.startswith(("http://", "https://", "//")):
+            ln = body[: m.start()].count("\n") + 1
+            warnings.append(
+                f"L{ln}: remote image '{src[:60]}' -- inline or localize "
+                "it; a print poster should not depend on a CDN at render "
+                "time"
+            )
             continue
         candidate = (html_path.parent / src).resolve()
         if not candidate.exists():
@@ -215,7 +227,6 @@ def cmd_preflight(args: argparse.Namespace) -> int:
             )
 
     # 6) Soft sanity: no <title> / no <h1>. Warns, doesn't fail.
-    warnings: list[str] = []
     if not re.search(r"<title[^>]*>.+?</title>", raw, re.DOTALL):
         warnings.append("no <title> set")
     if not re.search(r"<h1\b", raw):

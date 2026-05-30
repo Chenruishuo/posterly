@@ -195,3 +195,36 @@ def test_hello_world_preflight_passes() -> None:
     args = _ap.Namespace(html=str(hello))
     rc = preflight.cmd_preflight(args)
     assert rc == 0
+
+
+# ---- image src handling ----------------------------------------------------
+
+def test_remote_image_warns_not_fails(tmp_path, capsys) -> None:
+    """A print poster should be self-contained: a remote <img> WARNS
+    (soft) but does not fail preflight; an inline data: URI is silent."""
+    import argparse as _ap
+    p = tmp_path / "p.html"
+    p.write_text(
+        '<html><body><div data-measure-role="poster">'
+        '<img src="https://cdn.example.com/fig.png">'
+        '<img src="data:image/png;base64,AAAA">'
+        '</div></body></html>',
+        encoding="utf-8",
+    )
+    rc = preflight.cmd_preflight(_ap.Namespace(html=str(p)))
+    out = capsys.readouterr().out
+    assert rc == 0, "remote image is a warning, not a hard failure"
+    assert out.count("remote image") == 1, "only the http img, not data:"
+
+
+def test_missing_local_image_still_fails(tmp_path, capsys) -> None:
+    import argparse as _ap
+    p = tmp_path / "p.html"
+    p.write_text(
+        '<html><body><div data-measure-role="poster">'
+        '<img src="nope.png"></div></body></html>',
+        encoding="utf-8",
+    )
+    rc = preflight.cmd_preflight(_ap.Namespace(html=str(p)))
+    assert rc == 1
+    assert "missing local image" in capsys.readouterr().err
