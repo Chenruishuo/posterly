@@ -148,23 +148,23 @@ def cmd_measure(args: argparse.Namespace) -> int:
     tol = args.position_tol_px
     pos_problems = []
     if abs(poster_box["x"]) > tol:
-        pos_problems.append(f"x={poster_box['x']:.1f} (expected ≈ 0)")
+        pos_problems.append(f"x={poster_box['x']:.1f} (expected ~= 0)")
     if abs(poster_box["y"]) > tol:
-        pos_problems.append(f"y={poster_box['y']:.1f} (expected ≈ 0)")
+        pos_problems.append(f"y={poster_box['y']:.1f} (expected ~= 0)")
     if abs(poster_box["right"] - vw) > tol:
         pos_problems.append(
-            f"right={poster_box['right']:.1f} (expected ≈ {vw})"
+            f"right={poster_box['right']:.1f} (expected ~= {vw})"
         )
     if abs(poster_box["bottom"] - vh) > tol:
         pos_problems.append(
-            f"bottom={poster_box['bottom']:.1f} (expected ≈ {vh})"
+            f"bottom={poster_box['bottom']:.1f} (expected ~= {vh})"
         )
     if pos_problems:
         _eprint(
             "FAIL: [data-measure-role=\"poster\"] is not aligned to "
-            f"the page (tolerance ±{tol:.1f} px):\n"
+            f"the page (tolerance +/-{tol:.1f} px):\n"
             "  " + ", ".join(pos_problems) + ".\n"
-            "Fix: make `.poster` full-bleed in print —\n"
+            "Fix: make `.poster` full-bleed in print --\n"
             "  @media print {\n"
             "    .poster   { width: 100%; height: 100%;\n"
             "                margin: 0; padding: 0 }\n"
@@ -172,9 +172,8 @@ def cmd_measure(args: argparse.Namespace) -> int:
             "  }\n"
             "Then drop any `transform: translate*` / "
             "`position: absolute` offsets.\n"
-            "Also check: the `@media print` block must come AFTER the "
-            "screen `.poster` rule in the stylesheet (otherwise CSS "
-            "source-order cascade lets the screen rule win in print)."
+            "Also check: put `@media print` AFTER the screen "
+            "`.poster` rule."
         )
         return 1
 

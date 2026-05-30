@@ -73,7 +73,7 @@ posterly/
 
 The four sanity-check CLIs at a glance:
 
-- `preflight`     — static lint: LaTeX residue, raw `<` inside math, missing local images.
+- `preflight`     — static lint: LaTeX residue, raw `<` inside math, missing local images, missing `data-measure-role` markup.
 - `measure`       — print-emulated geometry: column-bottom spread, gap to footer, poster bbox aligned to the page.
 - `polish`        — soft visual checks: figure-AR sizing, typography orphans, space-between fill.
 - `verify-final`  — `pdfinfo`-based PDF sanity: page count, dimensions, file size.
