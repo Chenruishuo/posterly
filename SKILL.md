@@ -54,12 +54,12 @@ Procedure:
 
 ### Step 0.5 — Design discovery (one round of AskUserQuestion)
 
-Don't pick a template silently. Ask the user, in one batch:
+Don't pick a template, colors, logos, or a QR target silently. Ask the user, in one batch (≤ 4 questions — the AskUserQuestion cap):
 
 - **Layout**: "Which gallery template fits best? (a) 4-column landscape, (b) hero + supporting column landscape, (c) 2-column portrait." Show them `templates/README.md`'s table.
 - **Palette**: "Lab/venue colors? E.g. `#XXX` accent + `#YYY` highlight. Default = neutral slate-blue + gold."
-- **Logos**: "Which logos to include? Paths or URLs."
-- **Corresponding-author marker**: "Which author gets `✉`? Any starred (`★`) co-authors?"
+- **Logos & venue mark**: "Any logos to place? Affiliation / lab logo, and the conference / journal logo — give paths or URLs, or say 'none'." Don't assume a venue logo is wanted; cross-check the logo policy from Step 0 (some venues forbid them).
+- **QR code**: "Want a QR code? If so, pointing at which link — paper / arXiv / code repo / project page — or none?" Generate it **offline** as a local image (see Customizing in README / `qrencode`); never leave a remote QR-service URL in the poster — it hangs `measure`'s networkidle wait and link-rots in print/archive.
 
 Persist the user's answers as you go — re-reading them later prevents "improvement" loops that revert deliberate decisions.
 
@@ -68,6 +68,7 @@ Persist the user's answers as you go — re-reading them later prevents "improve
 Once layout is picked, ask once:
 - **Source paper** path (`paper-overleaf/.../main.tex` ideal). Read the abstract, intro, headline results. Don't draft from memory — pull actual numbers, dataset names, equations.
 - **Figures**: match `images/` filenames to paper figures.
+- **Corresponding-author marker**: which author gets `✉`? Any starred (`★`) co-authors?
 - **Items to preserve/exclude**: which sections to drop, any "do not revert" notes.
 
 ### Step 1.5 — Content audit (strongly recommended)
