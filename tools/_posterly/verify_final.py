@@ -95,7 +95,7 @@ def cmd_verify_final(args: argparse.Namespace) -> int:
         )
         return 2
     except subprocess.CalledProcessError as e:
-        _eprint(f"ERROR: pdfinfo failed: {e.output}")
+        _eprint(f"ERROR: pdfinfo failed: {ascii_safe(e.output)}")
         return 2
 
     info: dict[str, str] = {}

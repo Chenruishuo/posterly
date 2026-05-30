@@ -24,6 +24,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+from .textutil import ascii_safe
+
 
 def _eprint(*args: Any, **kw: Any) -> None:
     print(*args, file=sys.stderr, **kw)
@@ -190,7 +192,7 @@ def hard_fail_on_settle_problems(
     """
     if result.mathjax_status == "error":
         return (
-            f"MathJax typeset error: {result.mathjax_error}. "
+            f"MathJax typeset error: {ascii_safe(result.mathjax_error)}. "
             f"Refusing to measure a broken-script page."
         )
     if result.mathjax_status == "timeout":

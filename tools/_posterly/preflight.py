@@ -226,7 +226,7 @@ def cmd_preflight(args: argparse.Namespace) -> int:
         if role not in KNOWN_ROLES:
             ln = body[: m.start()].count("\n") + 1
             problems.append(
-                f"L{ln}: unknown data-measure-role='{role}' "
+                f"L{ln}: unknown data-measure-role='{ascii_safe(role)}' "
                 f"(allowed: {sorted(KNOWN_ROLES)})"
             )
 
