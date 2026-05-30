@@ -16,17 +16,23 @@ A poster in `posterly` is **one HTML file** styled for an exact print canvas. Th
 
 ## Showcase
 
-Two real **ICML 2026** posters (60 × 36 in landscape), built with `posterly` and shipped here as worked examples — every one passes `preflight`, `measure`, and `polish`. Click a thumbnail for the print-ready PDF; the editable source is under `examples/`.
+Three real conference posters — built with `posterly` from **publicly-available papers** (the authors' own) and shipped here as worked examples. Every one passes `preflight`, `measure`, and `polish`; click a thumbnail for the print-ready PDF, or open the editable source under `examples/`.
 
 [![PowerFlow — ICML 2026 poster](docs/showcase/powerflow_icml2026.jpg)](docs/showcase/powerflow_icml2026.pdf)
 
-**PowerFlow: Unlocking the Dual Nature of LLMs via Principled Distribution Matching** · Chen, Chen, Li, Huang (IIIS, Tsinghua) · [arXiv](https://arxiv.org/abs/2603.18363) · [code](https://github.com/Chenruishuo/PowerFlow) · [source](examples/powerflow_icml2026/poster.html) · [PDF](docs/showcase/powerflow_icml2026.pdf)
+**PowerFlow: Unlocking the Dual Nature of LLMs via Principled Distribution Matching** · ICML 2026 · Chen, Chen, Li, Huang (IIIS, Tsinghua) · [arXiv](https://arxiv.org/abs/2603.18363) · [code](https://github.com/Chenruishuo/PowerFlow) · [source](examples/powerflow_icml2026/poster.html) · [PDF](docs/showcase/powerflow_icml2026.pdf)
 
 [![TD-GFN — ICML 2026 poster](docs/showcase/tdgfn_icml2026.jpg)](docs/showcase/tdgfn_icml2026.pdf)
 
-**Beyond the Proxy: Trajectory-Distilled Guidance for Offline GFlowNet Training (TD-GFN)** · Chen, Wang, Hu, Li, Huang (IIIS, Tsinghua) · [arXiv](https://arxiv.org/abs/2505.20110) · [code](https://github.com/Chenruishuo/TD-GFN) · [source](examples/tdgfn_icml2026/poster.html) · [PDF](docs/showcase/tdgfn_icml2026.pdf)
+**Beyond the Proxy: Trajectory-Distilled Guidance for Offline GFlowNet Training (TD-GFN)** · ICML 2026 · Chen, Wang, Hu, Li, Huang (IIIS, Tsinghua) · [arXiv](https://arxiv.org/abs/2505.20110) · [code](https://github.com/Chenruishuo/TD-GFN) · [source](examples/tdgfn_icml2026/poster.html) · [PDF](docs/showcase/tdgfn_icml2026.pdf)
 
-Both are full four-column ICML layouts (header → framework banner → 4 columns → takeaways strip → footer), wired with the `data-measure-role` markup the gates read. They double as the largest end-to-end fixtures in the repo: copy one, swap in your content, and re-render. Reproduce locally with `tools/render_preview.py examples/<name>/poster.html`.
+[![OPT-AIL — NeurIPS 2024 poster](docs/showcase/optail_neurips2024.jpg)](docs/showcase/optail_neurips2024.pdf)
+
+**OPT-AIL: Provably & Practically Efficient Adversarial Imitation Learning with General Function Approximation** · NeurIPS 2024 · Xu, Zhang, Chen, Sun, Yu (Nanjing University · Polixir.ai) · [arXiv](https://arxiv.org/abs/2411.00610) · [code](https://github.com/LAMDA-RL/OPT-AIL) · [source](examples/optail_neurips2024/poster.html) · [PDF](docs/showcase/optail_neurips2024.pdf)
+
+> A **theory-heavy** paper — loss functions, optimism-regularized Bellman error, eluder coefficients, complexity tables, theorem boxes — all typeset via MathJax and clearing every gate. Drafted end-to-end (paper → print-ready PDF) in **1 h 11 m**.
+
+The ICML posters are four-column landscape; OPT-AIL is three-column. All carry the `data-measure-role` markup the gates read and double as the largest end-to-end fixtures in the repo: copy one, swap in your content, and re-render with `tools/render_preview.py examples/<name>/poster.html`.
 
 ---
 
@@ -99,7 +105,8 @@ posterly/
 ├── examples/
 │   ├── hello_world      ← smallest poster that clears every gate (install check)
 │   ├── powerflow_icml2026 ← real ICML 2026 poster (4-col landscape)
-│   └── tdgfn_icml2026     ← real ICML 2026 poster (4-col landscape)
+│   ├── tdgfn_icml2026     ← real ICML 2026 poster (4-col landscape)
+│   └── optail_neurips2024 ← real NeurIPS 2024 poster (3-col, math-heavy)
 ├── docs/showcase/       ← rendered PDFs + thumbnails for the showcase above
 └── tests/               ← pytest suite (canvas / preflight / polish / verify-final)
 ```
