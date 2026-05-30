@@ -133,7 +133,8 @@ def build_parser() -> argparse.ArgumentParser:
     # --- polish ---------------------------------------------------------
     ppl = sub.add_parser(
         "polish",
-        help="visual-polish warnings (figure size, orphans, space-between)",
+        help="visual-polish warnings (figure size, orphans, "
+             "space-between, flex/<br>)",
     )
     ppl.add_argument("html", help="path to poster.html")
     ppl.add_argument(

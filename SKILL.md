@@ -277,6 +277,12 @@ Concrete bad case (prior session): the SnipSnap Motivation column shipped with a
 
 **The same trap, one card.** A single card set to `flex: 1` (the standard way to make its column reach the footer and satisfy `measure`'s spread/gap gates) is measured only by its **bottom edge** — a card stretched to twice its content's height passes `measure` with spread = 0 while the lower half is blank white. `measure` can't catch it (it checks only the bottom edge), so **`polish` does**: the **CARD/TRAILING** warning fires when a card leaves more than `--max-card-trailing` (default 10 %) of its height blank below its last line of content. A green bottom-edge gate is necessary, not sufficient. Never stretch a block to create whitespace just to make the layout "fit." Fix it the same way as Gate C, in order of preference: (1) fill the card with real content from the paper until it is comfortably full (aim ≥ ~80 %, not 46 %); (2) enlarge a fixed-height figure to carry the space with substance; (3) if the content genuinely is that sparse, choose a **smaller canvas** so it fills — a single paragraph does not belong on a 60-inch sheet. A half-empty card reads as "ran out of things to say" and is a failed poster even when every gate is green.
 
+### Gate D — `<br>` line breaks inside a flex container
+
+A `<br>` that is a **direct child of a `display: flex` / `inline-flex` element is blockified into a flex item and stops creating a line break** (CSS Flexbox spec — every in-flow child becomes a flex item). Intended multi-line content silently collapses: in `flex-direction: row` the "lines" lay out side-by-side on one row (often with a MathJax `<mjx-container>` baseline pulling one fragment up, so it reads as jagged "misaligned" text); even in `column` the `<br>` is a dead empty item. `measure` can't see it — the card bottom is unchanged — so it survives to print. Concrete bad case (prior session): an OPT-AIL banner loop label `↻<br>repeat<br>$K$ iters` rendered as `repeat` and `K iters` jammed onto one row instead of three stacked lines.
+
+`polish` warns **LAYOUT/FLEX-BR** when any flex/inline-flex element has a direct `<br>` child, reporting the computed `flex-direction` so the fix is obvious. **Fix:** wrap each line in its own `<span>` (or `<div>`) and set `flex-direction: column` with `align-items: center` / `text-align: center`; or, if the element doesn't need to be flex, make it a plain block where `<br>` works normally. Never rely on `<br>` for layout inside a flex box.
+
 ## Universal pitfalls (apply to all templates)
 
 1. **`<` raw in MathJax inline** → may be HTML-parsed before MathJax sees it (mode-dependent). Prefer `\lt` everywhere. Preflight catches `(?<!\\)<(?![=/!])` inside `$…$` / `$$…$$` / `\(…\)` / `\[…\]` — i.e. raw `<` NOT preceded by a backslash and NOT followed by `=` / `/` / `!`. The `<=` case is intentionally exempt (single MathJax token, parsed atomically — no HTML-tokenizer ambiguity); preflight stays quiet about it, but `\le` reads more naturally in print.
@@ -318,7 +324,7 @@ tools/
 - `poster_check.py`:
   - `measure` — **hard** alignment gate (column-bottom spread < 5 px, gap-to-footer in [30, 50] px, canvas-fill ∈ [95 %, 101 %] as a coarse diagnostic, and poster bbox aligns to the page within ±2 px — the bbox-alignment check is the authoritative full-canvas requirement).
   - `preflight` — static HTML lint (LaTeX residue, math `<`, missing images, role validation).
-  - `polish` — **soft** visual gate (figure sizing by AR, broken images, typography orphans, space-between fill). Warns by default; `--strict` to fail. Hard-fails if the poster has no `[data-measure-role]` markup at all (silent PASS would be a worse bug).
+  - `polish` — **soft** visual gate (figure sizing by AR, broken images, typography orphans, space-between fill, `<br>`-in-flex collapse). Warns by default; `--strict` to fail. Hard-fails if the poster has no `[data-measure-role]` markup at all (silent PASS would be a worse bug).
   - `verify-final` — `pdfinfo`-based PDF sanity (page count, dimensions, file size).
 - `render_preview.py` — Playwright print-emulated PDF + scaled PNG thumbnail.
 

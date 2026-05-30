@@ -228,7 +228,32 @@ _POLISH_JS = r"""
       });
     });
 
-  return {figures, orphans, cols, cards};
+  // ---- 5) <br> as a direct child of a flex container ----
+  // A <br> that is an in-flow child of display:flex|inline-flex is
+  // blockified into a flex ITEM and stops creating a line break -- so
+  // intended multi-line content (e.g. an icon + label stacked with <br>)
+  // silently collapses onto one row. `measure` can't see it (card bottom
+  // is unchanged); only the eye catches it. Report each offending flex
+  // parent once. Even in flex-direction:column the <br> does nothing (the
+  // text runs already stack as separate items); row is where it visibly
+  // breaks, so we report the direction to make the fix obvious.
+  const flexbr = [];
+  const seenFlexBr = new Set();
+  document.querySelectorAll('br').forEach(br => {
+    const parent = br.parentElement;
+    if (!parent || seenFlexBr.has(parent)) return;
+    const cs = window.getComputedStyle(parent);
+    if (cs.display === 'flex' || cs.display === 'inline-flex') {
+      seenFlexBr.add(parent);
+      flexbr.push({
+        tag: parent.tagName.toLowerCase(),
+        cls: parent.className || '',
+        dir: cs.flexDirection || 'row',
+      });
+    }
+  });
+
+  return {figures, orphans, cols, cards, flexbr};
 }
 """
 
@@ -438,11 +463,29 @@ def cmd_polish(args: argparse.Namespace) -> int:
                 f"See Gate C in SKILL.md."
             )
 
+    # ---- Gate D: <br> inside a flex container ----
+    # A <br> that is a direct child of a flex container is blockified into
+    # a flex item and creates NO line break, so intended multi-line text
+    # collapses onto one row. Detectable only at render time (getComputed-
+    # Style), which is why it lives here and not in preflight's static scan.
+    for fb in data.get("flexbr", []):
+        cls = str(fb.get("cls", ""))
+        cls_attr = f' class="{ascii_safe(cls)}"' if cls else ""
+        warns.append(
+            f"LAYOUT/FLEX-BR: <{ascii_safe(fb['tag'])}{cls_attr}> is "
+            f"display:flex (flex-direction:{fb['dir']}) with a direct <br> "
+            f"child -- the <br> is blockified into a flex item and creates "
+            f"NO line break, so intended multi-line content collapses onto "
+            f"one row. Wrap each line in a <span> and use "
+            f"flex-direction:column, or make the wrapper a plain block."
+        )
+
     print(f"[polish] {ascii_safe(html_path.name)}")
     print(f"  figures checked     : {len(data.get('figures', []))}")
     print(f"  stat-like elements  : {len(data.get('orphans', []))}")
     print(f"  space-between cols  : {len(data.get('cols', []))}")
     print(f"  cards checked       : {len(data.get('cards', []))}")
+    print(f"  flex/<br> parents   : {len(data.get('flexbr', []))}")
     print(f"  warnings            : {len(warns)}")
     for w in warns:
         print(f"  WARN: {w}")
