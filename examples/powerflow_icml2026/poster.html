@@ -1,0 +1,914 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PowerFlow — ICML 2026 Poster</title>
+
+<!-- MathJax for inline equations -->
+<script>
+  window.MathJax = {
+    tex: {
+      inlineMath: [['$', '$'], ['\\(', '\\)']],
+      displayMath: [['$$', '$$'], ['\\[', '\\]']],
+      packages: {'[+]': ['ams']}
+    },
+    svg: { fontCache: 'global' }
+  };
+</script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+
+<style>
+  /* =========================================================
+     Page setup: 36"H × 60"W landscape (ICML standard)
+     ========================================================= */
+  @page {
+    size: 60in 36in;
+    margin: 0;
+  }
+
+  :root {
+    /* Tsinghua-purple academic palette */
+    --tsinghua-purple:    #6D2A7C;
+    --tsinghua-deep:      #4A1A57;
+    --tsinghua-light:     #F3E9F6;
+    --tsinghua-accent:    #B07ABC;
+    --gold-accent:        #C9A24A;
+
+    --text-primary:       #1A1A1A;
+    --text-secondary:     #555;
+    --text-muted:         #888;
+
+    --bg-page:            #F6F2F0;   /* warm off-white for poster paper feel */
+    --bg-card:            #FFFFFF;
+    --bg-card-tint:       #FAF6FB;
+    --bg-emphasis:        #F3E9F6;
+
+    --border-soft:        #D4C5DB;
+    --border-strong:      #6D2A7C;
+
+    /* Base unit for poster — 1 unit ≈ 1mm at print */
+    --u: 1.6px;             /* on-screen scaling: poster width = 60in × 25.4 mm × 1.6px ≈ 2438px */
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    background: #2b2b2b;
+    font-family: "Charter", "Source Serif Pro", "Georgia", serif;
+    color: var(--text-primary);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* The poster itself: 1524mm × 914mm = 60in × 36in landscape */
+  .poster {
+    width: calc(1524 * var(--u));
+    height: calc(914 * var(--u));
+    background: var(--bg-page);
+    background-image:
+      radial-gradient(ellipse at top left, rgba(109,42,124,0.06), transparent 40%),
+      radial-gradient(ellipse at bottom right, rgba(201,162,74,0.05), transparent 50%);
+    margin: 20px auto;
+    padding: calc(10 * var(--u)) calc(14 * var(--u));
+    display: grid;
+    grid-template-rows: auto auto 1fr auto auto;
+    gap: calc(6 * var(--u));
+    box-shadow: 0 0 60px rgba(0,0,0,0.5);
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* Framework banner: image + description + key stats — no side whitespace */
+  .framework-banner {
+    display: flex;
+    align-items: center;
+    gap: calc(16 * var(--u));
+    background: linear-gradient(90deg, var(--bg-emphasis) 0%, white 50%, var(--bg-emphasis) 100%);
+    border: calc(1 * var(--u)) solid var(--border-soft);
+    border-left: calc(6 * var(--u)) solid var(--tsinghua-purple);
+    border-radius: calc(6 * var(--u));
+    padding: calc(6 * var(--u)) calc(14 * var(--u));
+  }
+  .framework-banner img {
+    height: calc(120 * var(--u));
+    width: auto;
+    display: block;
+  }
+  .framework-banner .banner-stats {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: calc(6 * var(--u));
+  }
+  .framework-banner .bs-item {
+    background: white;
+    border: calc(1 * var(--u)) solid var(--border-soft);
+    border-left: calc(3 * var(--u)) solid var(--tsinghua-purple);
+    border-radius: calc(3 * var(--u));
+    padding: calc(2 * var(--u)) calc(8 * var(--u));
+    text-align: center;
+  }
+  .framework-banner .bs-num {
+    font-family: "Inter", sans-serif;
+    font-weight: 800;
+    font-size: calc(22 * var(--u));
+    color: var(--tsinghua-purple);
+    line-height: 1;
+  }
+  .framework-banner .bs-label {
+    font-family: "Inter", sans-serif;
+    font-size: calc(11 * var(--u));
+    color: var(--text-secondary);
+    margin-top: calc(2 * var(--u));
+    line-height: 1.2;
+  }
+  .framework-banner .fb-text {
+    flex: 1.6;
+    font-family: "Charter", "Source Serif Pro", "Georgia", serif;
+    font-size: calc(15 * var(--u));
+    line-height: 1.5;
+    color: var(--text-primary);
+    text-wrap: balance;
+    text-align: center;
+  }
+  .framework-banner .fb-text strong { color: var(--tsinghua-deep); }
+  .framework-banner .fb-label {
+    display: inline-block;
+    background: var(--tsinghua-purple);
+    color: white;
+    font-family: "Inter", sans-serif;
+    font-size: calc(13 * var(--u));
+    font-weight: 700;
+    padding: calc(2 * var(--u)) calc(8 * var(--u));
+    border-radius: calc(4 * var(--u));
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    vertical-align: middle;
+    line-height: 1;
+    position: relative;
+    top: calc(-1 * var(--u));
+  }
+
+  /* Decorative purple bar on top */
+  .poster::before {
+    content: "";
+    position: absolute; top: 0; left: 0; right: 0;
+    height: calc(8 * var(--u));
+    background: linear-gradient(90deg,
+      var(--tsinghua-deep) 0%,
+      var(--tsinghua-purple) 40%,
+      var(--tsinghua-accent) 70%,
+      var(--gold-accent) 100%);
+  }
+
+  /* =========================================================
+     Header
+     ========================================================= */
+  .header {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: calc(16 * var(--u));
+    padding: calc(2 * var(--u)) calc(4 * var(--u)) calc(5 * var(--u)) calc(4 * var(--u));
+    border-bottom: calc(2 * var(--u)) solid var(--tsinghua-purple);
+  }
+
+  .conf-badge {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: calc(4 * var(--u));
+  }
+  .conf-badge img {
+    height: calc(54 * var(--u));
+    width: auto;
+    display: block;
+  }
+  .conf-badge .conf-sub {
+    font-family: "Inter", sans-serif;
+    font-size: calc(10 * var(--u));
+    color: var(--tsinghua-purple);
+    font-weight: 700;
+    letter-spacing: 1.2px;
+  }
+
+  .iiis-logo {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .iiis-logo img {
+    height: calc(85 * var(--u));
+    width: auto;
+    display: block;
+  }
+
+  .title-block { text-align: center; min-width: 0; }
+  .title {
+    font-family: "Inter", "Helvetica Neue", sans-serif;
+    font-weight: 800;
+    font-size: calc(32 * var(--u));
+    line-height: 1.05;
+    color: var(--tsinghua-deep);
+    letter-spacing: -0.5px;
+  }
+  .title .accent { color: var(--gold-accent); }
+  .subtitle {
+    font-family: "Inter", sans-serif;
+    font-weight: 500;
+    font-size: calc(15 * var(--u));
+    color: var(--text-secondary);
+    margin-top: calc(2 * var(--u));
+    font-style: italic;
+  }
+  .authors-line {
+    font-family: "Inter", sans-serif;
+    font-size: calc(14 * var(--u));
+    color: var(--tsinghua-purple);
+    font-weight: 600;
+    margin-top: calc(3 * var(--u));
+  }
+  .authors-line .author { margin: 0 calc(4 * var(--u)); }
+  .authors-line sup { font-size: 0.7em; color: var(--tsinghua-purple); }
+  .authors-line .aff {
+    color: var(--text-secondary);
+    font-weight: 400;
+    display: block;
+    margin-top: calc(2 * var(--u));
+    font-size: calc(12 * var(--u));
+  }
+
+  .right-stack {
+    display: flex;
+    align-items: center;
+    gap: calc(10 * var(--u));
+  }
+  .qr-block {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: calc(2 * var(--u));
+  }
+  .qr-block img {
+    width: calc(85 * var(--u));
+    height: calc(85 * var(--u));
+    border: calc(2 * var(--u)) solid var(--tsinghua-purple);
+    border-radius: calc(4 * var(--u));
+    background: white;
+    padding: calc(2 * var(--u));
+  }
+  .qr-label {
+    font-family: "Inter", sans-serif;
+    font-size: calc(11 * var(--u));
+    color: var(--tsinghua-purple);
+    font-weight: 600;
+  }
+
+  /* =========================================================
+     3-column body layout
+     ========================================================= */
+  .body-grid {
+    display: grid;
+    grid-template-columns: 1fr 1.1fr 1fr 1fr;
+    gap: calc(10 * var(--u));
+    overflow: hidden;
+    min-height: 0;
+  }
+
+  .column {
+    display: flex;
+    flex-direction: column;
+    gap: calc(6 * var(--u));
+    min-height: 0;
+    height: 100%;
+    padding-bottom: calc(4 * var(--u));   /* shadow breathing room — keeps card box-shadow visible above takeaways */
+  }
+
+  .card {
+    background: var(--bg-card);
+    border-radius: calc(5 * var(--u));
+    padding: calc(4 * var(--u)) calc(9 * var(--u));
+    border: calc(1 * var(--u)) solid var(--border-soft);
+    box-shadow: 0 calc(2 * var(--u)) calc(6 * var(--u)) rgba(109,42,124,0.05);
+    position: relative;
+  }
+  .card.tinted { background: var(--bg-card-tint); }
+  .card.highlight {
+    border-left: calc(6 * var(--u)) solid var(--tsinghua-purple);
+    background: linear-gradient(90deg, var(--bg-emphasis) 0%, var(--bg-card) 30%);
+  }
+
+  .section-title {
+    font-family: "Inter", "Helvetica Neue", sans-serif;
+    font-weight: 700;
+    font-size: calc(16 * var(--u));
+    color: var(--tsinghua-deep);
+    margin-bottom: calc(3 * var(--u));
+    display: flex;
+    align-items: center;
+    gap: calc(5 * var(--u));
+    flex-wrap: wrap;
+  }
+  .section-title .num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: calc(22 * var(--u));
+    height: calc(22 * var(--u));
+    background: var(--tsinghua-purple);
+    color: white;
+    border-radius: 50%;
+    font-size: calc(13 * var(--u));
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+
+  .body-text, .card p, .card li {
+    font-family: "Charter", "Source Serif Pro", "Georgia", serif;
+    font-size: calc(12 * var(--u));
+    line-height: 1.3;
+    color: var(--text-primary);
+  }
+
+  .card ul, .card ol { padding-left: calc(18 * var(--u)); }
+  .card li { margin-bottom: calc(2 * var(--u)); }
+
+  .highlight-text { background: var(--bg-emphasis); padding: 0 calc(3 * var(--u)); border-radius: calc(2 * var(--u)); }
+  .keyword { color: var(--tsinghua-purple); font-weight: 700; }
+  .keyword-gold { color: var(--gold-accent); font-weight: 700; }
+
+  /* Equation styling */
+  .eqn {
+    background: var(--bg-emphasis);
+    border-left: calc(3 * var(--u)) solid var(--tsinghua-purple);
+    padding: calc(4 * var(--u)) calc(10 * var(--u));
+    margin: calc(4 * var(--u)) 0;
+    font-size: calc(14 * var(--u));
+    overflow-x: hidden;
+  }
+  .eqn .label {
+    display: block;
+    font-family: "Inter", sans-serif;
+    font-size: calc(10 * var(--u));
+    color: var(--tsinghua-purple);
+    font-weight: 600;
+    margin-bottom: calc(2 * var(--u));
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  /* Callout box */
+  .callout {
+    background: var(--tsinghua-purple);
+    color: white;
+    padding: calc(5 * var(--u)) calc(10 * var(--u));
+    border-radius: calc(4 * var(--u));
+    font-size: calc(12 * var(--u));
+    margin: calc(4 * var(--u)) 0;
+  }
+  .callout strong { color: var(--gold-accent); }
+  .callout.gold {
+    background: linear-gradient(135deg, var(--gold-accent) 0%, #B58A38 100%);
+  }
+  .callout.gold strong { color: var(--tsinghua-deep); }
+
+  /* Figure */
+  .figure {
+    margin: calc(4 * var(--u)) 0;
+    text-align: center;
+  }
+  .figure img {
+    width: 100%;
+    border-radius: calc(4 * var(--u));
+    border: calc(1 * var(--u)) solid var(--border-soft);
+    background: white;
+  }
+  .figure .caption {
+    font-family: "Inter", sans-serif;
+    font-size: calc(12 * var(--u));
+    color: var(--text-secondary);
+    margin-top: calc(3 * var(--u));
+    line-height: 1.3;
+    text-align: left;
+  }
+  .figure .caption strong { color: var(--tsinghua-deep); }
+
+  /* Two-column inside a card */
+  .twocol {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: calc(12 * var(--u));
+    align-items: start;
+  }
+
+  /* Result table */
+  .result-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: "Inter", sans-serif;
+    font-size: calc(11 * var(--u));
+    margin-top: calc(3 * var(--u));
+  }
+  .result-table th, .result-table td {
+    padding: calc(2 * var(--u)) calc(4 * var(--u));
+    text-align: center;
+    border-bottom: calc(1 * var(--u)) solid var(--border-soft);
+  }
+  .result-table thead th {
+    background: var(--tsinghua-purple);
+    color: white;
+    font-weight: 600;
+    font-size: calc(10 * var(--u));
+  }
+  .result-table tbody tr.group-row td {
+    background: var(--bg-emphasis);
+    font-weight: 700;
+    text-align: left;
+    color: var(--tsinghua-deep);
+    padding-left: calc(8 * var(--u));
+    border-bottom: calc(2 * var(--u)) solid var(--tsinghua-purple);
+  }
+  .result-table tbody tr.ours td {
+    background: #FFF7E0;
+    font-weight: 700;
+  }
+  .result-table tbody tr.ours td:first-child {
+    color: var(--tsinghua-deep);
+  }
+  .result-table tbody tr.divider td {
+    border-top: calc(1 * var(--u)) dashed var(--border-soft);
+  }
+  .result-table .method { text-align: left; padding-left: calc(14 * var(--u)); }
+  .result-table .best { color: var(--tsinghua-purple); font-weight: 700; }
+
+  /* Contribution chips */
+  .chips {
+    display: flex;
+    gap: calc(8 * var(--u));
+    flex-wrap: wrap;
+    margin-top: calc(8 * var(--u));
+  }
+  .chip {
+    background: white;
+    border: calc(1.5 * var(--u)) solid var(--tsinghua-purple);
+    padding: calc(4 * var(--u)) calc(10 * var(--u));
+    border-radius: calc(20 * var(--u));
+    font-family: "Inter", sans-serif;
+    font-size: calc(14 * var(--u));
+    color: var(--tsinghua-deep);
+    font-weight: 600;
+  }
+
+  /* Footer */
+  .footer {
+    grid-column: 1 / -1;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: calc(8 * var(--u));
+    border-top: calc(1 * var(--u)) solid var(--border-soft);
+    font-family: "Inter", sans-serif;
+    font-size: calc(13 * var(--u));
+    color: var(--text-muted);
+  }
+  .footer .repo { color: var(--tsinghua-purple); font-weight: 600; }
+
+  /* Small helper layouts */
+  .row-fig-text {
+    display: grid;
+    grid-template-columns: 1fr 0.9fr;
+    gap: calc(12 * var(--u));
+    align-items: center;
+  }
+  .stat-pop {
+    display: inline-block;
+    background: var(--tsinghua-purple);
+    color: white;
+    padding: calc(2 * var(--u)) calc(8 * var(--u));
+    border-radius: calc(4 * var(--u));
+    font-weight: 700;
+    font-family: "Inter", sans-serif;
+  }
+  .stat-pop.gold { background: var(--gold-accent); color: var(--tsinghua-deep); }
+
+  /* The "key result" emphasis box — compact single-row */
+  .keybox {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: calc(4 * var(--u));
+    margin: calc(4 * var(--u)) 0 0 0;
+  }
+  .keybox .kb-item {
+    background: var(--bg-emphasis);
+    border-top: calc(2 * var(--u)) solid var(--tsinghua-purple);
+    padding: calc(3 * var(--u)) calc(3 * var(--u));
+    text-align: center;
+    border-radius: 0 0 calc(3 * var(--u)) calc(3 * var(--u));
+  }
+  .kb-item .kb-num {
+    font-family: "Inter", sans-serif;
+    font-weight: 800;
+    font-size: calc(15 * var(--u));
+    color: var(--tsinghua-purple);
+    line-height: 1;
+  }
+  .kb-item .kb-label {
+    font-family: "Inter", sans-serif;
+    font-size: calc(9 * var(--u));
+    color: var(--text-secondary);
+    margin-top: calc(2 * var(--u));
+    line-height: 1.1;
+  }
+
+  /* Bottom takeaways strip spanning all columns */
+  .takeaways-strip {
+    display: grid;
+    grid-template-columns: auto repeat(4, 1fr);
+    align-items: center;
+    gap: calc(10 * var(--u));
+    background: linear-gradient(90deg, var(--bg-emphasis) 0%, white 50%, var(--bg-emphasis) 100%);
+    border: calc(1 * var(--u)) solid var(--border-soft);
+    border-radius: calc(5 * var(--u));
+    padding: calc(8 * var(--u)) calc(12 * var(--u));
+  }
+  .takeaways-strip .ts-title {
+    font-family: "Inter", sans-serif;
+    font-size: calc(15 * var(--u));
+    font-weight: 800;
+    color: var(--tsinghua-deep);
+    display: flex;
+    align-items: center;
+    gap: calc(6 * var(--u));
+  }
+  .takeaways-strip .ts-title .num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: calc(22 * var(--u));
+    height: calc(22 * var(--u));
+    background: var(--tsinghua-purple);
+    color: white;
+    border-radius: 50%;
+    font-size: calc(13 * var(--u));
+    font-weight: 700;
+  }
+  .takeaways-strip .ts-item {
+    border-left: calc(3 * var(--u)) solid var(--tsinghua-purple);
+    padding-left: calc(8 * var(--u));
+    line-height: 1.3;
+    text-align: center;
+  }
+  .takeaways-strip .ts-key {
+    font-family: "Inter", sans-serif;
+    font-size: calc(11 * var(--u));
+    font-weight: 700;
+    color: var(--tsinghua-purple);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  .takeaways-strip .ts-text {
+    font-family: "Charter", "Source Serif Pro", "Georgia", serif;
+    font-size: calc(12 * var(--u));
+    color: var(--text-primary);
+    margin-left: calc(4 * var(--u));
+    text-wrap: balance;
+  }
+  .takeaways-strip .ts-item {
+    text-wrap: balance;
+  }
+
+  /* Watermark Tsinghua-style ornament */
+  .ornament {
+    position: absolute;
+    right: calc(20 * var(--u));
+    bottom: calc(20 * var(--u));
+    font-family: "Inter", sans-serif;
+    font-size: calc(40 * var(--u));
+    color: rgba(109,42,124,0.06);
+    font-weight: 900;
+    letter-spacing: 4px;
+    pointer-events: none;
+    user-select: none;
+  }
+
+  /* Print specifics */
+  @media print {
+    html, body { background: white; }
+    .poster {
+      margin: 0;
+      box-shadow: none;
+      width: 60in;
+      height: 36in;
+      page-break-after: avoid;
+    }
+    :root { --u: 1mm; }
+  }
+</style>
+</head>
+<body>
+
+<div class="poster" data-measure-role="poster">
+
+  <!-- =========================== HEADER =========================== -->
+  <header class="header" data-measure-role="header">
+    <div class="conf-badge">
+      <img src="images/ICML-logo.svg" alt="ICML 2026">
+      <div class="conf-sub">2026 · POSTER</div>
+    </div>
+
+    <div class="title-block">
+      <div class="title">Power<span class="accent">Flow</span>: Unlocking the Dual Nature of LLMs<br>via Principled Distribution Matching</div>
+      <div class="subtitle">One tunable knob $\alpha$ — sharpen to reason, flatten to create.</div>
+      <div class="authors-line">
+        <span class="author">Ruishuo Chen</span> ·
+        <span class="author">Yu Chen</span> ·
+        <span class="author">Zhuoran Li</span> ·
+        <span class="author">Longbo Huang<sup>✉</sup></span>
+        <span class="aff">Institute for Interdisciplinary Information Sciences · Tsinghua University · Beijing, China</span>
+      </div>
+    </div>
+
+    <div class="right-stack">
+      <div class="iiis-logo">
+        <img src="images/IIISlogo111.png" alt="IIIS, Tsinghua University">
+      </div>
+      <div class="qr-block">
+        <img src="images/qr.png" alt="GitHub QR code">
+        <div class="qr-label">Code &amp; Models</div>
+      </div>
+    </div>
+  </header>
+
+  <!-- =========================== FRAMEWORK BANNER =========================== -->
+  <section class="framework-banner" data-measure-role="banner">
+    <img src="images/PowerFlow-1.png" alt="PowerFlow framework">
+    <div class="fb-text">
+      <span class="fb-label">Framework</span>
+      &nbsp;<strong>PowerFlow</strong> matches a length-aware $\alpha$-power target of the base model. A single knob $\alpha$ directionally elicits <strong style="color:var(--tsinghua-purple)">reasoning</strong> ($\alpha\!>\!1$, sharpen) or <strong style="color:var(--gold-accent)">creativity</strong> ($\alpha\!\lt\!1$, flatten) — fully unsupervised under standard decoding.
+    </div>
+    <div class="banner-stats">
+      <div class="bs-item">
+        <div class="bs-num">+1.7</div>
+        <div class="bs-label">avg@16 over GRPO<br>(Qwen2.5-1.5B)</div>
+      </div>
+      <div class="bs-item">
+        <div class="bs-num">Stable</div>
+        <div class="bs-label">monotonic gains;<br>no length collapse</div>
+      </div>
+      <div class="bs-item">
+        <div class="bs-num">Pareto</div>
+        <div class="bs-label">quality × diversity<br>across 4 models</div>
+      </div>
+      <div class="bs-item">
+        <div class="bs-num">I-proj.</div>
+        <div class="bs-label">minimum-KL<br>length correction</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- =========================== BODY (4 columns) =========================== -->
+  <div class="body-grid" data-measure-role="body">
+
+    <!-- =================== COLUMN 1: Motivation + Idea =================== -->
+    <div class="column" data-measure-role="column">
+
+      <!-- 1. Motivation -->
+      <div class="card highlight" data-measure-role="card">
+        <div class="section-title"><span class="num">1</span> Motivation</div>
+        <p class="body-text">
+          Unsupervised <span class="keyword">RLIF</span> elicits latent LLM capabilities, but its <em>heuristic</em> rewards cause: <span class="keyword">length collapse</span>, <span class="keyword">overconfidence</span>, <span class="keyword">mode collapse</span>, &amp; reward hacking.
+        </p>
+        <div class="callout" style="margin-top: calc(4 * var(--u))">
+          <strong>Q:</strong> Replace handcrafted rewards with a principled, controllable target distribution?
+        </div>
+      </div>
+
+      <!-- 2. Core Idea: alpha-power distribution -->
+      <div class="card" data-measure-role="card">
+        <div class="section-title"><span class="num">2</span> Core Idea: $\alpha$-Power</div>
+        <p class="body-text">
+          Recast fine-tuning as <span class="keyword">distribution matching</span>. Target the $\alpha$-power (escort) distribution of the base model — entropy modulates while <strong>rankings &amp; mode structure are strictly preserved</strong>:
+        </p>
+        <div class="eqn">
+          <span class="label">Target distribution</span>
+          $$p_\alpha(y\mid q) \;\propto\; p_{\text{base}}(y\mid q)^{\alpha}$$
+        </div>
+        <div class="keybox">
+          <div class="kb-item">
+            <div class="kb-num">$\alpha>1$</div>
+            <div class="kb-label">Sharpen · Reason</div>
+          </div>
+          <div class="kb-item">
+            <div class="kb-num">$\alpha=1$</div>
+            <div class="kb-label">Base · Identity</div>
+          </div>
+          <div class="kb-item">
+            <div class="kb-num">$\alpha\lt 1$</div>
+            <div class="kb-label">Flatten · Create</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3. Stability evidence (motivates length-aware design) -->
+      <div class="card" data-measure-role="card">
+        <div class="section-title"><span class="num">3</span> Why Length-Aware? <span style="color:var(--gold-accent); font-size: calc(10 * var(--u))">★ Evidence</span></div>
+        <div style="display:grid; grid-template-columns: 1.45fr 1fr; gap: calc(8*var(--u)); align-items: center; margin-top: calc(2*var(--u))">
+          <div class="figure" style="margin: 0">
+            <img src="images/dynamic_comparison-1.png" alt="Training dynamics" style="width: 100%; display:block;">
+          </div>
+          <div class="body-text" style="font-size: calc(11*var(--u)); line-height:1.4">
+            <p style="margin-bottom: calc(3*var(--u))"><strong style="color:var(--text-muted)">Naïve TB / RL:</strong> length collapse at $\alpha\!>\!1$.</p>
+            <p style="margin-bottom: calc(3*var(--u))"><strong style="color:var(--text-muted)">Token TB:</strong> repetition decay at $\alpha\!\lt\!1$.</p>
+            <p><strong style="color:var(--tsinghua-purple)">PowerFlow</strong> stays length-stable with monotonic gains on MATH.</p>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- =================== COLUMN 2: Method (Theory) =================== -->
+    <div class="column" data-measure-role="column">
+
+      <!-- 4. GFlowNet -->
+      <div class="card" data-measure-role="card">
+        <div class="section-title"><span class="num">4</span> GFlowNet as Amortized Sampler</div>
+        <p class="body-text">
+          Bypass the intractable $Z(q)$ via <span class="keyword">Trajectory Balance</span> (TB), a variational surrogate that at equilibrium of $Z_\phi$ satisfies $\mathbb{E}[\nabla_\theta\mathcal L_{\text{TB}}]=2\nabla_\theta\mathbb{D}_{\text{KL}}(P_F\Vert p_{\text{target}})$.
+        </p>
+        <div class="eqn">
+          <span class="label">Standard TB (autoregressive)</span>
+          $$\mathcal{L}_{\text{TB}}\!=\!\Big(\!\log Z_\phi+\!\sum_{t=1}^{T}\!\log\pi_\theta(y_t\mid y_{\lt t},q)-\log\tilde p_{\text{target}}\!\Big)^{\!2}$$
+        </div>
+        <p class="body-text">
+          <strong>But:</strong> on LLMs this is <span class="keyword">dominated by sequence length</span>, not semantic density — causing <em>length collapse</em> ($\alpha>1$) or <em>repetition explosion</em> ($\alpha\lt 1$).
+        </p>
+      </div>
+
+      <!-- 5. KEY: LA-TB -->
+      <div class="card highlight" data-measure-role="card">
+        <div class="section-title"><span class="num">5</span> Length-Aware TB <span style="color:var(--gold-accent); font-size: calc(11 * var(--u))">★ KEY</span></div>
+        <p class="body-text">
+          Reparameterize $Z_\phi(q,y)=\bigl(Z'_\phi(q)\bigr)^{|y|}$ and normalize by $|y|$ — projecting onto a length-normalized energy surface:
+        </p>
+        <div class="eqn">
+          <span class="label">PowerFlow loss ($w$: clipped IS; $\psi$: format penalty)</span>
+          $$\mathcal{L}_{\text{PF}}=w\!\Big(\!\log Z'_\phi+\tfrac{1}{|y|}\log\pi_\theta\!-\!\alpha\bigl[\tfrac{1}{|y|}\log p_{\text{base}}\!+\!\psi\bigr]\!\Big)^{2}$$
+        </div>
+        <p class="body-text">
+          The induced target is a 1-D exponential tilt of $p_\alpha$ by $|y|$:
+          $\pi^\star\!\propto\!p_{\text{base}}^{\alpha}\,e^{-\lambda_q|y|}$.
+        </p>
+        <div class="callout gold" style="padding: calc(5*var(--u)) calc(10*var(--u))">
+          <strong>Theory.</strong> LA-TB is the <em>I-projection</em> — the minimum-KL length correction onto length-calibrated distributions.
+        </div>
+        <p class="body-text" style="margin-top: calc(3 * var(--u))">
+          <strong>Empirical:</strong> pairwise inversion rate vs. the ideal $\alpha$-power target on Qwen2.5-Math-1.5B is <span class="stat-pop">IR ≈ 0.09</span> — ~91% of rankings preserved.
+        </p>
+      </div>
+
+    </div>
+
+    <!-- =================== COLUMN 3: Reasoning Results =================== -->
+    <div class="column" data-measure-role="column">
+
+      <!-- 7. Reasoning results -->
+      <div class="card highlight" data-measure-role="card">
+        <div class="section-title"><span class="num">6</span> Reasoning ($\alpha>1$) <span style="color:var(--gold-accent); font-size: calc(10 * var(--u))">★ GRPO-Matched</span></div>
+        <p class="body-text" style="font-size: calc(11 * var(--u)); margin-bottom: calc(1*var(--u)); color: var(--text-secondary)">
+          Avg@16 on MATH500 · Olympiad · AIME24/25 · AMC23 · GPQA
+        </p>
+        <table class="result-table">
+          <thead>
+            <tr>
+              <th class="method" style="text-align:left">Method</th>
+              <th>Avg.</th>
+              <th>Δ GRPO</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr class="group-row"><td colspan="3">Qwen2.5-1.5B</td></tr>
+            <tr><td class="method">Intuitor</td><td>18.95</td><td>+0.82</td></tr>
+            <tr class="ours"><td class="method">PowerFlow</td><td class="best">19.85</td><td class="best">+1.72</td></tr>
+            <tr class="divider"><td class="method" style="color:#888">GRPO (sup.)</td><td style="color:#888">18.13</td><td style="color:#888">ref</td></tr>
+
+            <tr class="group-row"><td colspan="3">Qwen2.5-Math-1.5B</td></tr>
+            <tr><td class="method">EMPO</td><td>32.45</td><td>−0.30</td></tr>
+            <tr class="ours"><td class="method">PowerFlow</td><td class="best">34.30</td><td class="best">+1.55</td></tr>
+            <tr class="divider"><td class="method" style="color:#888">GRPO (sup.)</td><td style="color:#888">32.75</td><td style="color:#888">ref</td></tr>
+
+            <tr class="group-row"><td colspan="3">Llama-3.2-3B-Inst.</td></tr>
+            <tr class="ours"><td class="method">PowerFlow</td><td class="best">22.88</td><td class="best">+0.55</td></tr>
+            <tr class="divider"><td class="method" style="color:#888">GRPO (sup.)</td><td style="color:#888">22.33</td><td style="color:#888">ref</td></tr>
+
+            <tr class="group-row"><td colspan="3">Qwen2.5-Math-7B</td></tr>
+            <tr><td class="method">EMPO / TTRL</td><td>40.88 / 41.18</td><td>−1.50 / −1.20</td></tr>
+            <tr class="ours"><td class="method">PowerFlow</td><td class="best">42.17</td><td>−0.21</td></tr>
+            <tr class="divider"><td class="method" style="color:#888">GRPO (sup.)</td><td style="color:#888">42.38</td><td style="color:#888">ref</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- 7. Diversity -->
+      <div class="card" data-measure-role="card">
+        <div class="section-title"><span class="num">7</span> Reasoning Diversity Preserved</div>
+        <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap: calc(8*var(--u)); margin-top: calc(5*var(--u)); text-align:center">
+          <div style="padding: calc(8*var(--u)) 0; background:#FFF7E0; border-top: calc(3*var(--u)) solid var(--gold-accent); border-radius: 0 0 calc(4*var(--u)) calc(4*var(--u))">
+            <div style="font-family:Inter,sans-serif; font-weight:800; font-size: calc(30*var(--u)); color:var(--tsinghua-deep); line-height:1">4.05</div>
+            <div style="font-family:Inter,sans-serif; font-size: calc(12*var(--u)); color:var(--text-secondary); margin-top: calc(3*var(--u)); font-weight:700">PowerFlow</div>
+          </div>
+          <div style="padding: calc(8*var(--u)) 0; background:var(--bg-emphasis); border-top: calc(2*var(--u)) solid var(--border-soft); border-radius: 0 0 calc(4*var(--u)) calc(4*var(--u))">
+            <div style="font-family:Inter,sans-serif; font-weight:700; font-size: calc(24*var(--u)); color:var(--text-secondary); line-height:1">3.93</div>
+            <div style="font-family:Inter,sans-serif; font-size: calc(12*var(--u)); color:var(--text-muted); margin-top: calc(3*var(--u))">GRPO (sup.)</div>
+          </div>
+          <div style="padding: calc(8*var(--u)) 0; background:var(--bg-emphasis); border-top: calc(2*var(--u)) solid var(--border-soft); border-radius: 0 0 calc(4*var(--u)) calc(4*var(--u))">
+            <div style="font-family:Inter,sans-serif; font-weight:700; font-size: calc(24*var(--u)); color:var(--text-secondary); line-height:1">3.80</div>
+            <div style="font-family:Inter,sans-serif; font-size: calc(12*var(--u)); color:var(--text-muted); margin-top: calc(3*var(--u))">EMPO (RLIF)</div>
+          </div>
+        </div>
+        <p class="body-text" style="margin-top: calc(3*var(--u))">
+          Strategy-diversity on AIME24/25 (DeepSeek-V3.2 judge, 16 samples/problem). The $\alpha$-power transform preserves the base model's multi-modal structure — <strong>no monolithic mode collapse</strong>.
+        </p>
+      </div>
+
+    </div>
+
+    <!-- =================== COLUMN 4: Creativity + Takeaways =================== -->
+    <div class="column" data-measure-role="column">
+
+      <!-- 8. Creativity: Pareto-Dominant -->
+      <div class="card highlight" data-measure-role="card">
+        <div class="section-title"><span class="num">8</span> Creativity ($\alpha\lt 1$) <span style="color:var(--gold-accent); font-size: calc(10 * var(--u))">★ Pareto-Dominant</span></div>
+        <div style="display:grid; grid-template-columns: auto 1fr; gap: calc(8*var(--u)); align-items: center; margin-top: calc(2*var(--u))">
+          <div class="figure" style="margin: 0">
+            <img src="images/creative_writing_comparison-1.png" alt="Quality × Semantic Diversity Pareto" style="height: calc(220 * var(--u)); width: auto; display:block;">
+          </div>
+          <div style="display: flex; flex-direction: column; gap: calc(6*var(--u))">
+            <div style="background: var(--bg-emphasis); border-left: calc(3*var(--u)) solid var(--tsinghua-purple); padding: calc(4*var(--u)) calc(6*var(--u)); border-radius: calc(2*var(--u))">
+              <div style="font-family:Inter,sans-serif; font-size: calc(9*var(--u)); color: var(--tsinghua-purple); font-weight:700; text-transform:uppercase; letter-spacing:1px">Axes</div>
+              <div style="font-family:Inter,sans-serif; font-size: calc(13*var(--u)); color: var(--text-primary); font-weight:700; margin-top: calc(2*var(--u)); line-height:1.25">Quality ×<br>Diversity</div>
+              <div style="font-family:Inter,sans-serif; font-size: calc(10*var(--u)); color: var(--text-secondary); margin-top: calc(2*var(--u)); font-style:italic">↗ upper-right<br>is better</div>
+            </div>
+            <div style="background: linear-gradient(135deg, var(--gold-accent) 0%, #B58A38 100%); color: var(--tsinghua-deep); padding: calc(5*var(--u)) calc(6*var(--u)); border-radius: calc(2*var(--u))">
+              <div style="font-family:Inter,sans-serif; font-size: calc(9*var(--u)); font-weight:700; text-transform:uppercase; letter-spacing:1px">★ Result</div>
+              <div style="font-family:Inter,sans-serif; font-size: calc(13*var(--u)); font-weight:700; margin-top: calc(2*var(--u)); line-height:1.25">Beyond the<br>Instruct<br>frontier</div>
+            </div>
+            <div style="background: var(--bg-emphasis); border-left: calc(3*var(--u)) solid var(--tsinghua-purple); padding: calc(4*var(--u)) calc(6*var(--u)); border-radius: calc(2*var(--u))">
+              <div style="font-family:Inter,sans-serif; font-size: calc(9*var(--u)); color: var(--tsinghua-purple); font-weight:700; text-transform:uppercase; letter-spacing:1px">Setup</div>
+              <div style="font-family:Inter,sans-serif; font-size: calc(12*var(--u)); color: var(--text-primary); font-weight:700; margin-top: calc(2*var(--u)); line-height:1.25">4 model<br>families</div>
+              <div style="font-family:Inter,sans-serif; font-size: calc(10*var(--u)); color: var(--text-secondary); margin-top: calc(2*var(--u))">$\alpha\!=\!0.5$ flatten</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 9. Pass@n: sample efficiency -->
+      <div class="card" data-measure-role="card">
+        <div class="section-title"><span class="num">9</span> Reasoning Mechanism: Pass@n</div>
+        <div class="figure">
+          <img src="images/pass_at_n_comparison-1.png" alt="Pass@n on OlympiadBench" style="max-height: calc(170 * var(--u)); width: auto; max-width: 100%;">
+          <div class="caption">
+            PowerFlow tracks GRPO across $n\!=\!1\!\to\!256$ on <strong>OlympiadBench</strong> — sharpening lifts pass@1 <em>without</em> sacrificing reasoning coverage.
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+  <!-- =========================== TAKEAWAYS STRIP =========================== -->
+  <section class="takeaways-strip" data-measure-role="footer-strip">
+    <div class="ts-title"><span class="num">10</span> Takeaways</div>
+    <div class="ts-item">
+      <span class="ts-key">Principled.</span><span class="ts-text">One knob $\alpha$ replaces all heuristic rewards.</span>
+    </div>
+    <div class="ts-item">
+      <span class="ts-key">Length-aware.</span><span class="ts-text">I-projection neutralizes length bias.</span>
+    </div>
+    <div class="ts-item">
+      <span class="ts-key">Dual-nature.</span><span class="ts-text">Reasoning &amp; creativity, one loss.</span>
+    </div>
+    <div class="ts-item">
+      <span class="ts-key">Practical.</span><span class="ts-text">~10% step overhead; standard decoding.</span>
+    </div>
+  </section>
+
+  <!-- =========================== FOOTER =========================== -->
+  <div class="footer" data-measure-role="footer">
+    <div>
+      <strong style="color:var(--tsinghua-deep)">PowerFlow</strong> · ICML 2026 ·
+      Acknowledgements: NSFC Grant 52494974.
+    </div>
+    <div>
+      Code: <span class="repo">github.com/Chenruishuo/PowerFlow</span> &nbsp;·&nbsp;
+      Contact: <span class="repo">crs25@mails.tsinghua.edu.cn</span>
+    </div>
+  </div>
+
+  <div class="ornament">IIIS · TSINGHUA</div>
+
+</div>
+
+</body>
+</html>

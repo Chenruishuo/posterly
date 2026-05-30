@@ -12,6 +12,22 @@ A poster in `posterly` is **one HTML file** styled for an exact print canvas. Th
 
 ---
 
+## Showcase
+
+Two real **ICML 2026** posters (60 × 36 in landscape), built with `posterly` and shipped here as worked examples — every one passes `preflight`, `measure`, and `polish`. Click a thumbnail for the print-ready PDF; the editable source is under `examples/`.
+
+[![PowerFlow — ICML 2026 poster](docs/showcase/powerflow_icml2026.jpg)](docs/showcase/powerflow_icml2026.pdf)
+
+**PowerFlow: Unlocking the Dual Nature of LLMs via Principled Distribution Matching** · Chen, Chen, Li, Huang (IIIS, Tsinghua) · [source](examples/powerflow_icml2026/poster.html) · [PDF](docs/showcase/powerflow_icml2026.pdf) · [code](https://github.com/Chenruishuo/PowerFlow)
+
+[![TD-GFN — ICML 2026 poster](docs/showcase/tdgfn_icml2026.jpg)](docs/showcase/tdgfn_icml2026.pdf)
+
+**Beyond the Proxy: Trajectory-Distilled Guidance for Offline GFlowNet Training (TD-GFN)** · Chen, Wang, Li, Huang (IIIS, Tsinghua) · [source](examples/tdgfn_icml2026/poster.html) · [PDF](docs/showcase/tdgfn_icml2026.pdf) · [code](https://github.com/Chenruishuo/TD-GFN)
+
+Both are full four-column ICML layouts (header → framework banner → 4 columns → takeaways strip → footer), wired with the `data-measure-role` markup the gates read. They double as the largest end-to-end fixtures in the repo: copy one, swap in your content, and re-render. Reproduce locally with `tools/render_preview.py examples/<name>/poster.html`.
+
+---
+
 ## Why HTML + CSS, not LaTeX?
 
 - **Tweak loop in seconds, not minutes.** Edit CSS, refresh — vs. LaTeX `recompile + scan log + re-open PDF`.
@@ -67,7 +83,11 @@ posterly/
 │   ├── render_preview.py← print-emulated PDF + thumbnail PNG
 │   └── _posterly/       ← internal modules
 ├── templates/           ← landscape_4col, landscape_hero, portrait_2col
-├── examples/hello_world ← end-to-end smoke fixture
+├── examples/
+│   ├── hello_world      ← smallest poster that clears every gate (install check)
+│   ├── powerflow_icml2026 ← real ICML 2026 poster (4-col landscape)
+│   └── tdgfn_icml2026     ← real ICML 2026 poster (4-col landscape)
+├── docs/showcase/       ← rendered PDFs + thumbnails for the showcase above
 └── tests/               ← pytest suite (canvas / preflight / polish / verify-final)
 ```
 

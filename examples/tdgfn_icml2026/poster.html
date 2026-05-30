@@ -1,0 +1,875 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TD-GFN &mdash; ICML 2026 Poster</title>
+
+<!-- MathJax for inline equations -->
+<script>
+  window.MathJax = {
+    tex: {
+      inlineMath: [['$', '$'], ['\\(', '\\)']],
+      displayMath: [['$$', '$$'], ['\\[', '\\]']],
+      packages: {'[+]': ['ams']}
+    },
+    svg: { fontCache: 'global' }
+  };
+</script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+
+<style>
+  /* =========================================================
+     Page setup: 36"H x 60"W landscape (ICML standard)
+     ========================================================= */
+  @page {
+    size: 60in 36in;
+    margin: 0;
+  }
+
+  :root {
+    /* Tsinghua-purple academic palette */
+    --tsinghua-purple:    #6D2A7C;
+    --tsinghua-deep:      #4A1A57;
+    --tsinghua-light:     #F3E9F6;
+    --tsinghua-accent:    #B07ABC;
+    --gold-accent:        #C9A24A;
+
+    --text-primary:       #1A1A1A;
+    --text-secondary:     #555;
+    --text-muted:         #888;
+
+    --bg-page:            #F6F2F0;
+    --bg-card:            #FFFFFF;
+    --bg-card-tint:       #FAF6FB;
+    --bg-emphasis:        #F3E9F6;
+
+    --border-soft:        #D4C5DB;
+    --border-strong:      #6D2A7C;
+
+    --u: 1.6px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    background: #2b2b2b;
+    font-family: "Charter", "Source Serif Pro", "Georgia", serif;
+    color: var(--text-primary);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .poster {
+    width: calc(1524 * var(--u));
+    height: calc(914 * var(--u));
+    background: var(--bg-page);
+    background-image:
+      radial-gradient(ellipse at top left, rgba(109,42,124,0.06), transparent 40%),
+      radial-gradient(ellipse at bottom right, rgba(201,162,74,0.05), transparent 50%);
+    margin: 20px auto;
+    padding: calc(10 * var(--u)) calc(14 * var(--u));
+    display: grid;
+    grid-template-rows: auto auto 1fr auto auto;
+    gap: calc(6 * var(--u));
+    box-shadow: 0 0 60px rgba(0,0,0,0.5);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .framework-banner {
+    display: flex;
+    align-items: center;
+    gap: calc(16 * var(--u));
+    background: linear-gradient(90deg, var(--bg-emphasis) 0%, white 50%, var(--bg-emphasis) 100%);
+    border: calc(1 * var(--u)) solid var(--border-soft);
+    border-left: calc(6 * var(--u)) solid var(--tsinghua-purple);
+    border-radius: calc(6 * var(--u));
+    padding: calc(6 * var(--u)) calc(14 * var(--u));
+  }
+  .framework-banner img {
+    height: calc(120 * var(--u));
+    width: auto;
+    display: block;
+  }
+  .framework-banner .banner-stats {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: calc(6 * var(--u));
+  }
+  .framework-banner .bs-item {
+    background: white;
+    border: calc(1 * var(--u)) solid var(--border-soft);
+    border-left: calc(3 * var(--u)) solid var(--tsinghua-purple);
+    border-radius: calc(3 * var(--u));
+    padding: calc(2 * var(--u)) calc(8 * var(--u));
+    text-align: center;
+  }
+  .framework-banner .bs-num {
+    font-family: "Inter", sans-serif;
+    font-weight: 800;
+    font-size: calc(22 * var(--u));
+    color: var(--tsinghua-purple);
+    line-height: 1;
+  }
+  .framework-banner .bs-label {
+    font-family: "Inter", sans-serif;
+    font-size: calc(11 * var(--u));
+    color: var(--text-secondary);
+    margin-top: calc(2 * var(--u));
+    line-height: 1.2;
+  }
+  .framework-banner .fb-text {
+    flex: 1.6;
+    font-family: "Charter", "Source Serif Pro", "Georgia", serif;
+    font-size: calc(15 * var(--u));
+    line-height: 1.5;
+    color: var(--text-primary);
+    text-wrap: balance;
+    text-align: center;
+  }
+  .framework-banner .fb-text strong { color: var(--tsinghua-deep); }
+  .framework-banner .fb-label {
+    display: inline-block;
+    background: var(--tsinghua-purple);
+    color: white;
+    font-family: "Inter", sans-serif;
+    font-size: calc(13 * var(--u));
+    font-weight: 700;
+    padding: calc(2 * var(--u)) calc(8 * var(--u));
+    border-radius: calc(4 * var(--u));
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    vertical-align: middle;
+    line-height: 1;
+    position: relative;
+    top: calc(-1 * var(--u));
+  }
+
+  .poster::before {
+    content: "";
+    position: absolute; top: 0; left: 0; right: 0;
+    height: calc(8 * var(--u));
+    background: linear-gradient(90deg,
+      var(--tsinghua-deep) 0%,
+      var(--tsinghua-purple) 40%,
+      var(--tsinghua-accent) 70%,
+      var(--gold-accent) 100%);
+  }
+
+  .header {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: calc(16 * var(--u));
+    padding: calc(2 * var(--u)) calc(4 * var(--u)) calc(5 * var(--u)) calc(4 * var(--u));
+    border-bottom: calc(2 * var(--u)) solid var(--tsinghua-purple);
+  }
+
+  .conf-badge {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: calc(4 * var(--u));
+  }
+  .conf-badge img {
+    height: calc(54 * var(--u));
+    width: auto;
+    display: block;
+  }
+  .conf-badge .conf-sub {
+    font-family: "Inter", sans-serif;
+    font-size: calc(10 * var(--u));
+    color: var(--tsinghua-purple);
+    font-weight: 700;
+    letter-spacing: 1.2px;
+  }
+
+  .iiis-logo {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .iiis-logo img {
+    height: calc(85 * var(--u));
+    width: auto;
+    display: block;
+  }
+
+  .title-block { text-align: center; min-width: 0; }
+  .title {
+    font-family: "Inter", "Helvetica Neue", sans-serif;
+    font-weight: 800;
+    font-size: calc(32 * var(--u));
+    line-height: 1.05;
+    color: var(--tsinghua-deep);
+    letter-spacing: -0.5px;
+  }
+  .title .accent { color: var(--gold-accent); }
+  .subtitle {
+    font-family: "Inter", sans-serif;
+    font-weight: 500;
+    font-size: calc(15 * var(--u));
+    color: var(--text-secondary);
+    margin-top: calc(2 * var(--u));
+    font-style: italic;
+  }
+  .authors-line {
+    font-family: "Inter", sans-serif;
+    font-size: calc(14 * var(--u));
+    color: var(--tsinghua-purple);
+    font-weight: 600;
+    margin-top: calc(3 * var(--u));
+  }
+  .authors-line .author { margin: 0 calc(4 * var(--u)); }
+  .authors-line sup { font-size: 0.7em; color: var(--tsinghua-purple); }
+  .authors-line .aff {
+    color: var(--text-secondary);
+    font-weight: 400;
+    display: block;
+    margin-top: calc(2 * var(--u));
+    font-size: calc(12 * var(--u));
+  }
+
+  .right-stack {
+    display: flex;
+    align-items: center;
+    gap: calc(10 * var(--u));
+  }
+  .qr-block {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: calc(2 * var(--u));
+  }
+  .qr-block img {
+    width: calc(85 * var(--u));
+    height: calc(85 * var(--u));
+    border: calc(2 * var(--u)) solid var(--tsinghua-purple);
+    border-radius: calc(4 * var(--u));
+    background: white;
+    padding: calc(2 * var(--u));
+  }
+  .qr-label {
+    font-family: "Inter", sans-serif;
+    font-size: calc(11 * var(--u));
+    color: var(--tsinghua-purple);
+    font-weight: 600;
+  }
+
+  .body-grid {
+    display: grid;
+    grid-template-columns: 1fr 1.05fr 1.05fr 1fr;
+    gap: calc(10 * var(--u));
+    overflow: hidden;
+    min-height: 0;
+  }
+
+  .column {
+    display: flex;
+    flex-direction: column;
+    gap: calc(6 * var(--u));
+    min-height: 0;
+    height: 100%;
+    padding-bottom: calc(4 * var(--u));
+  }
+
+  .card {
+    background: var(--bg-card);
+    border-radius: calc(5 * var(--u));
+    padding: calc(4 * var(--u)) calc(9 * var(--u));
+    border: calc(1 * var(--u)) solid var(--border-soft);
+    box-shadow: 0 calc(2 * var(--u)) calc(6 * var(--u)) rgba(109,42,124,0.05);
+    position: relative;
+  }
+  .card.tinted { background: var(--bg-card-tint); }
+  .card.highlight {
+    border-left: calc(6 * var(--u)) solid var(--tsinghua-purple);
+    background: linear-gradient(90deg, var(--bg-emphasis) 0%, var(--bg-card) 30%);
+  }
+
+  .section-title {
+    font-family: "Inter", "Helvetica Neue", sans-serif;
+    font-weight: 700;
+    font-size: calc(16 * var(--u));
+    color: var(--tsinghua-deep);
+    margin-bottom: calc(3 * var(--u));
+    display: flex;
+    align-items: center;
+    gap: calc(5 * var(--u));
+    flex-wrap: wrap;
+  }
+  .section-title .num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: calc(22 * var(--u));
+    height: calc(22 * var(--u));
+    background: var(--tsinghua-purple);
+    color: white;
+    border-radius: 50%;
+    font-size: calc(13 * var(--u));
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+
+  .body-text, .card p, .card li {
+    font-family: "Charter", "Source Serif Pro", "Georgia", serif;
+    font-size: calc(12 * var(--u));
+    line-height: 1.3;
+    color: var(--text-primary);
+  }
+
+  .card ul, .card ol { padding-left: calc(18 * var(--u)); }
+  .card li { margin-bottom: calc(2 * var(--u)); }
+
+  .highlight-text { background: var(--bg-emphasis); padding: 0 calc(3 * var(--u)); border-radius: calc(2 * var(--u)); }
+  .keyword { color: var(--tsinghua-purple); font-weight: 700; }
+  .keyword-gold { color: var(--gold-accent); font-weight: 700; }
+
+  .eqn {
+    background: var(--bg-emphasis);
+    border-left: calc(3 * var(--u)) solid var(--tsinghua-purple);
+    padding: calc(4 * var(--u)) calc(10 * var(--u));
+    margin: calc(4 * var(--u)) 0;
+    font-size: calc(13 * var(--u));
+    overflow-x: hidden;
+  }
+  .eqn .label {
+    display: block;
+    font-family: "Inter", sans-serif;
+    font-size: calc(10 * var(--u));
+    color: var(--tsinghua-purple);
+    font-weight: 600;
+    margin-bottom: calc(2 * var(--u));
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  .callout {
+    background: var(--tsinghua-purple);
+    color: white;
+    padding: calc(5 * var(--u)) calc(10 * var(--u));
+    border-radius: calc(4 * var(--u));
+    font-size: calc(12 * var(--u));
+    margin: calc(4 * var(--u)) 0;
+  }
+  .callout strong { color: var(--gold-accent); }
+  .callout.gold {
+    background: linear-gradient(135deg, var(--gold-accent) 0%, #B58A38 100%);
+  }
+  .callout.gold strong { color: var(--tsinghua-deep); }
+
+  .figure {
+    margin: calc(4 * var(--u)) 0;
+    text-align: center;
+  }
+  .figure img {
+    width: 100%;
+    border-radius: calc(4 * var(--u));
+    border: calc(1 * var(--u)) solid var(--border-soft);
+    background: white;
+  }
+  .figure .caption {
+    font-family: "Inter", sans-serif;
+    font-size: calc(11 * var(--u));
+    color: var(--text-secondary);
+    margin-top: calc(3 * var(--u));
+    line-height: 1.3;
+    text-align: left;
+  }
+  .figure .caption strong { color: var(--tsinghua-deep); }
+
+  .twocol {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: calc(12 * var(--u));
+    align-items: start;
+  }
+
+  .result-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: "Inter", sans-serif;
+    font-size: calc(11 * var(--u));
+    margin-top: calc(3 * var(--u));
+  }
+  .result-table th, .result-table td {
+    padding: calc(2 * var(--u)) calc(4 * var(--u));
+    text-align: center;
+    border-bottom: calc(1 * var(--u)) solid var(--border-soft);
+  }
+  .result-table thead th {
+    background: var(--tsinghua-purple);
+    color: white;
+    font-weight: 600;
+    font-size: calc(10 * var(--u));
+  }
+  .result-table tbody tr.group-row td {
+    background: var(--bg-emphasis);
+    font-weight: 700;
+    text-align: left;
+    color: var(--tsinghua-deep);
+    padding-left: calc(8 * var(--u));
+    border-bottom: calc(2 * var(--u)) solid var(--tsinghua-purple);
+  }
+  .result-table tbody tr.ours td {
+    background: #FFF7E0;
+    font-weight: 700;
+  }
+  .result-table tbody tr.ours td:first-child {
+    color: var(--tsinghua-deep);
+  }
+  .result-table tbody tr.divider td {
+    border-top: calc(1 * var(--u)) dashed var(--border-soft);
+  }
+  .result-table .method { text-align: left; padding-left: calc(8 * var(--u)); }
+  .result-table .best { color: var(--tsinghua-purple); font-weight: 700; }
+
+  .chips {
+    display: flex;
+    gap: calc(8 * var(--u));
+    flex-wrap: wrap;
+    margin-top: calc(8 * var(--u));
+  }
+  .chip {
+    background: white;
+    border: calc(1.5 * var(--u)) solid var(--tsinghua-purple);
+    padding: calc(4 * var(--u)) calc(10 * var(--u));
+    border-radius: calc(20 * var(--u));
+    font-family: "Inter", sans-serif;
+    font-size: calc(14 * var(--u));
+    color: var(--tsinghua-deep);
+    font-weight: 600;
+  }
+
+  .footer {
+    grid-column: 1 / -1;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: calc(8 * var(--u));
+    border-top: calc(1 * var(--u)) solid var(--border-soft);
+    font-family: "Inter", sans-serif;
+    font-size: calc(13 * var(--u));
+    color: var(--text-muted);
+  }
+  .footer .repo { color: var(--tsinghua-purple); font-weight: 600; }
+
+  .row-fig-text {
+    display: grid;
+    grid-template-columns: 1fr 0.9fr;
+    gap: calc(12 * var(--u));
+    align-items: center;
+  }
+  .stat-pop {
+    display: inline-block;
+    background: var(--tsinghua-purple);
+    color: white;
+    padding: calc(2 * var(--u)) calc(8 * var(--u));
+    border-radius: calc(4 * var(--u));
+    font-weight: 700;
+    font-family: "Inter", sans-serif;
+  }
+  .stat-pop.gold { background: var(--gold-accent); color: var(--tsinghua-deep); }
+
+  .keybox {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: calc(4 * var(--u));
+    margin: calc(4 * var(--u)) 0 0 0;
+  }
+  .keybox .kb-item {
+    background: var(--bg-emphasis);
+    border-top: calc(2 * var(--u)) solid var(--tsinghua-purple);
+    padding: calc(3 * var(--u)) calc(3 * var(--u));
+    text-align: center;
+    border-radius: 0 0 calc(3 * var(--u)) calc(3 * var(--u));
+  }
+  .kb-item .kb-num {
+    font-family: "Inter", sans-serif;
+    font-weight: 800;
+    font-size: calc(15 * var(--u));
+    color: var(--tsinghua-purple);
+    line-height: 1;
+  }
+  .kb-item .kb-label {
+    font-family: "Inter", sans-serif;
+    font-size: calc(9 * var(--u));
+    color: var(--text-secondary);
+    margin-top: calc(2 * var(--u));
+    line-height: 1.1;
+  }
+
+  .takeaways-strip {
+    display: grid;
+    grid-template-columns: auto repeat(4, 1fr);
+    align-items: center;
+    gap: calc(10 * var(--u));
+    background: linear-gradient(90deg, var(--bg-emphasis) 0%, white 50%, var(--bg-emphasis) 100%);
+    border: calc(1 * var(--u)) solid var(--border-soft);
+    border-radius: calc(5 * var(--u));
+    padding: calc(8 * var(--u)) calc(12 * var(--u));
+  }
+  .takeaways-strip .ts-title {
+    font-family: "Inter", sans-serif;
+    font-size: calc(15 * var(--u));
+    font-weight: 800;
+    color: var(--tsinghua-deep);
+    display: flex;
+    align-items: center;
+    gap: calc(6 * var(--u));
+  }
+  .takeaways-strip .ts-title .num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: calc(22 * var(--u));
+    height: calc(22 * var(--u));
+    background: var(--tsinghua-purple);
+    color: white;
+    border-radius: 50%;
+    font-size: calc(13 * var(--u));
+    font-weight: 700;
+  }
+  .takeaways-strip .ts-item {
+    border-left: calc(3 * var(--u)) solid var(--tsinghua-purple);
+    padding-left: calc(8 * var(--u));
+    line-height: 1.3;
+    text-align: center;
+    text-wrap: balance;
+  }
+  .takeaways-strip .ts-key {
+    font-family: "Inter", sans-serif;
+    font-size: calc(11 * var(--u));
+    font-weight: 700;
+    color: var(--tsinghua-purple);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  .takeaways-strip .ts-text {
+    font-family: "Charter", "Source Serif Pro", "Georgia", serif;
+    font-size: calc(12 * var(--u));
+    color: var(--text-primary);
+    margin-left: calc(4 * var(--u));
+  }
+
+  .ornament {
+    position: absolute;
+    right: calc(20 * var(--u));
+    bottom: calc(20 * var(--u));
+    font-family: "Inter", sans-serif;
+    font-size: calc(40 * var(--u));
+    color: rgba(109,42,124,0.06);
+    font-weight: 900;
+    letter-spacing: 4px;
+    pointer-events: none;
+    user-select: none;
+  }
+
+  @media print {
+    html, body { background: white; }
+    .poster {
+      margin: 0;
+      box-shadow: none;
+      width: 60in;
+      height: 36in;
+      page-break-after: avoid;
+    }
+    :root { --u: 1mm; }
+  }
+</style>
+</head>
+<body>
+
+<div class="poster" data-measure-role="poster">
+
+  <!-- =========================== HEADER =========================== -->
+  <header class="header" data-measure-role="header">
+    <div class="conf-badge">
+      <img src="images/ICML-logo.svg" alt="ICML 2026">
+      <div class="conf-sub">2026 &middot; POSTER</div>
+    </div>
+
+    <div class="title-block">
+      <div class="title">Beyond the <span class="accent">Proxy</span>: Trajectory-Distilled Guidance<br>for Offline GFlowNet Training</div>
+      <div class="subtitle">Proxy-free training via IRL edge rewards &mdash; indirect guidance, ground-truth gradients.</div>
+      <div class="authors-line">
+        <span class="author">Ruishuo Chen</span> &middot;
+        <span class="author">Xun Wang</span> &middot;
+        <span class="author">Rui Hu</span> &middot;
+        <span class="author">Zhuoran Li</span> &middot;
+        <span class="author">Longbo Huang<sup>&#9993;</sup></span>
+        <span class="aff">Institute for Interdisciplinary Information Sciences &middot; Tsinghua University &middot; Beijing, China</span>
+      </div>
+    </div>
+
+    <div class="right-stack">
+      <div class="iiis-logo">
+        <img src="images/IIISlogo111.png" alt="IIIS, Tsinghua University">
+      </div>
+      <div class="qr-block">
+        <img src="images/qr.png" alt="GitHub QR code">
+        <div class="qr-label">Code &amp; Models</div>
+      </div>
+    </div>
+  </header>
+
+  <!-- =========================== FRAMEWORK BANNER =========================== -->
+  <section class="framework-banner" data-measure-role="banner">
+    <img src="images/algorithm-1.png" alt="TD-GFN training pipeline">
+    <div class="fb-text">
+      <span class="fb-label">Framework</span>
+      &nbsp;<strong>TD-GFN</strong> distills <strong style="color:var(--tsinghua-purple)">edge rewards</strong> from offline trajectories via IRL on a rebalanced dataset, then uses them <em>indirectly</em> &mdash; <strong style="color:var(--tsinghua-purple)">DAG pruning</strong> + <strong style="color:var(--gold-accent)">prioritized backward sampling</strong> &mdash; so gradients stay on ground-truth terminal rewards.
+    </div>
+    <div class="banner-stats">
+      <div class="bs-item">
+        <div class="bs-num">6&times;</div>
+        <div class="bs-label">faster mode discovery<br>(Hypergrid $8^4$)</div>
+      </div>
+      <div class="bs-item">
+        <div class="bs-num">16&times;</div>
+        <div class="bs-label">fewer trajectories<br>vs Oracle (Molecule)</div>
+      </div>
+      <div class="bs-item">
+        <div class="bs-num">SOTA</div>
+        <div class="bs-label">3 benchmarks:<br>Grid &middot; AMP &middot; Mol</div>
+      </div>
+      <div class="bs-item">
+        <div class="bs-num">Proxy-free</div>
+        <div class="bs-label">no OOD reward queries;<br>error-propagation-safe</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- =========================== BODY (4 columns) =========================== -->
+  <div class="body-grid" data-measure-role="body">
+
+    <!-- =================== COLUMN 1: Problem + Key Insight =================== -->
+    <div class="column" data-measure-role="column">
+
+      <!-- 1. Motivation -->
+      <div class="card highlight" data-measure-role="card">
+        <div class="section-title"><span class="num">1</span> Motivation</div>
+        <p class="body-text">
+          GFlowNets sample diverse high-reward objects, but in many domains active reward queries are <span class="keyword">infeasible</span> (wet labs, human eval). Standard offline pipelines depend on a learned <span class="keyword">reward proxy</span>:
+        </p>
+        <ul style="margin-top: calc(3 * var(--u)); font-size: calc(11 * var(--u))">
+          <li>Reliable proxy needs <em>large, diverse</em> data &mdash; rarely available.</li>
+          <li>OOD queries leak <em>fitting error</em> into the policy gradient.</li>
+          <li>Existing proxy-free methods impose <em>coarse</em> constraints.</li>
+        </ul>
+        <div class="callout" style="margin-top: calc(4 * var(--u))">
+          <strong>Q:</strong> Use offline trajectories &mdash; not proxies &mdash; to give the policy <em>dense, transition-level</em> guidance?
+        </div>
+      </div>
+
+      <!-- 2. Key Insight -->
+      <div class="card" data-measure-role="card">
+        <div class="section-title"><span class="num">2</span> Key Insight: Edges Differ</div>
+        <p class="body-text">
+          DAG transitions contribute <span class="keyword">unequally</span> to policy learning. Removing one edge can block a reward-20 mode; another only loses a 0.1 leaf.
+        </p>
+        <div class="figure" style="margin-top: calc(3*var(--u))">
+          <img src="images/motivation-cropped.png" alt="Edge importance on DAG">
+          <div class="caption">
+            <strong>(a)</strong> environment DAG &mdash; solid: observed, dashed: unobserved.
+            <strong>(b)</strong> edge rewards $R_E$ recovered by IRL.
+            <strong>(c)</strong> guided exploration over the pruned DAG.
+          </div>
+        </div>
+        <p class="body-text" style="margin-top: calc(2 * var(--u)); font-size: calc(11 * var(--u))">
+          <span class="keyword">Implication.</span> Quantify edge importance offline &rarr; steer exploration <em>without</em> a proxy &mdash; foundation of TD-GFN.
+        </p>
+      </div>
+
+    </div>
+
+    <!-- =================== COLUMN 2: Method =================== -->
+    <div class="column" data-measure-role="column">
+
+      <!-- 3. Phase 1: IRL edge rewards -->
+      <div class="card" data-measure-role="card">
+        <div class="section-title"><span class="num">3</span> Phase 1: IRL Edge Rewards</div>
+        <p class="body-text">
+          Exploit the GFlowNet&ndash;entropy-RL equivalence: train discriminator $D_\phi$ on a <span class="keyword">rebalanced</span> dataset $\widetilde{\mathcal{D}}$ ($P(\tau)\!\propto\!R(s_T)$) via max-causal-entropy IRL:
+        </p>
+        <div class="eqn">
+          <span class="label">Edge reward (unbiased; Kostrikov et al.&nbsp;2018)</span>
+          $$R_E(s,s') \;=\; \log D_\phi(s,s') \;-\; \log\!\bigl(1-D_\phi(s,s')\bigr)$$
+        </div>
+        <p class="body-text">
+          Rebalancing biases sampling toward high-reward terminals, yielding a <em>pseudo-expert</em> set whose backward policy is still $\mathcal{P}_B^*$ (Prop.&nbsp;1).
+        </p>
+        <div class="callout gold" style="padding: calc(4*var(--u)) calc(10*var(--u))">
+          <strong>Thm 1 (Recovery + Stability).</strong> Among parent-normalised global minimizers of the population IRL objective, $r^*\!=\!\log\mathcal{P}_B^*$ is unique. If $\|R_E\!-\!r^*\|_\infty\!\le\!\varepsilon$, then $\mathrm{TV}(\hat{\mathcal{P}}_B,\mathcal{P}_B^*)\!\le\!\tfrac{1}{2}(e^{2\varepsilon}\!-\!1)$.
+        </div>
+      </div>
+
+      <!-- 4. Phases 2-3: indirect guidance -->
+      <div class="card highlight" data-measure-role="card">
+        <div class="section-title"><span class="num">4</span> Phases 2&ndash;3: Indirect Guidance <span style="color:var(--gold-accent); font-size: calc(11 * var(--u))">&#9733; KEY</span></div>
+        <p class="body-text">
+          Edge rewards <em>never</em> enter the gradient. Two indirect mechanisms shape training:
+        </p>
+        <div class="eqn" style="padding: calc(3*var(--u)) calc(10*var(--u))">
+          <span class="label">(i) Prune low-utility edges &nbsp;&middot;&nbsp; (ii) Backward-sample on pruned $G'\!=\!(V',E')$</span>
+          $$\text{drop }(s,s')\text{ if }R_E\!\lt\!\mathrm{mean}\!-\!K\!\cdot\!\mathrm{std}; \quad \mathcal{P}_B(s_t\!\mid\!s_{t+1}) \!\propto_{E'}\! e^{R_E(s_t,s_{t+1})}$$
+        </div>
+        <p class="body-text">
+          Policy is optimised on $G'$ using <strong>only ground-truth terminal rewards</strong> &mdash; <span class="keyword">no error propagation</span>, while backward sampling concentrates effort on high-utility paths.
+        </p>
+        <div class="callout gold" style="padding: calc(4*var(--u)) calc(10*var(--u))">
+          <strong>Thm 2 (Robust Pruning).</strong> If $\|R_E\!-\!r^*\|_\infty\!\le\!\varepsilon$, every terminal with bottleneck $\beta(x)\!>\!\tau\!+\!\varepsilon$ survives; on survivors $\mathcal{X}'\!\neq\!\varnothing$ the reward-proportional target is preserved exactly up to renormalisation.
+        </div>
+      </div>
+
+    </div>
+
+    <!-- =================== COLUMN 3: Hypergrid Results =================== -->
+    <div class="column" data-measure-role="column">
+
+      <!-- 5. Hypergrid main -->
+      <div class="card highlight" data-measure-role="card">
+        <div class="section-title"><span class="num">5</span> Hypergrid $8^4$ <span style="color:var(--gold-accent); font-size: calc(10 * var(--u))">&#9733; 6&times; Faster Modes</span></div>
+        <p class="body-text" style="font-size: calc(11 * var(--u)); color: var(--text-secondary); margin-bottom: calc(1*var(--u))">
+          1,500 expert traj.&nbsp;&middot; FM objective &middot; vs.&nbsp;COFlowNet, CQL, IQL, BC, rebal.&nbsp;GAIL, Dataset-GFN.
+        </p>
+        <div class="figure" style="margin: calc(2*var(--u)) 0">
+          <img src="images/r-20000_d-expert.pt_-1.png" alt="Hypergrid 8^4 main result: L1 error and modes found">
+          <div class="caption" style="font-size: calc(10 * var(--u))">
+            <strong>Left:</strong> $L_1$ &mdash; $2\times$ faster than COFlowNet. <strong>Right:</strong> all 16 modes in $\lt\!5{,}000$ visits &mdash; <strong>6&times;</strong> speed-up.
+          </div>
+        </div>
+        <div class="keybox">
+          <div class="kb-item">
+            <div class="kb-num">16/16</div>
+            <div class="kb-label">modes found<br>($&lt;5\!\times\!10^3$ visits)</div>
+          </div>
+          <div class="kb-item">
+            <div class="kb-num">2&times;</div>
+            <div class="kb-label">faster $L_1$<br>convergence</div>
+          </div>
+          <div class="kb-item">
+            <div class="kb-num">6&times;</div>
+            <div class="kb-label">faster vs<br>baselines</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 6. Robustness -->
+      <div class="card" data-measure-role="card">
+        <div class="section-title"><span class="num">6</span> Robust Across Data Regimes</div>
+        <p class="body-text">
+          TD-GFN matches the target distribution and recovers modes <em>first</em> under every stress test:
+        </p>
+        <ul style="margin-top: calc(3 * var(--u)); font-size: calc(12 * var(--u))">
+          <li><strong>Mixed</strong> &mdash; 50% noise from random policy.</li>
+          <li><strong>Few</strong> &mdash; only $1/10$ trajectories (150).</li>
+          <li><strong>Median</strong> &mdash; half-trained behavior policy.</li>
+          <li><strong>Bad</strong> &mdash; inverted-reward behavior policy, $IR\!=\!R^{-0.1}$ (worst-case demos).</li>
+        </ul>
+        <div class="callout" style="margin-top: calc(8 * var(--u))">
+          Even when only <strong>6/16</strong> modes are covered by the offline data, TD-GFN <em>generates</em> the remaining modes via $R_E$ generalisation &mdash; the policy reaches DAG regions never visited at training time.
+        </div>
+      </div>
+
+    </div>
+
+    <!-- =================== COLUMN 4: Molecule + Biosequence =================== -->
+    <div class="column" data-measure-role="column">
+
+      <!-- 7. Molecule design -->
+      <div class="card highlight" data-measure-role="card">
+        <div class="section-title"><span class="num">7</span> Molecule Design <span style="color:var(--gold-accent); font-size: calc(10 * var(--u))">&#9733; SOTA + Oracle-Level</span></div>
+        <p class="body-text" style="font-size: calc(10 * var(--u)); color: var(--text-secondary); margin-bottom: calc(1*var(--u))">
+          5,000 samples per policy &middot; means over 3 seeds (std in paper) &middot; 1,500-traj.&nbsp;offline set &middot; Conv.&nbsp;$=$ trajectories to convergence.
+        </p>
+        <table class="result-table">
+          <thead>
+            <tr>
+              <th class="method" style="text-align:left">Method</th>
+              <th>R-10 &#8593;</th>
+              <th>R-100 &#8593;</th>
+              <th>Conv. &#8595;<br>($\times 10^4$)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td class="method" style="color:#888"><em>Oracle-GFN (ref.)</em></td><td style="color:#888">7.718</td><td style="color:#888">7.408</td><td style="color:#888">44.14</td></tr>
+            <tr><td class="method">Proxy-GFN</td><td>7.625</td><td>7.281</td><td>43.74</td></tr>
+            <tr><td class="method">FM-COFlowNet</td><td>7.582</td><td>7.201</td><td>5.83</td></tr>
+            <tr><td class="method">QM-COFlowNet</td><td>7.611</td><td>7.296</td><td>4.42</td></tr>
+            <tr class="ours"><td class="method">TD-GFN (Ours)</td><td class="best">7.733</td><td class="best">7.450</td><td class="best">2.75</td></tr>
+          </tbody>
+        </table>
+        <p class="body-text" style="margin-top: calc(2 * var(--u)); font-size: calc(11 * var(--u))">
+          Top reward among offline baselines; among GFN-style methods uses the <strong>fewest trajectories</strong> &mdash; matching Oracle-GFN at <span class="stat-pop">1/16 the cost</span>.
+        </p>
+      </div>
+
+      <!-- 8. Modes + Bioseq -->
+      <div class="card" data-measure-role="card">
+        <div class="section-title"><span class="num">8</span> Diversity: Molecule &amp; Peptide</div>
+        <div style="display:flex; gap: calc(10*var(--u)); align-items: flex-end; justify-content: center">
+          <div class="figure" style="margin: 0; display:flex; flex-direction:column; align-items:center">
+            <img src="images/modes_found_vertical.png"
+                 alt="High-reward modes vs trajectories (stacked)"
+                 style="height: calc(193 * var(--u)); width: auto">
+            <div class="caption" style="font-size: calc(10*var(--u)); text-align:center">
+              <strong>Mol.</strong> 1.5&ndash;2$\times$ more high-reward modes ($R\!>\!7$, $R\!>\!7.5$).
+            </div>
+          </div>
+          <div class="figure" style="margin: 0; display:flex; flex-direction:column; align-items:center">
+            <img src="images/reward_diversity_comparison-1.png"
+                 alt="Biosequence reward and diversity"
+                 style="height: calc(193 * var(--u)); width: auto">
+            <div class="caption" style="font-size: calc(10*var(--u)); text-align:center">
+              <strong>AMP.</strong> Top-100 reward &amp; diversity &mdash; both best.
+            </div>
+          </div>
+        </div>
+        <p class="body-text" style="margin-top: calc(3*var(--u)); font-size: calc(11 * var(--u))">
+          Pruning does <em>not</em> hurt diversity &mdash; TD-GFN beats every offline baseline on <strong>both</strong> tasks.
+        </p>
+      </div>
+
+    </div>
+
+  </div>
+
+  <!-- =========================== TAKEAWAYS STRIP =========================== -->
+  <section class="takeaways-strip" data-measure-role="footer-strip">
+    <div class="ts-title"><span class="num">9</span> Takeaways</div>
+    <div class="ts-item">
+      <span class="ts-key">Proxy-free.</span><span class="ts-text">No reward model, no OOD queries, no fitting error in gradients.</span>
+    </div>
+    <div class="ts-item">
+      <span class="ts-key">Dense guidance.</span><span class="ts-text">IRL distills transition-level $R_E$ from offline trajectories.</span>
+    </div>
+    <div class="ts-item">
+      <span class="ts-key">Indirect &amp; safe.</span><span class="ts-text">Prune + backward-sample; gradients stay on ground-truth rewards.</span>
+    </div>
+    <div class="ts-item">
+      <span class="ts-key">Efficient SOTA.</span><span class="ts-text">6$\times$ faster modes, 16$\times$ fewer trajectories than Oracle.</span>
+    </div>
+  </section>
+
+  <!-- =========================== FOOTER =========================== -->
+  <div class="footer" data-measure-role="footer">
+    <div>
+      <strong style="color:var(--tsinghua-deep)">TD-GFN</strong> &middot; ICML 2026 &middot;
+      Acknowledgements: NSFC Grant 52494974.
+    </div>
+    <div>
+      Code: <span class="repo">github.com/Chenruishuo/TD-GFN</span> &nbsp;&middot;&nbsp;
+      Contact: <span class="repo">crs25@mails.tsinghua.edu.cn</span>
+    </div>
+  </div>
+
+  <div class="ornament">IIIS &middot; TSINGHUA</div>
+
+</div>
+
+</body>
+</html>
