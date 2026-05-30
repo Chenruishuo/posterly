@@ -184,13 +184,13 @@ def resolve_canvas(
     if canvas_override is not None:
         canvas = canvas_override
         print(f"{label} canvas (--canvas override) = "
-              f"{canvas[0]:.2f}in × {canvas[1]:.2f}in")
+              f"{canvas[0]:.2f}in x {canvas[1]:.2f}in")
     else:
         parsed = read_canvas_from_html(html_path)
         if parsed is None:
             return None
         canvas = parsed
-        print(f"{label} canvas = {canvas[0]:.2f}in × {canvas[1]:.2f}in")
+        print(f"{label} canvas = {canvas[0]:.2f}in x {canvas[1]:.2f}in")
     viewport = viewport_for(canvas)
-    print(f"{label} viewport = {viewport[0]} × {viewport[1]} px")
+    print(f"{label} viewport = {viewport[0]} x {viewport[1]} px")
     return canvas, viewport

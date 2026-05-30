@@ -50,6 +50,7 @@ _MEASURE_JS = r"""
 def cmd_measure(args: argparse.Namespace) -> int:
     try:
         from playwright.sync_api import sync_playwright
+        from playwright.sync_api import TimeoutError as PWTimeoutError
     except ImportError:
         _eprint("ERROR: playwright not installed. Run:")
         _eprint("  python -m pip install playwright")
@@ -76,7 +77,15 @@ def cmd_measure(args: argparse.Namespace) -> int:
 
     with sync_playwright() as p:
         browser, _ctx, page = _render.open_print_emulated_page(p, viewport)
-        page.goto(html_path.as_uri(), wait_until="networkidle")
+        try:
+            page.goto(html_path.as_uri(), wait_until="networkidle",
+                      timeout=args.mathjax_timeout_ms)
+        except PWTimeoutError:
+            # A hung/slow CDN (e.g. blocked MathJax) must not raw-traceback
+            # the hard gate. Bound the wait by --mathjax-timeout-ms; the
+            # settle_page check below detects a non-rendered MathJax and
+            # hard-fails with the documented message instead.
+            pass
 
         settle = _render.settle_page(
             page,
@@ -98,7 +107,7 @@ def cmd_measure(args: argparse.Namespace) -> int:
         Path(args.json_out).write_text(
             json.dumps(data, indent=2), encoding="utf-8"
         )
-        print(f"[measure] raw data → {args.json_out}")
+        print(f"[measure] raw data -> {args.json_out}")
 
     # Canvas-fill gate (coarse early diagnostic). The position-align
     # check below is the authoritative rule — any poster whose bbox
@@ -120,7 +129,7 @@ def cmd_measure(args: argparse.Namespace) -> int:
     if poster_box is None:
         _eprint(
             "FAIL: no [data-measure-role=\"poster\"] element found on "
-            "the page. Add it to the root poster container — measure "
+            "the page. Add it to the root poster container -- measure "
             "needs it to verify the canvas-fill, and preflight already "
             "rejects pages without it."
         )
@@ -133,8 +142,8 @@ def cmd_measure(args: argparse.Namespace) -> int:
     if not (lo <= fill_w <= hi) or not (lo <= fill_h <= hi):
         _eprint(
             f"FAIL: [data-measure-role=\"poster\"] fills "
-            f"{fill_w * 100:.0f}% × {fill_h * 100:.0f}% of the print "
-            f"viewport (target {lo * 100:.0f}% – {hi * 100:.0f}% in "
+            f"{fill_w * 100:.0f}% x {fill_h * 100:.0f}% of the print "
+            f"viewport (target {lo * 100:.0f}% - {hi * 100:.0f}% in "
             f"BOTH dimensions). Common cause when too small: missing "
             f"`@media print {{ :root {{ --u: 1mm }} }}` so the poster "
             f"keeps the screen-mode unit scale in print. Common cause "
@@ -275,10 +284,10 @@ def cmd_measure(args: argparse.Namespace) -> int:
     print(f"  spread = {spread:.2f} px   (target < {args.max_spread} px)")
     if next_strip is not None:
         lo, hi = gap_range  # type: ignore[misc]
-        print(f"  gap → {next_name} ∈ [{lo:.2f}, {hi:.2f}] px"
+        print(f"  gap -> {next_name} in [{lo:.2f}, {hi:.2f}] px"
               f"   (target [{args.min_gap}, {args.max_gap}])")
     else:
-        print("  gap → (no footer-strip or footer below content)")
+        print("  gap -> (no footer-strip or footer below content)")
 
     ok = True
     if spread >= args.max_spread:
@@ -302,5 +311,5 @@ def cmd_measure(args: argparse.Namespace) -> int:
     if ok:
         print("[measure] PASS")
         return 0
-    _eprint("[measure] FAIL — alignment gate not met")
+    _eprint("[measure] FAIL -- alignment gate not met")
     return 1

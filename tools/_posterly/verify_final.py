@@ -110,7 +110,7 @@ def cmd_verify_final(args: argparse.Namespace) -> int:
     file_size_mb = file_size_b / (1024 * 1024)
 
     print(f"[verify-final] {pdf}")
-    print(f"  expected canvas = {exp_w:.2f}in × {exp_h:.2f}in  "
+    print(f"  expected canvas = {exp_w:.2f}in x {exp_h:.2f}in  "
           f"(from {src})")
     print(f"  pages           = {pages}")
     print(f"  page size       = {page_size}")
@@ -131,7 +131,7 @@ def cmd_verify_final(args: argparse.Namespace) -> int:
     else:
         w_in = float(m.group(1)) / 72.0
         h_in = float(m.group(2)) / 72.0
-        print(f"  → {w_in:.2f}in × {h_in:.2f}in")
+        print(f"  -> {w_in:.2f}in x {h_in:.2f}in")
         tol = args.dim_tol_in
         direct_ok = (
             abs(w_in - exp_w) <= tol and abs(h_in - exp_h) <= tol
@@ -144,16 +144,16 @@ def cmd_verify_final(args: argparse.Namespace) -> int:
             pass
         elif swap_ok and allow_swap:
             print(
-                f"  (swapped dimensions accepted — page rot = "
-                f"{page_rot}°"
+                f"  (swapped dimensions accepted -- page rot = "
+                f"{page_rot}deg"
                 + (" + --allow-rotated" if args.allow_rotated else "")
                 + ")"
             )
         else:
             problems.append(
-                f"dimensions {w_in:.2f}×{h_in:.2f}in "
-                f"do not match canvas {exp_w}×{exp_h}in "
-                f"(tol ±{tol}in, page rot {page_rot}°)"
+                f"dimensions {w_in:.2f}x{h_in:.2f}in "
+                f"do not match canvas {exp_w}x{exp_h}in "
+                f"(tol +/-{tol}in, page rot {page_rot}deg)"
             )
 
     if file_size_mb > args.max_size_mb:

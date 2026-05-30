@@ -151,8 +151,8 @@ def main() -> int:
         if settle.mathjax_intended and settle.tex_without_mathjax:
             _eprint(
                 "[render_preview] WARN: page intended to load MathJax "
-                "but no <mjx-container> rendered — MathJax may have "
-                "failed to load. PDF will show raw $…$ text."
+                "but no <mjx-container> rendered -- MathJax may have "
+                "failed to load. PDF will show raw $...$ text."
             )
 
         # ---- PDF: exact poster size, print-emulated ----
@@ -198,11 +198,11 @@ def main() -> int:
         browser.close()
 
     print(
-        f"[render_preview] PDF → {pdf_path}  "
+        f"[render_preview] PDF -> {pdf_path}  "
         f"({pdf_path.stat().st_size / 1024:.1f} KB)"
     )
     print(
-        f"[render_preview] PNG → {png_path}  "
+        f"[render_preview] PNG -> {png_path}  "
         f"({png_path.stat().st_size / 1024:.1f} KB)"
     )
     return 0

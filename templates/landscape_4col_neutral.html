@@ -299,7 +299,9 @@
     display: grid;
     grid-template-columns: 1fr 1.05fr 1.05fr 1fr;
     gap: calc(10 * var(--u));
-    overflow: hidden;
+    /* No overflow:hidden here — it would clip card shadows (pitfall #6).
+       .poster already clips at the page boundary; min-height:0 is the
+       grid-blowout guard. */
     min-height: 0;
   }
   .column {

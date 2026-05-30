@@ -262,7 +262,9 @@
     /* Option A default: hero LEFT 60%, supporting column RIGHT 40%. */
     grid-template-columns: 1.5fr 1fr;
     gap: calc(10 * var(--u));
-    overflow: hidden;
+    /* No overflow:hidden here — it would clip the hero/card shadows
+       (pitfall #6). .poster already clips at the page boundary;
+       min-height:0 is the grid-blowout guard. */
     min-height: 0;
   }
 

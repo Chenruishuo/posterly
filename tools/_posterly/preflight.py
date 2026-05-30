@@ -135,13 +135,13 @@ def _delim_label(body: str, segment: str) -> str:
     output. ``segment`` is the raw matched text; we look at its first
     char(s)."""
     if segment.startswith("$$") and segment.endswith("$$"):
-        return "$$…$$"
+        return "$$...$$"
     if segment.startswith("$") and segment.endswith("$"):
-        return "$…$"
+        return "$...$"
     if segment.startswith("\\["):
-        return "\\[…\\]"
+        return "\\[...\\]"
     if segment.startswith("\\("):
-        return "\\(…\\)"
+        return "\\(...\\)"
     return "math"
 
 
@@ -159,7 +159,7 @@ def cmd_preflight(args: argparse.Namespace) -> int:
     for pat, desc in LATEX_PATTERNS:
         for m in re.finditer(pat, body):
             ln = body[: m.start()].count("\n") + 1
-            problems.append(f"L{ln}: {desc} → '{m.group(0)}'")
+            problems.append(f"L{ln}: {desc} -> '{m.group(0)}'")
 
     # 2) Raw '<' inside math segments. The common HTML-parse failure
     #    case is `a<b` / `x<y`. We catch '<' even after a letter/digit.
@@ -183,7 +183,7 @@ def cmd_preflight(args: argparse.Namespace) -> int:
             label = _delim_label(body[s:e], body[s:e])
             problems.append(
                 f"L{ln}: raw '<' inside {label} "
-                f"'{mbody.strip()[:60]}' — use \\lt"
+                f"'{mbody.strip()[:60]}' -- use \\lt"
             )
 
     # 3) Local image src="..." that doesn't exist.
@@ -220,7 +220,7 @@ def cmd_preflight(args: argparse.Namespace) -> int:
         warnings.append("no <title> set")
     if not re.search(r"<h1\b", raw):
         warnings.append(
-            "no <h1> — poster title block usually carries one"
+            "no <h1> -- poster title block usually carries one"
         )
 
     print(f"[preflight] {html_path}")

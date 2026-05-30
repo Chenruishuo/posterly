@@ -128,6 +128,7 @@ _POLISH_JS = r"""
 def cmd_polish(args: argparse.Namespace) -> int:
     try:
         from playwright.sync_api import sync_playwright
+        from playwright.sync_api import TimeoutError as PWTimeoutError
     except ImportError:
         _eprint("ERROR: playwright not installed. Run:")
         _eprint("  python -m pip install playwright")
@@ -166,7 +167,15 @@ def cmd_polish(args: argparse.Namespace) -> int:
 
     with sync_playwright() as p:
         browser, _ctx, page = _render.open_print_emulated_page(p, viewport)
-        page.goto(html_path.as_uri(), wait_until="networkidle")
+        try:
+            page.goto(html_path.as_uri(), wait_until="networkidle",
+                      timeout=args.mathjax_timeout_ms)
+        except PWTimeoutError:
+            # A hung/slow CDN (e.g. blocked MathJax) must not raw-traceback
+            # the gate. Bound the wait by --mathjax-timeout-ms; the
+            # settle_page check below detects a non-rendered MathJax and
+            # hard-fails with the documented message instead.
+            pass
 
         settle = _render.settle_page(
             page,
@@ -199,20 +208,20 @@ def cmd_polish(args: argparse.Namespace) -> int:
         if ar > 1.3 and ratio < args.wide_min_ratio:
             warns.append(
                 f"FIG/WIDE: '{f['src']}' (AR={ar:.2f}) at "
-                f"{ratio * 100:.0f}% of card width — wide figures "
+                f"{ratio * 100:.0f}% of card width -- wide figures "
                 f"should sit >= {args.wide_min_ratio * 100:.0f}%. "
                 f"Enlarge, or drop the image-left/text-right wrapper."
             )
         elif ar < 0.8 and ratio > args.tall_max_ratio:
             warns.append(
                 f"FIG/TALL: '{f['src']}' (AR={ar:.2f}) at "
-                f"{ratio * 100:.0f}% of card width — tall figures "
+                f"{ratio * 100:.0f}% of card width -- tall figures "
                 f"usually pair better with text-right at 45-60%."
             )
         elif 0.8 <= ar <= 1.3 and ratio < args.square_min_ratio:
             warns.append(
                 f"FIG/SQUARE: '{f['src']}' (AR={ar:.2f}) at "
-                f"{ratio * 100:.0f}% of card width — square figures "
+                f"{ratio * 100:.0f}% of card width -- square figures "
                 f"sit better at {args.square_min_ratio * 100:.0f}-75%."
             )
 
@@ -250,7 +259,7 @@ def cmd_polish(args: argparse.Namespace) -> int:
                 f"({fill * 100:.1f}% of column height, stated gap "
                 f"{c['stated_gap_px']:.0f} px). Balance via "
                 f"meaningful content, not justify-content. See "
-                f"§Gate C in SKILL.md."
+                f"Gate C in SKILL.md."
             )
 
     print(f"[polish] {html_path.name}")
@@ -262,7 +271,7 @@ def cmd_polish(args: argparse.Namespace) -> int:
         print(f"  WARN: {w}")
 
     if args.strict and warns:
-        _eprint("[polish] FAIL — --strict and warnings present")
+        _eprint("[polish] FAIL -- --strict and warnings present")
         return 1
     print("[polish] PASS" if not warns
           else "[polish] OK (warnings only)")

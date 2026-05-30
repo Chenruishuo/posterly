@@ -236,7 +236,7 @@ Defenses (preferred → fallback):
 2. **Non-breaking glue** between the last two tokens: `1.18–1.30×&nbsp;↑`. Use when nowrap would overflow a tight card.
 3. **Reword to put the marker first**: `↑ 1.18–1.30× speedup` — arrow becomes the line's first token, can't orphan.
 
-`polish` warns when an element matching `[class*="stat"], [class*="num"], .takeaway-num, .hs-stat, .headline-num` ends with one of `↑↓↔×÷±§¶†‡*°%` and lacks `white-space: nowrap`.
+`polish` flags an element (`[class*="stat"], [class*="num"], .takeaway-num, .hs-stat, .headline-num`) only when its text **ends with a whitespace-separated trailing glyph** from `↑↓↔×÷±§¶†‡*°%` and lacks `white-space: nowrap` — i.e. a lone glyph token that could wrap by itself, like `1.18–1.30× ↑` or `18.24% ↓`. It does **not** catch fused forms such as `4096 × 4096`, `7 nm`, `2248×`, `BraVE*`, or `MEAN§` (the text doesn't end on a space-separated glyph) — guard those by hand with the defenses above.
 
 ### Gate C — Content-driven balance, not space-between-driven
 
