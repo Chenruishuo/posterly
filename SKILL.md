@@ -215,7 +215,7 @@ A figure too small for its column is more wasteful than one too big. Pick width 
 
 | AR range | Shape | Aim for | `polish` warns below / above |
 |---|---|---|---|
-| `AR > 1.3` | Wide (workflow diagram, comparison chart) | **70–100%** of card width | < **65%** ⇒ FIG/WIDE. **Do NOT use image-left/text-right** in a narrow column — text gets squeezed to nothing. |
+| `AR > 1.3` | Wide (workflow diagram, comparison chart) | **70–100%** of card width | < **65%** ⇒ FIG/WIDE. Avoid image-left/text-right in a narrow column — text gets squeezed to nothing (deliberate, balanced exception: the `data-fig-layout="beside-text"` opt-out below). |
 | `0.8 ≤ AR ≤ 1.3` | Square-ish (block diagram, scatter) | **55–75%** of card width | < **55%** ⇒ FIG/SQUARE. |
 | `AR < 0.8` | Tall (multi-series bar, long pipeline) | **45–60%**, paired with **text-right** | > **70%** at full width ⇒ FIG/TALL (recommends side text). |
 
@@ -224,6 +224,15 @@ Thresholds are tunable via `--wide-min-ratio` / `--square-min-ratio` / `--tall-m
 A figure whose `<img>` fails to load (missing file, 404, or unreachable remote URL) reports zero natural size and warns as **FIG/BROKEN** — it will be blank in print. SVGs are exempt (they legitimately report zero intrinsic size). The probe covers both card and hero-panel `<img>` (the hero centerpiece is the worst image to silently lose); the AR sizing gates stay card-only. One known gap: an SVG served from an extensionless URL still slips through the exemption heuristic.
 
 Concrete bad case (prior session): `co-consideration.png` (AR ≈ 1.41) shipped at 41 % column width. The whitespace beside it conveyed nothing and the figure was unreadable from 2 m. Fix: 66 % width, no text-right.
+
+**Deliberate image-left/text-right (the opt-out).** FIG/WIDE fires on a wide figure sized below 65 % because the *usual* cause is the bad case above — a figure shrunk into a gray margin. But a wide figure that **shares its card with a meaningful text column** (figure left, explanatory annotations right) is a legitimate layout when the text genuinely earns its space and isn't squeezed to a sliver. For that case, mark the `<img>` with `data-fig-layout="beside-text"`:
+
+```html
+<img src="images/dynamics.png" alt="Training dynamics"
+     data-fig-layout="beside-text" style="width: 100%">
+```
+
+This skips the AR width gates (FIG/WIDE / FIG/SQUARE / FIG/TALL) for that image only — **FIG/BROKEN still applies** (a blank image is a bug regardless of intent). The attribute records the design decision *in the markup*, so a later edit (human or agent) reads "this figure is intentionally beside text" and leaves the layout alone instead of widening it to silence the warning. Use it only after you've eyeballed the render and confirmed the text column isn't squeezed — it is an opt-out for a *verified-good* layout, not a way to mute a real warning. `examples/powerflow_icml2026/poster.html` uses it on its training-dynamics card.
 
 ### Gate B — Typography orphans
 

@@ -64,6 +64,7 @@ _POLISH_JS = r"""
           role: 'card',
           src: img.getAttribute('src') || '',
           alt: img.getAttribute('alt') || '',
+          fig_layout: img.getAttribute('data-fig-layout') || '',
           rendered_w: r.width,
           rendered_h: r.height,
           card_w: cw,
@@ -88,6 +89,7 @@ _POLISH_JS = r"""
           role: 'hero',
           src: img.getAttribute('src') || '',
           alt: img.getAttribute('alt') || '',
+          fig_layout: img.getAttribute('data-fig-layout') || '',
           rendered_w: r.width,
           rendered_h: r.height,
           card_w: hw,
@@ -343,6 +345,19 @@ def cmd_polish(args: argparse.Namespace) -> int:
         # gates below are framed as "% of card width" and don't apply to
         # the full-bleed hero panel. Skip them.
         if role == "hero":
+            continue
+        # Author opt-out for a DELIBERATE image-left/text-right card: a
+        # wide figure that shares its card width with a meaningful text
+        # column is sized below the AR thresholds on purpose. Marking the
+        # <img> with `data-fig-layout="beside-text"` records that intent
+        # in the markup -- so a later edit (human or agent) reads "this is
+        # intentionally beside text" and leaves the layout alone instead
+        # of widening the figure to silence the warning. It skips only the
+        # AR width gates below; the FIG/BROKEN check above still applies
+        # (a blank image is a bug regardless of layout). The gate stays
+        # strict on the accidental case: a lone wide figure shrunk into a
+        # gray margin has no such attribute and still warns.
+        if str(f.get("fig_layout", "")).strip() == "beside-text":
             continue
         if cw <= 0 or rw <= 0 or nw <= 0 or nh <= 0:
             continue
