@@ -77,20 +77,25 @@ def strip_for_lint(html: str) -> str:
     """Remove ``<style>``, ``<script>``, and HTML comments while
     preserving newline counts. The output is what every preflight rule
     scans against.
+
+    ONE document-order pass over all three so a construct nested inside
+    another is consumed as a single unit by whichever delimiter opens
+    FIRST. Stripping them in separate passes was a bug: a comment that
+    contained ``<script>`` (e.g. ``<!-- ... change the <script> src -->``)
+    had its closing ``-->`` eaten by the script pass, after which the
+    comment pass ran past it and deleted real body markup downstream --
+    the root ``<div data-measure-role="poster">`` went missing, so
+    preflight false-failed "missing poster". The combined alternation
+    also handles the reverse (a ``<style>``/``<script>`` body containing
+    ``-->`` or ``<!--``): the tag opens first, so its whole body is taken
+    before the comment rule can match inside it.
     """
-    html = _newline_preserving_sub(
-        r"<style[^>]*>.*?</style>",
+    return _newline_preserving_sub(
+        r"<!--.*?-->"
+        r"|<style[^>]*>.*?</style>"
+        r"|<script[^>]*>.*?</script>",
         html, flags=re.DOTALL | re.IGNORECASE,
     )
-    html = _newline_preserving_sub(
-        r"<script[^>]*>.*?</script>",
-        html, flags=re.DOTALL | re.IGNORECASE,
-    )
-    html = _newline_preserving_sub(
-        r"<!--.*?-->",
-        html, flags=re.DOTALL,
-    )
-    return html
 
 
 def find_math_segments(text: str) -> list[tuple[int, int, str]]:

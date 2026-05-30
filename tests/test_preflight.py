@@ -100,6 +100,44 @@ def test_strip_preserves_line_numbers_across_style_block() -> None:
     )
 
 
+def test_strip_comment_containing_script_does_not_eat_body() -> None:
+    """A comment that CONTAINS a <script> (e.g. offline-MathJax notes)
+    must not over-strip. Bug: the separate script pass ate the comment's
+    closing '-->', then the comment pass ran past it and deleted real
+    body markup downstream -- the root data-measure-role='poster' div
+    went missing, so preflight false-failed 'missing poster'."""
+    html = (
+        "<html><head>\n"
+        "<!-- to go offline, change the <script> src to a local file -->\n"
+        '<script>console.log("real script")</script>\n'
+        "<style>.x{color:red}</style>\n"
+        "</head><body>\n"
+        '<div data-measure-role="poster">MARKER</div>\n'
+        "</body></html>\n"
+    )
+    stripped = preflight.strip_for_lint(html)
+    assert 'data-measure-role="poster"' in stripped  # survived
+    assert "MARKER" in stripped
+    assert "console.log" not in stripped   # real script body gone
+    assert "color:red" not in stripped     # real style body gone
+
+
+def test_strip_style_body_with_double_dash_arrow_not_overstripped() -> None:
+    """Reverse case: a <style>/<script> body containing '-->' must not
+    let a later comment rule match INTO it. The tag opens first, so its
+    whole body is consumed before the comment rule applies."""
+    html = (
+        "<html><head>\n"
+        "<script>for (let i = n; i --> 0;) {}</script>\n"   # contains '-->'
+        "</head><body>\n"
+        '<div data-measure-role="poster">MARKER</div>\n'
+        "</body></html>\n"
+    )
+    stripped = preflight.strip_for_lint(html)
+    assert 'data-measure-role="poster"' in stripped
+    assert "MARKER" in stripped
+
+
 def test_strip_preserves_line_numbers_across_script_and_comments() -> None:
     html = (
         "<html>\n"                                                  # L1
