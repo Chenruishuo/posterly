@@ -4,6 +4,15 @@ Each template is a **self-contained, neutral** HTML file: no lab branding, no pa
 
 Every layout-critical element carries `data-measure-role` so the measurement script can locate columns / hero / footer regions across templates.
 
+## Scaffolds, not finished posters
+
+A template is a **scaffold**: figures are commented out and copy is `TODO` stubs, so each column only fills the top of the canvas. That means:
+
+- **`preflight` passes out of the box** — it checks structure (valid roles, no LaTeX residue, no raw `<` in math), which the scaffold already satisfies.
+- **`measure` and `polish` are gates for your *finished* poster.** They check that columns bottom-align to within 5 px, that the gap to the footer sits in a tight band, and that no card is left half-empty — properties only a *filled* poster can have. An unfilled scaffold is **expected to fail them** (huge column-bottom spread, a large gap to the footer). That's not a bug in the template; it's the gate telling you the poster isn't finished yet.
+
+So the loop is: copy → fill content + uncomment figures → run `measure`/`polish` and balance until they pass. For an all-gates-pass reference, see `examples/hello_world/` (a complete, balanced poster).
+
 ## Picking a template
 
 | Template | Canvas | Layout | Use when |

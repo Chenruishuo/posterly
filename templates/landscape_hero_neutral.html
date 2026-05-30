@@ -21,6 +21,11 @@
     4. Run `python tools/poster_check.py measure poster.html` to verify the
        hero panel's bottom edge aligns with the supporting column's last card,
        then `python tools/render_preview.py poster.html` to produce the PDF.
+  NOTE: as shipped, this scaffold passes `preflight` (structure) but is
+    EXPECTED to FAIL `measure`/`polish` -- the hero is empty and copy is TODO
+    stubs, so the panel and column only fill the top of the canvas. Those two
+    gates judge a FILLED poster; balance them once you've added real content.
+    See templates/README.md ("Scaffolds, not finished posters").
   MEASURE ROLES: every layout-critical element carries `data-measure-role`.
     poster, header, body, hero (NEW), column, card, footer-strip, footer.
   Generic measurement scripts depend on these — do not remove.

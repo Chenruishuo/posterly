@@ -115,6 +115,8 @@ For each paper figure you'll use:
 3. Replace `<title>`, header (title/subtitle/authors/affiliation), banner (if any), column cards, takeaways strip (if any), footer.
 4. Match the template's `data-measure-role` scheme — DO NOT remove these attributes. The measurement script depends on them.
 
+A gallery template is a **scaffold**: it passes `preflight` (structure) as shipped, but with figures commented out and copy as `TODO` stubs it is **expected to fail `measure`/`polish`** (columns only fill the top, so the column-bottom spread and gap-to-footer are far out of band). Those two gates judge a *filled* poster — they go green only after Steps 4–6 below, once you've added real content and balanced the columns. Don't try to "fix" a fresh scaffold to pass `measure`; fill it first.
+
 Tools live in `tools/` and read `@page` from the HTML, so they're canvas-agnostic — the same commands work for ICLR portrait and ICML landscape.
 
 ### Step 4 — Render + measure loop (HARD GATE)

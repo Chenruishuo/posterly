@@ -13,6 +13,11 @@
     3. Replace TODO content placeholders (search for "TODO").
     4. Run `python tools/poster_check.py measure poster.html` to align columns.
     5. Run `python tools/render_preview.py poster.html` to produce the PDF.
+  NOTE: as shipped, this scaffold passes `preflight` (structure) but is
+    EXPECTED to FAIL `measure`/`polish` -- figures are commented out and copy
+    is TODO stubs, so columns only fill the top of the canvas. Those two gates
+    judge a FILLED poster; balance them once you've added real content. See
+    templates/README.md ("Scaffolds, not finished posters").
   MEASURE ROLES: every layout-critical element carries `data-measure-role`.
   Generic measurement scripts depend on these — do not remove.
   ============================================================
