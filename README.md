@@ -8,6 +8,7 @@
 
 **This is a Claude Code skill, not a hosted service.** Clone, install, and either invoke `/posterly` from Claude Code or call the CLIs directly. There is no cloud, no signup, no telemetry.
 
+> [!NOTE]
 > 🚧 **Codex version in the works.** A Codex-compatible port is on the way. If posterly is useful to you, a ⭐ and your suggestions / issues are always welcome!
 
 A poster in `posterly` is **one HTML file** styled for an exact print canvas. The skill ships three neutral templates, four sanity-check CLIs, and a render pipeline that produces a PDF at exact ICML / NeurIPS / ICLR / CVPR dimensions. Inside Claude Code, `/posterly` walks you through venue lookup → template pick → content fill → render — see `SKILL.md` for the full workflow Claude Code follows.
@@ -38,6 +39,7 @@ Three real conference posters — built with `posterly` from **publicly-availabl
   NeurIPS 2024 · Xu, Zhang, Chen, Sun, Yu (Nanjing University · Polixir.ai) · <a href="https://arxiv.org/abs/2411.00610">arXiv</a> · <a href="https://github.com/LAMDA-RL/OPT-AIL">code</a> · <a href="examples/optail_neurips2024/poster.html">source</a> · <a href="docs/showcase/optail_neurips2024.pdf">PDF</a>
 </p>
 
+> [!TIP]
 > A **theory-heavy** paper — loss functions, optimism-regularized Bellman error, eluder coefficients, complexity tables, theorem boxes — all typeset via MathJax and clearing every gate. Drafted end-to-end (paper → print-ready PDF) in **1 h 11 m**.
 
 The ICML posters are four-column landscape; OPT-AIL is three-column. All carry the `data-measure-role` markup the gates read and double as the largest end-to-end fixtures in the repo: copy one, swap in your content, and re-render with `tools/render_preview.py examples/<name>/poster.html`.
