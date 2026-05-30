@@ -18,11 +18,11 @@ Two real **ICML 2026** posters (60 × 36 in landscape), built with `posterly` an
 
 [![PowerFlow — ICML 2026 poster](docs/showcase/powerflow_icml2026.jpg)](docs/showcase/powerflow_icml2026.pdf)
 
-**PowerFlow: Unlocking the Dual Nature of LLMs via Principled Distribution Matching** · Chen, Chen, Li, Huang (IIIS, Tsinghua) · [source](examples/powerflow_icml2026/poster.html) · [PDF](docs/showcase/powerflow_icml2026.pdf) · [code](https://github.com/Chenruishuo/PowerFlow)
+**PowerFlow: Unlocking the Dual Nature of LLMs via Principled Distribution Matching** · Chen, Chen, Li, Huang (IIIS, Tsinghua) · [arXiv](https://arxiv.org/abs/2603.18363) · [code](https://github.com/Chenruishuo/PowerFlow) · [source](examples/powerflow_icml2026/poster.html) · [PDF](docs/showcase/powerflow_icml2026.pdf)
 
 [![TD-GFN — ICML 2026 poster](docs/showcase/tdgfn_icml2026.jpg)](docs/showcase/tdgfn_icml2026.pdf)
 
-**Beyond the Proxy: Trajectory-Distilled Guidance for Offline GFlowNet Training (TD-GFN)** · Chen, Wang, Li, Huang (IIIS, Tsinghua) · [source](examples/tdgfn_icml2026/poster.html) · [PDF](docs/showcase/tdgfn_icml2026.pdf) · [code](https://github.com/Chenruishuo/TD-GFN)
+**Beyond the Proxy: Trajectory-Distilled Guidance for Offline GFlowNet Training (TD-GFN)** · Chen, Wang, Hu, Li, Huang (IIIS, Tsinghua) · [arXiv](https://arxiv.org/abs/2505.20110) · [code](https://github.com/Chenruishuo/TD-GFN) · [source](examples/tdgfn_icml2026/poster.html) · [PDF](docs/showcase/tdgfn_icml2026.pdf)
 
 Both are full four-column ICML layouts (header → framework banner → 4 columns → takeaways strip → footer), wired with the `data-measure-role` markup the gates read. They double as the largest end-to-end fixtures in the repo: copy one, swap in your content, and re-render. Reproduce locally with `tools/render_preview.py examples/<name>/poster.html`.
 
