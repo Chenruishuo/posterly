@@ -165,6 +165,22 @@ def cmd_preflight(args: argparse.Namespace) -> int:
     problems: list[str] = []
     warnings: list[str] = []
 
+    # 0) Unclosed <style>/<script>/<!-- --> . strip_for_lint needs the
+    #    closer to remove the block, so an unclosed opener SURVIVES in
+    #    `body`. A real browser swallows the rest of the document into that
+    #    construct -- which makes every post-strip check below (LaTeX scan,
+    #    raw-'<' scan, role-presence) untrustworthy: the linter "sees" a
+    #    poster div the browser will never render. Fail loudly instead of
+    #    silently PASSing on markup we can't actually see past.
+    m_open = re.search(r"<!--|<style\b|<script\b", body, re.IGNORECASE)
+    if m_open:
+        ln = body[: m_open.start()].count("\n") + 1
+        problems.append(
+            f"L{ln}: unclosed '{ascii_safe(m_open.group(0))}' block -- add "
+            "the matching '-->', '</style>', or '</script>'. The browser "
+            "would otherwise swallow the rest of the poster into it."
+        )
+
     # 1) LaTeX residue.
     for pat, desc in LATEX_PATTERNS:
         for m in re.finditer(pat, body):

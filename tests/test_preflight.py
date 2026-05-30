@@ -349,3 +349,62 @@ def test_uppercase_scheme_treated_as_remote_not_missing(
     assert rc == 0, "uppercase-scheme remote/data must not hard-fail"
     assert "missing local image" not in cap.err
     assert "remote image" in cap.out  # the HTTPS one still warned
+
+
+# ---- unclosed <style>/<script>/<!-- guard ----------------------------------
+
+def test_unclosed_script_fails_loudly(tmp_path, capsys) -> None:
+    """A review follow-up: strip_for_lint needs the closer to remove a
+    block, so an unclosed <script> survives in the stripped body. A real
+    browser would swallow the rest of the document into it -- including
+    the poster div the linter would then wrongly 'see'. Fail loudly
+    instead of silently passing on markup we can't see past."""
+    import argparse as _ap
+    p = tmp_path / "p.html"
+    p.write_text(
+        '<html><head><title>t</title>\n'
+        '<script>console.log("oops, never closed")\n'   # no </script>
+        '</head><body>\n'
+        '<div data-measure-role="poster"><h1>x</h1></div>\n'
+        '</body></html>\n',
+        encoding="utf-8",
+    )
+    rc = preflight.cmd_preflight(_ap.Namespace(html=str(p)))
+    assert rc == 1
+    assert "unclosed" in capsys.readouterr().err
+
+
+def test_unclosed_comment_fails_loudly(tmp_path, capsys) -> None:
+    """An unclosed <!-- comment likewise survives the strip and would
+    eat the poster body in a browser -- preflight must hard-fail."""
+    import argparse as _ap
+    p = tmp_path / "p.html"
+    p.write_text(
+        '<html><body>\n'
+        '<!-- a note that forgets to close\n'            # no -->
+        '<div data-measure-role="poster"><h1>x</h1></div>\n'
+        '</body></html>\n',
+        encoding="utf-8",
+    )
+    rc = preflight.cmd_preflight(_ap.Namespace(html=str(p)))
+    assert rc == 1
+    assert "unclosed" in capsys.readouterr().err
+
+
+def test_closed_script_and_comment_do_not_false_trigger(tmp_path) -> None:
+    """Well-formed (closed) <script>/<style>/<!-- --> must NOT trip the
+    unclosed guard -- including a comment that itself mentions <script>."""
+    import argparse as _ap
+    p = tmp_path / "p.html"
+    p.write_text(
+        '<html><head><title>t</title>\n'
+        '<!-- to go offline change the <script> src to a local file -->\n'
+        '<script>console.log("ok")</script>\n'
+        '<style>.x{color:red}</style>\n'
+        '</head><body>\n'
+        '<div data-measure-role="poster"><h1>x</h1></div>\n'
+        '</body></html>\n',
+        encoding="utf-8",
+    )
+    rc = preflight.cmd_preflight(_ap.Namespace(html=str(p)))
+    assert rc == 0

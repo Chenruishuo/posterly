@@ -165,17 +165,64 @@ _POLISH_JS = r"""
       if (cr.height <= 0) return;
       const padB = parseFloat(cs.paddingBottom) || 0;
       const padT = parseFloat(cs.paddingTop) || 0;
-      // bottom-most leaf descendant that actually renders
+      const borderB = parseFloat(cs.borderBottomWidth) || 0;
+
+      // Is `node` inside an absolutely/fixed-positioned subtree within the
+      // card? A corner badge / QR / watermark sits at the card bottom but
+      // is NOT the normal-flow content bottom -- counting it would mask a
+      // top-packed void above it (false negative). Walk parents to card.
+      const inAbs = (node) => {
+        let el = node.nodeType === 1 ? node : node.parentElement;
+        while (el && el !== card) {
+          const pos = window.getComputedStyle(el).position;
+          if (pos === 'absolute' || pos === 'fixed') return true;
+          el = el.parentElement;
+        }
+        return false;
+      };
+
+      // Bottom-most rendered CONTENT = max over three sources (each kept
+      // via `maxB`, so adding a source can only RAISE the content bottom,
+      // never hide a void):
+      //   (1) TEXT, via Range -- a plain-text tail that wraps onto a line
+      //       BELOW an inline <span>/<b>/<code> is invisible to an element
+      //       scan (its parent <p> has element children so it's skipped,
+      //       and the inline leaf sits on an earlier line) -> undershoot.
+      //   (2) REPLACED media (img/svg/canvas/...) -- even when it has child
+      //       nodes (e.g. <svg> wrapping <path>s) and so isn't a leaf.
+      //   (3) LEAF element boxes (no element children) -- re-covers a pure-
+      //       CSS diagram node (an empty <div> bar/box) that carries no
+      //       text and isn't replaced, which (1)+(2) alone would miss.
+      // Non-leaf, non-replaced CONTAINERS are skipped: a stretched wrapper
+      // box would over-measure to the card bottom and mask the void.
       let maxB = cr.top + padT;
+      const bump = (r) => {
+        if (r && r.height > 0 && r.bottom > maxB) maxB = r.bottom;
+      };
+      const walker = document.createTreeWalker(card, NodeFilter.SHOW_TEXT);
+      for (let tn = walker.nextNode(); tn; tn = walker.nextNode()) {
+        if (!tn.nodeValue || !tn.nodeValue.trim()) continue;
+        if (inAbs(tn)) continue;
+        const rng = document.createRange();
+        rng.selectNodeContents(tn);
+        const rects = rng.getClientRects();
+        for (let i = 0; i < rects.length; i++) bump(rects[i]);
+      }
+      const REPLACED = /^(IMG|SVG|CANVAS|VIDEO|IFRAME|HR|OBJECT|EMBED)$/;
       card.querySelectorAll('*').forEach(el => {
-        if (el.children.length) return;            // leaves only
-        const r = el.getBoundingClientRect();
-        if (r.height > 0 && r.bottom > maxB) maxB = r.bottom;
+        if (inAbs(el)) return;
+        // tagName is upper-case for HTML, but case-preserved (lower) for
+        // SVG elements -- normalise before the replaced-tag test.
+        if (!REPLACED.test(el.tagName.toUpperCase()) && el.children.length) {
+          return;  // a non-replaced container: skip (only leaves + media)
+        }
+        bump(el.getBoundingClientRect());
       });
+
       cards.push({
         card_index: ci,
         card_h: cr.height,
-        trailing_px: (cr.bottom - padB) - maxB,
+        trailing_px: (cr.bottom - padB - borderB) - maxB,
       });
     });
 
