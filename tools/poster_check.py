@@ -117,6 +117,14 @@ def build_parser() -> argparse.ArgumentParser:
              "layout, and stray body margin in print.",
     )
     pm.add_argument(
+        "--max-clip-px", type=float, default=2.0,
+        help="hard gate: a card/column/hero whose content is clipped by "
+             "overflow:hidden|clip|scroll|auto by MORE than this many px "
+             "(scrollHeight-clientHeight) FAILS -- clipped content is "
+             "silently lost in print while the box still looks aligned "
+             "(default 2.0; sub-pixel rounding tolerated).",
+    )
+    pm.add_argument(
         "--json-out", default=None,
         help="dump raw measurement to JSON",
     )

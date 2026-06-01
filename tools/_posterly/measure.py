@@ -36,12 +36,22 @@ _MEASURE_JS = r"""
   const nodes = Array.from(document.querySelectorAll('[data-measure-role]'));
   return nodes.map(n => {
     const r = n.getBoundingClientRect();
+    const cs = window.getComputedStyle(n);
     return {
       role: n.getAttribute('data-measure-role') || '',
       tag:  n.tagName.toLowerCase(),
       cls:  n.className || '',
       x: r.left, y: r.top, w: r.width, h: r.height,
       bottom: r.bottom, right: r.right,
+      // For the content-clipping gate: the computed overflow plus the
+      // scroll-vs-client deltas. `overflow != visible` decouples the
+      // border-box (read above) from the real content extent; a positive
+      // (scroll - client) is content sitting past the box edge that print
+      // silently clips. Integer-rounded by the browser, so a small
+      // tolerance on the Python side absorbs sub-pixel noise.
+      overflow_x: cs.overflowX, overflow_y: cs.overflowY,
+      scroll_h: n.scrollHeight, client_h: n.clientHeight,
+      scroll_w: n.scrollWidth,  client_w: n.clientWidth,
     };
   });
 }
@@ -196,6 +206,65 @@ def cmd_measure(args: argparse.Namespace) -> int:
             "`position: absolute` offsets.\n"
             "Also check: put `@media print` AFTER the screen "
             "`.poster` rule."
+        )
+        return 1
+
+    # Content-clipping gate (HARD). Everything below reads each element's
+    # border-box edge -- but `overflow` other than `visible` DECOUPLES that
+    # box from the real content extent: anything past the edge is clipped
+    # in print and silently lost, while the box (and so every spread/gap
+    # number below) still looks clean. The classic trap is a flex
+    # card/column/hero: when its overflow is hidden/scroll/auto its
+    # `min-height: auto` is floored toward 0, so flexbox shrinks the
+    # over-full item back inside its track and clips the overflow -- turning
+    # a too-full poster into a false PASS. (A fixed-/max-height box with any
+    # non-visible overflow clips the same way, without the flex step.) Catch
+    # it directly by comparing scroll-size to client-size on the alignment
+    # containers -- the exact roles whose bottoms feed spread/gap below.
+    #
+    # Scope is deliberately those role containers (card, column, hero), NOT
+    # a full-descendant sweep: the latter trips over MathJax's off-screen
+    # `<mjx-assistive-mml>` a11y nodes (overflow:hidden, a few px of
+    # intrinsic overflow) and would false-fail every math poster. Known
+    # limitation: an author-built inner panel that clips via its own
+    # `max-height; overflow:hidden` (e.g. a scroll-box around a wide table)
+    # is NOT scanned -- only the role container itself. `overflow: visible`
+    # is never flagged: that content spills VISIBLY and the existing
+    # gap/spread gate already sees the displaced box -- only the *hidden*
+    # clip is invisible to it.
+    clip_overflows = {"hidden", "clip", "scroll", "auto"}
+    clip_problems: list[str] = []
+    for el in data:
+        if el["role"] not in ("card", "column", "hero"):
+            continue
+        oy = str(el.get("overflow_y") or "").lower()
+        ox = str(el.get("overflow_x") or "").lower()
+        dy = el.get("scroll_h", 0) - el.get("client_h", 0)
+        dx = el.get("scroll_w", 0) - el.get("client_w", 0)
+        axes: list[str] = []
+        if oy in clip_overflows and dy > args.max_clip_px:
+            axes.append(f"{dy:.0f}px below the box (overflow-y: {oy})")
+        if ox in clip_overflows and dx > args.max_clip_px:
+            axes.append(f"{dx:.0f}px past the right (overflow-x: {ox})")
+        if axes:
+            cls = el.get("cls", "")
+            ident = f"{el['role']} <{el['tag']}" + (
+                f" class=\"{cls}\"" if cls else "") + ">"
+            clip_problems.append(f"{ident}: " + ", ".join(axes))
+    if clip_problems:
+        _eprint(
+            "FAIL: content overflows its box and is CLIPPED by "
+            "overflow:hidden/clip/scroll/auto -- print drops it silently "
+            "while the box still looks aligned:\n"
+            + "\n".join("  " + p for p in clip_problems)
+            + f"\n(tolerance {args.max_clip_px:.0f} px). Fix: remove the "
+            "`overflow` rule so the content overflows VISIBLY -- measure "
+            "then reports a negative gap pointing at the real 'too much "
+            "content' problem -- then cut content, shrink fonts, or enlarge "
+            "the canvas. Do NOT use overflow:hidden to make a too-full "
+            "column 'pass': a flex item with overflow other than visible "
+            "has min-height auto -> 0, so flexbox shrinks it and clips the "
+            "overflow."
         )
         return 1
 
