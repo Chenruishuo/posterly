@@ -46,6 +46,20 @@ The ICML posters are four-column landscape; OPT-AIL is three-column. All carry t
 
 ---
 
+## Also built with Codex — community
+
+Proof the Codex path holds up outside our own tests: a community contributor drove `posterly` end-to-end with **Codex (GPT-5.5)** — no Claude in the loop — to turn their ICML 2026 paper into this poster.
+
+<p align="center">
+  <a href="docs/community/cflower_icml2026.pdf"><img src="docs/community/cflower_icml2026.jpg" alt="CFlower — ICML 2026 poster, built with Codex" width="80%"></a><br>
+  <b>Improving LLM-Based Recommenders with Conservative Generative Flow Networks (CFlower)</b><br>
+  ICML 2026 · Yu, Niu, Zhu, Zhang, Wang, Wang (USTC) · <a href="https://github.com/yuxuan9982/CFlower">code</a> · <a href="docs/community/cflower_icml2026.pdf">PDF</a>
+</p>
+
+Built one with Codex (or any other agent)? Open a PR or an issue — we'd love to feature it here.
+
+---
+
 ## Why HTML + CSS, not LaTeX?
 
 - **Tweak loop in seconds, not minutes.** Edit CSS, refresh — vs. LaTeX `recompile + scan log + re-open PDF`.
