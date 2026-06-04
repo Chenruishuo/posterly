@@ -125,6 +125,24 @@ def build_parser() -> argparse.ArgumentParser:
              "(default 2.0; sub-pixel rounding tolerated).",
     )
     pm.add_argument(
+        "--max-intercard-gap", type=float,
+        default=_measure.DEFAULT_MAX_INTERCARD_GAP,
+        help="hard gate: max whitespace between consecutive stacked "
+             "cards in a column (default 50 px, same ceiling as the "
+             "footer gap). Catches `justify-content: space-between` "
+             "faking bottom alignment on an under-filled column -- "
+             "spread reads ~0 while a void sits mid-column.",
+    )
+    pm.add_argument(
+        "--min-intercard-gap", type=float,
+        default=_measure.DEFAULT_MIN_INTERCARD_GAP,
+        help="hard gate: min whitespace between consecutive stacked "
+             "cards (default 12 px). Tighter gaps bury the card's drop "
+             "shadow (templates ship `0 2u 6u`) under the next card, "
+             "fusing the stack into one slab. Set 0 to disable for "
+             "shadowless themes.",
+    )
+    pm.add_argument(
         "--json-out", default=None,
         help="dump raw measurement to JSON",
     )

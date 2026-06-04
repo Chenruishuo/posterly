@@ -31,6 +31,42 @@ def _eprint(*args: Any, **kw: Any) -> None:
     print(*args, file=sys.stderr, **kw)
 
 
+#: Hard ceiling for the whitespace between consecutive stacked cards in a
+#: column. Same ceiling as the footer gap: anything wider reads as a void
+#: in print. Shared by the CLI default in poster_check.py and the getattr
+#: fallback in cmd_measure.
+DEFAULT_MAX_INTERCARD_GAP = 50.0
+
+#: Hard floor for the same gap. The shipped card shadow is
+#: ``0 2u 6u`` (offset ~7.6 px + blur ~22.7 px at print scale, u = 1mm);
+#: a gap under ~12 px buries the shadow core under the next card, so the
+#: stack reads as one fused slab instead of separate cards. Floor sits
+#: well under the shipped 6u (~22.7 px) design gap; tune (or 0 to
+#: disable) for shadowless custom themes.
+DEFAULT_MIN_INTERCARD_GAP = 12.0
+
+
+def intercard_gaps(cards: list[dict]) -> list[float]:
+    """Vertical gaps between consecutive *rows* of cards in one column.
+
+    Cards are grouped into rows by vertical-overlap chaining (sorted by
+    top; a card whose top sits above the current row's bottom joins that
+    row), so two half-width cards sitting side by side count as ONE row
+    and don't produce a bogus negative/huge "gap". Returns one gap per
+    consecutive row pair. Pure function so the grouping rule is
+    unit-testable without Chromium.
+    """
+    if len(cards) < 2:
+        return []
+    rows: list[list[float]] = []  # [top, bottom] per row
+    for c in sorted(cards, key=lambda c: c["y"]):
+        if rows and c["y"] < rows[-1][1]:
+            rows[-1][1] = max(rows[-1][1], c["bottom"])
+        else:
+            rows.append([c["y"], c["bottom"]])
+    return [rows[i][0] - rows[i - 1][1] for i in range(1, len(rows))]
+
+
 _MEASURE_JS = r"""
 () => {
   const nodes = Array.from(document.querySelectorAll('[data-measure-role]'));
@@ -338,6 +374,7 @@ def cmd_measure(args: argparse.Namespace) -> int:
             continue
         for ci, col in columns.items():
             if x_overlaps(el, col["box"]):
+                col.setdefault("cards", []).append(el)
                 prev = col["last_card_bottom"]
                 if prev is None or el["bottom"] > prev:
                     col["last_card_bottom"] = el["bottom"]
@@ -354,6 +391,46 @@ def cmd_measure(args: argparse.Namespace) -> int:
             "Add cards or pass --allow-empty-column."
         )
         return 1
+
+    # Intra-column whitespace gate (HARD). The spread/gap gates only read
+    # the LAST card's bottom -- `justify-content: space-between` (or a big
+    # margin) pins the first card to the top and the last to the bottom,
+    # so an under-filled column reads spread ~= 0 and a clean footer gap
+    # while a void sits mid-column, plainly visible in print. (Observed
+    # in the wild: 98-135 px voids against a 22.7 px design row-gap, with
+    # polish's relative-threshold warn silent.) Gate: every gap between
+    # consecutive stacked card rows must stay under --max-intercard-gap.
+    # The same band has a floor: a gap under --min-intercard-gap buries
+    # the card's drop shadow (`0 2u 6u` in the shipped templates) under
+    # the next card, fusing the stack into one slab.
+    max_icg = getattr(
+        args, "max_intercard_gap", DEFAULT_MAX_INTERCARD_GAP
+    )
+    min_icg = getattr(
+        args, "min_intercard_gap", DEFAULT_MIN_INTERCARD_GAP
+    )
+    icg_problems: list[str] = []
+    icg_tight: list[str] = []
+    icg_worst: tuple[str, float] | None = None
+    icg_tightest: tuple[str, float] | None = None
+    for ci, col in columns.items():
+        gaps_c = intercard_gaps(col.get("cards", []))
+        if not gaps_c:
+            continue
+        g = max(gaps_c)
+        g_lo = min(gaps_c)
+        if icg_worst is None or g > icg_worst[1]:
+            icg_worst = (f"col{ci}", g)
+        if icg_tightest is None or g_lo < icg_tightest[1]:
+            icg_tightest = (f"col{ci}", g_lo)
+        if g > max_icg:
+            icg_problems.append(
+                f"col{ci}: {g:.1f} px between stacked cards"
+            )
+        if g_lo < min_icg:
+            icg_tight.append(
+                f"col{ci}: {g_lo:.1f} px between stacked cards"
+            )
 
     bottoms: list[tuple[str, float]] = []
     for ci, col in columns.items():
@@ -407,6 +484,10 @@ def cmd_measure(args: argparse.Namespace) -> int:
     for name, b in bottoms:
         print(f"  {name:6s}  last-card-bottom = {b:8.2f} px")
     print(f"  spread = {spread:.2f} px   (target < {args.max_spread} px)")
+    if icg_worst is not None:
+        print(f"  intercard gap in [{icg_tightest[1]:.2f} ({icg_tightest[0]}),"
+              f" {icg_worst[1]:.2f} ({icg_worst[0]})] px"
+              f"   (target [{min_icg}, {max_icg}])")
     if next_strip is not None:
         lo, hi = gap_range  # type: ignore[misc]
         print(f"  gap -> {next_name} in [{lo:.2f}, {hi:.2f}] px"
@@ -417,6 +498,33 @@ def cmd_measure(args: argparse.Namespace) -> int:
     ok = True
     if spread >= args.max_spread:
         _eprint(f"FAIL: spread {spread:.2f} >= max {args.max_spread}")
+        ok = False
+    if icg_problems:
+        _eprint(
+            "FAIL: intra-column whitespace void (max intercard gap "
+            f"{max_icg:.0f} px):\n"
+            + "\n".join("  " + p for p in icg_problems)
+            + "\nColumns must be filled by CONTENT, not stretched "
+            "whitespace. Do NOT use `justify-content: space-between` / "
+            "`space-around` (or oversized margins) to fake bottom "
+            "alignment -- it pins the last card to the bottom so spread "
+            "reads ~0 while a void sits mid-column. Fix: grow figures or "
+            "text, rebalance cards across columns, or use a fixed "
+            "row-gap, then re-measure."
+        )
+        ok = False
+    if icg_tight:
+        _eprint(
+            "FAIL: stacked cards too tight (min intercard gap "
+            f"{min_icg:.0f} px):\n"
+            + "\n".join("  " + p for p in icg_tight)
+            + "\nA gap this small buries the card's drop shadow under "
+            "the next card, fusing the stack into one slab. Fix: restore "
+            "the column's design row-gap (shipped templates use 6u "
+            "~= 22.7 px) and absorb the height elsewhere (trim content "
+            "or shrink a figure); for a deliberately shadowless theme, "
+            "lower --min-intercard-gap."
+        )
         ok = False
     if next_strip is not None:
         lo, hi = gap_range  # type: ignore[misc]
