@@ -235,3 +235,27 @@ def test_body_less_layout_column_under_poster_passes(tmp_path) -> None:
     )
     rc, _out, err = _run(html, tmp_path)
     assert rc == 0, f"expected PASS on a body-less layout, got: {err!r}"
+
+
+def test_footer_strip_inside_body_passes(tmp_path) -> None:
+    """A hand-rolled layout may nest the strip/footer inside ``body``
+    instead of as a direct poster grid row; measure reads the strip's
+    rendered position regardless. Only the *document root* escape (the
+    precipitating stray-``</div>`` bug) must keep failing -- pinned by
+    ``test_footer_strip_outside_poster_fails`` above."""
+    html = (
+        '<!DOCTYPE html><html><head><title>x</title></head><body>\n'
+        '<div data-measure-role="poster">\n'
+        '  <header data-measure-role="header"><h1>t</h1></header>\n'
+        '  <div data-measure-role="body">\n'
+        '    <div data-measure-role="column">\n'
+        '      <div data-measure-role="card">c</div>\n'
+        '    </div>\n'
+        '    <section data-measure-role="footer-strip">strip</section>\n'
+        '    <div data-measure-role="footer">f</div>\n'
+        '  </div>\n'
+        '</div>\n'
+        '</body></html>\n'
+    )
+    rc, _out, err = _run(html, tmp_path)
+    assert rc == 0, f"expected PASS with strip/footer inside body, got: {err!r}"

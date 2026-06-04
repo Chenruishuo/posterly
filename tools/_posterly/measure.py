@@ -74,7 +74,10 @@ def compute_adjustment_hints(
 
       * ``"keep"`` -- |delta| <= ``keep_tol_px``; not worth touching
         because a single wrapped line of body text is ~25 px and edits
-        below that don't reliably change the column bottom.
+        below that don't reliably change the column bottom. Callers
+        should pass the gate's ``--max-spread`` here so the keep band
+        tracks the gate: a column the spread check would tolerate is
+        never flagged for an edit.
       * ``"grow ~N px"`` -- column needs to be taller (delta > 0).
       * ``"trim ~N px"`` -- column needs to be shorter (delta < 0).
 
@@ -449,6 +452,7 @@ def cmd_measure(args: argparse.Namespace) -> int:
             next_strip["y"],
             min_gap=args.min_gap,
             max_gap=args.max_gap,
+            keep_tol_px=args.max_spread,
         )
 
         print()
@@ -460,6 +464,9 @@ def cmd_measure(args: argparse.Namespace) -> int:
         )
         for name, b, hint in adjustments:
             print(f"  {name:6s}  {b:8.2f} px -> {hint}")
+        # The px magnitudes below are heuristics at typical print scale
+        # (~3000 px canvas) and don't scale with the canvas -- they are
+        # approximate by design; the per-column deltas above are exact.
         print(
             "  Tip: a body paragraph adds/removes ~25 px per wrapped line,"
             " a callout ~60-90 px,"

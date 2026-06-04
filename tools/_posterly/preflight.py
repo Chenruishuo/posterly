@@ -59,8 +59,14 @@ ROLE_PARENTS: dict[str, tuple[str, ...]] = {
     "header":       ("poster",),
     "banner":       ("poster",),
     "body":         ("poster",),
-    "footer-strip": ("poster",),
-    "footer":       ("poster",),
+    # ``body`` is allowed for footer-strip/footer for the same reason
+    # ``poster`` is allowed for column/hero below: a hand-rolled layout
+    # may nest the strip inside the body container, and measure reads
+    # the strip's rendered position regardless of where it sits. The
+    # precipitating bug (strip escaping to the *document root* after a
+    # stray ``</div>``) is still caught -- root has no role.
+    "footer-strip": ("poster", "body"),
+    "footer":       ("poster", "body"),
     # ``poster`` is allowed for column/hero because ``body`` was never
     # required by any gate -- a poster hanging its columns directly off
     # the root is valid today and measures fine.
