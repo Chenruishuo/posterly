@@ -160,7 +160,7 @@ def build_parser() -> argparse.ArgumentParser:
     ppl = sub.add_parser(
         "polish",
         help="visual-polish warnings (figure size, orphans, "
-             "space-between, flex/<br>)",
+             "space-between, flex/<br>, header logos)",
     )
     ppl.add_argument("html", help="path to poster.html")
     ppl.add_argument(
@@ -209,6 +209,31 @@ def build_parser() -> argparse.ArgumentParser:
              "fraction of its height blank below the last line "
              "(default 0.10); catches a flex-stretched card padded "
              "with whitespace to fake a full page",
+    )
+    ppl.add_argument(
+        "--logo-max-width-ratio", type=float,
+        default=_polish.DEFAULT_LOGO_MAX_WIDTH_RATIO,
+        help="warn (LOGO/WIDE) if a header logo renders wider than this "
+             "fraction of the header width (default %(default)s)",
+    )
+    ppl.add_argument(
+        "--logo-qr-tol", type=float,
+        default=_polish.DEFAULT_LOGO_QR_TOL,
+        help="warn (LOGO/QR-MISMATCH) if a non-wide header logo's height "
+             "differs from the QR's by more than this fraction; logo-wide "
+             "slots use a band instead (default %(default)s)",
+    )
+    ppl.add_argument(
+        "--rightblock-max-ratio", type=float,
+        default=_polish.DEFAULT_RIGHTBLOCK_MAX_RATIO,
+        help="warn (HEADER/TITLE-SQUEEZED) if the header's right block "
+             "exceeds this fraction of header width (default %(default)s)",
+    )
+    ppl.add_argument(
+        "--title-min-ratio", type=float,
+        default=_polish.DEFAULT_TITLE_MIN_RATIO,
+        help="warn (HEADER/TITLE-SQUEEZED) if the title block falls below "
+             "this fraction of header width (default %(default)s)",
     )
     ppl.add_argument(
         "--strict", action="store_true",

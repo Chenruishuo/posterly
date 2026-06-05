@@ -64,7 +64,9 @@ def _args(html, **over):
         html=str(html), canvas=None, settle_ms=500,
         mathjax_timeout_ms=15000, wide_min_ratio=0.65,
         tall_max_ratio=0.70, tall_min_ratio=0.36, square_min_ratio=0.55,
-        max_space_between_fill=0.05, max_card_trailing=0.10, strict=False,
+        max_space_between_fill=0.05, max_card_trailing=0.10,
+        logo_max_width_ratio=0.22, logo_qr_tol=0.15,
+        rightblock_max_ratio=0.32, title_min_ratio=0.45, strict=False,
     )
     base.update(over)
     return argparse.Namespace(**base)
@@ -361,4 +363,194 @@ def test_tall_min_ratio_missing_falls_back_to_default(
     rc = _polish.cmd_polish(args)
     combined = "".join(capsys.readouterr())
     assert "FIG/TALL-SMALL" not in combined  # 0.38 > 0.36 fallback
+    assert rc == 0
+
+
+# ---------------------------------------------------------------------------
+# Gate E: header logos / QR / title squeeze
+# ---------------------------------------------------------------------------
+
+def _logo(**over):
+    """Canned _POLISH_JS logo entry; defaults to a healthy default-class
+    logo (85px tall, matching the 85px QR, well under the width limit)."""
+    base = dict(
+        src="images/lab-logo.png", rendered_w=170.0, rendered_h=85.0,
+        natural_w=400.0, natural_h=200.0, slot_classes="logo-slot",
+        venue=False, has_chip=False,
+    )
+    base.update(over)
+    return base
+
+
+def _logo_data(logos, qrs=None, header_w=2000.0, header_blocks=None):
+    return {
+        "figures": [], "orphans": [], "cols": [],
+        "logos": logos,
+        "qrs": [{"rendered_h": 85.0}] if qrs is None else qrs,
+        "header_w": header_w,
+        "headerBlocks": header_blocks or [],
+    }
+
+
+def test_logo_broken_raster_flagged(tmp_path, monkeypatch, capsys) -> None:
+    """A 404'd header logo used to print blank SILENTLY -- the FIG/BROKEN
+    gate only scans card/hero images. LOGO/BROKEN must surface it."""
+    data = _logo_data([_logo(natural_w=0.0, natural_h=0.0)])
+    combined, rc = _run(monkeypatch, tmp_path, capsys, data)
+    assert "LOGO/BROKEN" in combined
+    assert rc == 0
+
+
+def test_logo_svg_zero_natural_not_broken(tmp_path, monkeypatch, capsys) -> None:
+    """A viewBox-only SVG logo reports zero natural size but renders fine
+    -- same exemption as FIG/BROKEN."""
+    data = _logo_data([_logo(src="images/seal.svg",
+                             natural_w=0.0, natural_h=0.0)])
+    combined, rc = _run(monkeypatch, tmp_path, capsys, data)
+    assert "LOGO/BROKEN" not in combined
+    assert rc == 0
+
+
+def test_venue_badge_broken_flagged_but_qr_exempt(
+    tmp_path, monkeypatch, capsys
+) -> None:
+    """A custom venue logo (inside .venue-badge) gets the broken-image
+    check, but NOT the QR height match -- it sits left of the title at
+    its own scale."""
+    broken = _logo(src="images/icml.png", venue=True,
+                   natural_w=0.0, natural_h=0.0)
+    combined, _ = _run(monkeypatch, tmp_path, capsys, _logo_data([broken]))
+    assert "LOGO/BROKEN" in combined
+    short = _logo(src="images/icml.png", venue=True, rendered_h=40.0)  # vs 85 QR
+    combined2, rc = _run(monkeypatch, tmp_path, capsys, _logo_data([short]))
+    assert "LOGO/QR-MISMATCH" not in combined2
+    assert rc == 0
+
+
+def test_logo_wide_warns_and_under_threshold_silent(
+    tmp_path, monkeypatch, capsys
+) -> None:
+    """A logo at 30% of header width crowds the title (the auto|1fr|auto
+    header grid steals that width from the title track) -> LOGO/WIDE;
+    the same logo at 15% is silent."""
+    wide = _logo(rendered_w=300.0)
+    combined, _ = _run(
+        monkeypatch, tmp_path, capsys, _logo_data([wide], header_w=1000.0))
+    assert "LOGO/WIDE" in combined
+    combined2, rc = _run(
+        monkeypatch, tmp_path, capsys,
+        _logo_data([_logo(rendered_w=150.0)], header_w=1000.0))
+    assert "LOGO/WIDE" not in combined2
+    assert rc == 0
+
+
+def test_logo_qr_mismatch_warns_and_match_silent(
+    tmp_path, monkeypatch, capsys
+) -> None:
+    """A default-class logo 41% taller than the QR breaks the level header
+    strip -> LOGO/QR-MISMATCH; 90 vs 85 (5.9%, the logo-square preset) is
+    within the 15% tolerance and silent."""
+    combined, _ = _run(
+        monkeypatch, tmp_path, capsys,
+        _logo_data([_logo(rendered_h=120.0)]))
+    assert "LOGO/QR-MISMATCH" in combined
+    combined2, rc = _run(
+        monkeypatch, tmp_path, capsys,
+        _logo_data([_logo(rendered_h=90.0)]))
+    assert "LOGO/QR-MISMATCH" not in combined2
+    assert rc == 0
+
+
+def test_logo_wide_class_uses_band_not_strict_match(
+    tmp_path, monkeypatch, capsys
+) -> None:
+    """A .logo-wide wordmark is INTENTIONALLY shorter than the QR: the
+    preset 58/85 = 68% sits inside the [55%, 85%] band -> silent (a strict
+    15% match would fight the size class). 30/85 = 35% is below the band
+    -> warns."""
+    in_band = _logo(slot_classes="logo-slot logo-wide", rendered_h=58.0)
+    combined, _ = _run(monkeypatch, tmp_path, capsys, _logo_data([in_band]))
+    assert "LOGO/QR-MISMATCH" not in combined
+    too_thin = _logo(slot_classes="logo-slot logo-wide", rendered_h=30.0)
+    combined2, rc = _run(
+        monkeypatch, tmp_path, capsys, _logo_data([too_thin]))
+    assert "LOGO/QR-MISMATCH" in combined2
+    assert rc == 0
+
+
+def test_no_qr_skips_height_match(tmp_path, monkeypatch, capsys) -> None:
+    """No QR on the poster -> nothing to match against; the height gate
+    must stay silent (and not divide by zero)."""
+    data = _logo_data([_logo(rendered_h=200.0)], qrs=[])
+    combined, rc = _run(monkeypatch, tmp_path, capsys, data)
+    assert "LOGO/QR-MISMATCH" not in combined
+    assert rc == 0
+
+
+def test_title_squeezed_both_branches(tmp_path, monkeypatch, capsys) -> None:
+    """The aggregate gate fires on EITHER signal: a right block over 32%
+    of header width, or a title block under the 45% floor. A healthy
+    layout (right 20%, title 60%) is silent."""
+    fat_right = [{"cls": "right-block", "kind": "right", "w": 400.0}]
+    combined, _ = _run(
+        monkeypatch, tmp_path, capsys,
+        _logo_data([], header_w=1000.0, header_blocks=fat_right))
+    assert "HEADER/TITLE-SQUEEZED" in combined
+    thin_title = [{"cls": "title-block", "kind": "title", "w": 400.0}]
+    combined2, _ = _run(
+        monkeypatch, tmp_path, capsys,
+        _logo_data([], header_w=1000.0, header_blocks=thin_title))
+    assert "HEADER/TITLE-SQUEEZED" in combined2
+    healthy = [
+        {"cls": "right-block", "kind": "right", "w": 200.0},
+        {"cls": "title-block", "kind": "title", "w": 600.0},
+    ]
+    combined3, rc = _run(
+        monkeypatch, tmp_path, capsys,
+        _logo_data([], header_w=1000.0, header_blocks=healthy))
+    assert "HEADER/TITLE-SQUEEZED" not in combined3
+    assert rc == 0
+
+
+def test_logo_unicode_src_stays_ascii(tmp_path, monkeypatch, capsys) -> None:
+    """A Unicode logo path must not leak raw non-ASCII into the warn."""
+    data = _logo_data([_logo(src="images/校徽.png",
+                             natural_w=0.0, natural_h=0.0)])
+    combined, rc = _run(monkeypatch, tmp_path, capsys, data)
+    combined.encode("ascii")  # raises if the path leaked through
+    assert "LOGO/BROKEN" in combined
+    assert rc == 0
+
+
+def test_strict_promotes_logo_warn(tmp_path, monkeypatch, capsys) -> None:
+    """--strict promotes a soft LOGO warn to a non-zero exit."""
+    data = _logo_data([_logo(rendered_w=300.0)], header_w=1000.0)
+    combined, rc = _run(monkeypatch, tmp_path, capsys, data, strict=True)
+    assert "LOGO/WIDE" in combined
+    assert rc == 1
+
+
+def test_logo_args_missing_fall_back_to_defaults(
+    tmp_path, monkeypatch, capsys
+) -> None:
+    """A programmatic caller whose Namespace predates the logo flags must
+    fall back to the module defaults (same single-source pattern as
+    tall_min_ratio): a 30%-wide logo still warns LOGO/WIDE."""
+    _install_fake_playwright(monkeypatch)
+    page = _Page(_logo_data([_logo(rendered_w=300.0)], header_w=1000.0))
+    monkeypatch.setattr(
+        _polish._render, "open_print_emulated_page",
+        lambda p, vp: (_Browser(), None, page),
+    )
+    monkeypatch.setattr(_polish._render, "settle_page", lambda *a, **k: object())
+    monkeypatch.setattr(
+        _polish._render, "hard_fail_on_settle_problems", lambda *a, **k: None
+    )
+    args = _args(_poster_html(tmp_path))
+    for k in ("logo_max_width_ratio", "logo_qr_tol",
+              "rightblock_max_ratio", "title_min_ratio"):
+        delattr(args, k)
+    rc = _polish.cmd_polish(args)
+    combined = "".join(capsys.readouterr())
+    assert "LOGO/WIDE" in combined
     assert rc == 0

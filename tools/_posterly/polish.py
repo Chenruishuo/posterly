@@ -46,6 +46,21 @@ ORPHAN_GLYPHS = "↑↓↔×÷±§¶†‡*°%"
 # with a pre-flag Namespace gets the SAME floor as the CLI.
 DEFAULT_TALL_MIN_RATIO = 0.36
 
+# Header-logo gates (Gate E). Same single-source pattern as above: the
+# CLI defaults in poster_check.py import these, and the getattr fallbacks
+# in cmd_polish reuse them. Calibrated against the template size classes
+# (60x36in landscape header ~1496u: logo-wide caps at 300u < 22%;
+# 24x36in portrait header ~586u: wide cap 125u < 22%) so a logo sized by
+# a recommended class never trips its own gate.
+DEFAULT_LOGO_MAX_WIDTH_RATIO = 0.22
+DEFAULT_LOGO_QR_TOL = 0.15
+# A logo-wide wordmark is INTENTIONALLY shorter than the QR for visual
+# balance (58/85 = 0.68), so it gets a height BAND relative to the QR
+# instead of the strict match above.
+LOGO_WIDE_QR_BAND = (0.55, 0.85)
+DEFAULT_RIGHTBLOCK_MAX_RATIO = 0.32
+DEFAULT_TITLE_MIN_RATIO = 0.45
+
 
 from .textutil import ascii_safe
 
@@ -260,7 +275,61 @@ _POLISH_JS = r"""
     }
   });
 
-  return {figures, orphans, cols, cards, flexbr};
+  // ---- 6) Header logos / QR / title squeeze ----
+  // Affiliation + venue logos live in the header, outside any card/hero,
+  // so blocks 1-5 never see them: a 404'd logo prints blank silently and
+  // an oversized wordmark silently squeezes the title (the header grid is
+  // `auto 1fr auto`, so the right block STEALS width from the 1fr title
+  // track instead of overflowing). Collect geometry for Gate E. Everything
+  // is scoped UNDER the header role: a footer .qr-block or a card-body
+  // .logo-slot is not a header asset and must not drive these gates.
+  const header = document.querySelector('[data-measure-role="header"]');
+  const headerW = header ? header.getBoundingClientRect().width : 0;
+  const logos = [];
+  const qrs = [];
+  const headerBlocks = [];
+  if (header) {
+    // querySelectorAll dedupes, so an img matching BOTH selectors (a
+    // .logo-slot nested inside .venue-badge) is collected exactly once;
+    // closest() then resolves its scope (venue wins -- the badge sits
+    // left of the title at its own scale).
+    header.querySelectorAll('.logo-slot img, .venue-badge img')
+      .forEach(img => {
+        const r = img.getBoundingClientRect();
+        if (r.width < 20) return;  // skip stray inline marks
+        const slot = img.closest('.logo-slot')
+                  || img.closest('.venue-badge');
+        logos.push({
+          src: img.getAttribute('src') || '',
+          rendered_w: r.width,
+          rendered_h: r.height,
+          natural_w: img.naturalWidth || 0,
+          natural_h: img.naturalHeight || 0,
+          slot_classes: slot ? (slot.className || '') : '',
+          venue: !!img.closest('.venue-badge'),
+          has_chip: !!img.closest('.logo-chip'),
+        });
+      });
+    header.querySelectorAll('.qr-block img').forEach(img => {
+      const r = img.getBoundingClientRect();
+      if (r.width < 20) return;
+      qrs.push({rendered_h: r.height});
+    });
+    // .right-stack is the stacked variant some posters use in place of
+    // .right-block -- cover both, or those posters skip the squeeze gate.
+    header.querySelectorAll('.right-block, .right-stack, .title-block')
+      .forEach(el => {
+        const r = el.getBoundingClientRect();
+        headerBlocks.push({
+          cls: el.className || '',
+          kind: el.classList.contains('title-block') ? 'title' : 'right',
+          w: r.width,
+        });
+      });
+  }
+
+  return {figures, orphans, cols, cards, flexbr,
+          logos, qrs, header_w: headerW, headerBlocks};
 }
 """
 
@@ -512,12 +581,102 @@ def cmd_polish(args: argparse.Namespace) -> int:
             f"flex-direction:column, or make the wrapper a plain block."
         )
 
+    # ---- Gate E: header logos / QR / title squeeze ----
+    # Header logos live outside any card/hero, so Gates A-D never see
+    # them. Read defensively (getattr) like tall_min above.
+    logo_max_w = getattr(
+        args, "logo_max_width_ratio", DEFAULT_LOGO_MAX_WIDTH_RATIO)
+    logo_qr_tol = getattr(args, "logo_qr_tol", DEFAULT_LOGO_QR_TOL)
+    right_max = getattr(
+        args, "rightblock_max_ratio", DEFAULT_RIGHTBLOCK_MAX_RATIO)
+    title_min = getattr(args, "title_min_ratio", DEFAULT_TITLE_MIN_RATIO)
+    header_w = float(data.get("header_w", 0) or 0)
+    qr_h = max((float(q.get("rendered_h", 0)) for q in data.get("qrs", [])),
+               default=0.0)
+    wide_lo, wide_hi = LOGO_WIDE_QR_BAND
+    for lg in data.get("logos", []):
+        lw = float(lg.get("rendered_w", 0))
+        lh = float(lg.get("rendered_h", 0))
+        nw = float(lg.get("natural_w", 0))
+        nh = float(lg.get("natural_h", 0))
+        src_l = str(lg.get("src", "")).lower()
+        # Same SVG exemption as FIG/BROKEN above: zero natural size is
+        # legitimate for vector images.
+        src_path = src_l.split("?", 1)[0].split("#", 1)[0]
+        is_svg = (
+            src_path.endswith((".svg", ".svgz"))
+            or src_l.startswith("data:image/svg")
+        )
+        if (nw <= 0 or nh <= 0) and not is_svg:
+            warns.append(
+                f"LOGO/BROKEN: header logo '{ascii_safe(lg['src'])}' has "
+                f"zero natural size -- the image failed to load (missing "
+                f"file, 404, or an unreachable remote URL); it will be "
+                f"blank in print."
+            )
+            continue
+        if header_w > 0 and lw / header_w > logo_max_w:
+            warns.append(
+                f"LOGO/WIDE: '{ascii_safe(lg['src'])}' renders at "
+                f"{lw / header_w * 100:.0f}% of header width (limit "
+                f"{logo_max_w * 100:.0f}%) -- it crowds the title block. "
+                f"Set a size class on the .logo-slot (logo-wide caps a "
+                f"wordmark); see Logo handling in SKILL.md."
+            )
+        # The venue badge sits left of the title at its own scale -- only
+        # the broken/width checks apply; QR height match is a right-block
+        # rule.
+        if lg.get("venue") or qr_h <= 0 or lh <= 0:
+            continue
+        if "logo-wide" in str(lg.get("slot_classes", "")):
+            ratio = lh / qr_h
+            if not (wide_lo <= ratio <= wide_hi):
+                warns.append(
+                    f"LOGO/QR-MISMATCH: wide logo '{ascii_safe(lg['src'])}' "
+                    f"is {ratio * 100:.0f}% of QR height -- a wide wordmark "
+                    f"reads level at {wide_lo * 100:.0f}-"
+                    f"{wide_hi * 100:.0f}%. Adjust --logo-h; see Logo "
+                    f"handling in SKILL.md."
+                )
+        elif abs(lh - qr_h) / qr_h > logo_qr_tol:
+            warns.append(
+                f"LOGO/QR-MISMATCH: logo '{ascii_safe(lg['src'])}' renders "
+                f"{lh:.0f}px tall vs QR {qr_h:.0f}px "
+                f"(>{logo_qr_tol * 100:.0f}% off) -- match heights via the "
+                f".logo-slot size class so the header strip reads level. "
+                f"See Logo handling in SKILL.md."
+            )
+    if header_w > 0:
+        for hb in data.get("headerBlocks", []):
+            w = float(hb.get("w", 0))
+            if w <= 0:
+                continue
+            frac = w / header_w
+            if hb.get("kind") == "right" and frac > right_max:
+                warns.append(
+                    f"HEADER/TITLE-SQUEEZED: header right block "
+                    f"('{ascii_safe(hb['cls'])}') takes {frac * 100:.0f}% "
+                    f"of header width (limit {right_max * 100:.0f}%) -- "
+                    f"the header grid steals that width from the title. "
+                    f"Shrink or stack the logos/QR; see Logo handling in "
+                    f"SKILL.md."
+                )
+            elif hb.get("kind") == "title" and frac < title_min:
+                warns.append(
+                    f"HEADER/TITLE-SQUEEZED: title block squeezed to "
+                    f"{frac * 100:.0f}% of header width (floor "
+                    f"{title_min * 100:.0f}%) -- logos/venue/QR are "
+                    f"crowding the title. Shrink or stack the side "
+                    f"blocks; see Logo handling in SKILL.md."
+                )
+
     print(f"[polish] {ascii_safe(html_path.name)}")
     print(f"  figures checked     : {len(data.get('figures', []))}")
     print(f"  stat-like elements  : {len(data.get('orphans', []))}")
     print(f"  space-between cols  : {len(data.get('cols', []))}")
     print(f"  cards checked       : {len(data.get('cards', []))}")
     print(f"  flex/<br> parents   : {len(data.get('flexbr', []))}")
+    print(f"  header logos        : {len(data.get('logos', []))}")
     print(f"  warnings            : {len(warns)}")
     for w in warns:
         print(f"  WARN: {w}")

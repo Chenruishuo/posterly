@@ -238,9 +238,36 @@
     color: var(--accent);
     font-weight: 600;
   }
-  /* Optional logo slot — drop your lab logo here. Keep its rendered height
-     close to the QR (~85u) so the header doesn't grow disproportionately. */
-  .logo-slot img { height: calc(85 * var(--u)); width: auto; display: block; }
+  /* Optional logo slot — drop your lab logo here. Fixed height (so a low-res
+     logo still upscales to target) + width cap + contain (extreme-AR safety
+     net: the mark letterboxes inside the fixed-height box instead of
+     ballooning the header). Pick a size class on the .logo-slot div per
+     SKILL.md's logo AR table; override per poster via inline
+     style="--logo-h: ...; --logo-wmax: ..." if needed. */
+  .logo-slot { --logo-h: calc(85 * var(--u)); --logo-wmax: calc(220 * var(--u)); }
+  .logo-slot img {
+    height: var(--logo-h);
+    width: auto;
+    max-width: var(--logo-wmax);
+    object-fit: contain;
+    display: block;
+  }
+  /* Size classes — square seal fills the height budget; a wide wordmark sits
+     shorter so it doesn't out-mass the QR; tall stacked marks stay narrow. */
+  .logo-slot.logo-square { --logo-h: calc(90 * var(--u)); --logo-wmax: calc(130 * var(--u)); }
+  .logo-slot.logo-wide   { --logo-h: calc(58 * var(--u)); --logo-wmax: calc(300 * var(--u)); }
+  .logo-slot.logo-tall   { --logo-h: calc(95 * var(--u)); --logo-wmax: calc(90 * var(--u)); }
+  /* White rounded chip — wrap a transparent-dark or bare-white-background
+     logo so it reads as intentional on a colored header (mirrors the
+     .qr-block img treatment). See SKILL.md's logo background table. */
+  .logo-chip {
+    background: #fff;
+    border-radius: calc(6 * var(--u));
+    padding: calc(6 * var(--u)) calc(10 * var(--u));
+    display: inline-flex; align-items: center;
+  }
+  /* Inverse: dark chip for a white/light logo on a light header. */
+  .logo-chip.logo-chip-dark { background: var(--accent-deep, #1f2d3d); }
 
   /* =========================================================
      BODY: HERO-GRID — HERO panel (~60%) + SUPPORTING column (~40%).

@@ -235,9 +235,38 @@
     color: var(--accent);
     font-weight: 600;
   }
-  /* Optional logo slot — drop your lab logo here. Keep rendered height ~75u to
-     match QR; otherwise the header grows and steals vertical space. */
-  .logo-slot img { height: calc(75 * var(--u)); width: auto; display: block; }
+  /* Optional logo slot — drop your lab logo here. Fixed height (so a low-res
+     logo still upscales to target) + width cap + contain (extreme-AR safety
+     net: the mark letterboxes inside the fixed-height box instead of
+     ballooning the narrow portrait header). Pick a size class on the
+     .logo-slot div per SKILL.md's logo AR table; override per poster via
+     inline style="--logo-h: ...; --logo-wmax: ..." if needed. Portrait
+     headers are tight: don't place a wide wordmark and the QR side by side
+     (stack them or drop one). */
+  .logo-slot { --logo-h: calc(75 * var(--u)); --logo-wmax: calc(125 * var(--u)); }
+  .logo-slot img {
+    height: var(--logo-h);
+    width: auto;
+    max-width: var(--logo-wmax);
+    object-fit: contain;
+    display: block;
+  }
+  /* Size classes — square seal fills the height budget; a wide wordmark sits
+     shorter so it doesn't out-mass the QR; tall stacked marks stay narrow. */
+  .logo-slot.logo-square { --logo-h: calc(80 * var(--u)); --logo-wmax: calc(105 * var(--u)); }
+  .logo-slot.logo-wide   { --logo-h: calc(50 * var(--u)); --logo-wmax: calc(125 * var(--u)); }
+  .logo-slot.logo-tall   { --logo-h: calc(84 * var(--u)); --logo-wmax: calc(70 * var(--u)); }
+  /* White rounded chip — wrap a transparent-dark or bare-white-background
+     logo so it reads as intentional on a colored header (mirrors the
+     .qr-block img treatment). See SKILL.md's logo background table. */
+  .logo-chip {
+    background: #fff;
+    border-radius: calc(6 * var(--u));
+    padding: calc(6 * var(--u)) calc(10 * var(--u));
+    display: inline-flex; align-items: center;
+  }
+  /* Inverse: dark chip for a white/light logo on a light header. */
+  .logo-chip.logo-chip-dark { background: var(--accent-deep, #1f2d3d); }
 
   /* =========================================================
      BODY: 2 columns (portrait posters live and die on column balance)

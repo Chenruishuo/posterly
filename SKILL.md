@@ -59,7 +59,7 @@ Don't pick a template, colors, logos, or a QR target silently. Ask the user, in 
 
 - **Layout**: "Which gallery template fits best? (a) 4-column landscape, (b) hero + supporting column landscape, (c) 2-column portrait." Show them `templates/README.md`'s table.
 - **Palette**: "Lab/venue colors? E.g. `#XXX` accent + `#YYY` highlight. Default = neutral slate-blue + gold."
-- **Logos & venue mark**: "Any logos to place? Affiliation / lab logo, and the conference / journal logo — give paths or URLs, or say 'none'." Don't assume a venue logo is wanted; cross-check the logo policy from Step 0 (some venues forbid them).
+- **Logos & venue mark**: "Any logos to place? Affiliation / lab logo, and the conference / journal logo — give paths or URLs, or say 'none'." Don't assume a venue logo is wanted; cross-check the logo policy from Step 0 (some venues forbid them). When logo files are provided, inspect each one (aspect ratio, transparency, background — Step 2 item 5) and pick a size class + chip treatment per **Gate E — Header logos** below; don't just drop them in at the default size.
 - **QR code**: "Want a QR code? If so, pointing at which link — paper / arXiv / code repo / project page — or none?" Generate it **offline** as a local image (see Customizing in README / `qrencode`); never leave a remote QR-service URL in the poster — it hangs `measure`'s networkidle wait and link-rots in print/archive.
 
 Persist the user's answers as you go — re-reading them later prevents "improvement" loops that revert deliberate decisions.
@@ -114,6 +114,29 @@ For each paper figure you'll use:
 2. **Autocrop whitespace** with PIL.ImageChops so the figure fills its card.
 3. **Re-export at ≥ 2× the rendered px**. A `200u × 120u` figure print-rendered at 96 ppi → ~756 × 454 px. Source PNGs must be ≥ 1500 × 900 to look crisp at print.
 4. **QR codes**: request at ≥ 2× rendered px (e.g., 480×480 if displayed at ~240 px).
+5. **Logos**: inspect each user-provided logo file before placing it, then pick a size class and chip treatment from the two tables in **Gate E — Header logos** below. Use the same `python` that runs the posterly tools; this snippet needs Pillow (`pip install Pillow` if missing):
+
+   ```python
+   from PIL import Image
+   src = Image.open("images/lab-logo.png")
+   w, h = src.size
+   has_alpha = src.mode in ("RGBA", "LA", "PA") or "transparency" in src.info
+   im = src.convert("RGBA")
+   im.thumbnail((512, 512))  # analysis-only downscale
+   tw, th = im.size
+   px = im.load()
+   edge = ([px[x, 0] for x in range(tw)] + [px[x, th - 1] for x in range(tw)]
+           + [px[0, y] for y in range(th)] + [px[tw - 1, y] for y in range(th)])
+   white_edge = sum(a > 240 and min(r, g, b) > 245
+                    for r, g, b, a in edge) / len(edge)
+   lum = sorted(0.2126 * r + 0.7152 * g + 0.0722 * b
+                for r, g, b, a in im.getdata() if a > 32)
+   p10, p90 = (lum[len(lum) // 10], lum[(len(lum) * 9) // 10]) if lum else (0, 0)
+   print(f"AR={w / h:.2f}  alpha={has_alpha}  white_edge={white_edge:.0%}  "
+         f"mark lum p10/p90={p10:.0f}/{p90:.0f}")
+   ```
+
+   Reading the output: `AR` drives the size class (Gate E table 1). `white_edge >= ~70%` on an image **without** alpha means a bare white background (Gate E table 2's "stray white rectangle" case). The mark's luminance **percentiles** — not the mean — say whether the marks are dark (`p90 < ~120`) or light (`p10 > ~200`); a white-filled logo with a thin dark outline fools a mean. An **SVG** logo can't be opened by PIL — parse its `viewBox` for the AR and judge the chip from the rendered header crop in Step 5 instead.
 
 ### Step 3 — Scaffold from the gallery
 
@@ -190,11 +213,10 @@ After alignment is solid, run the **visual polish gate**:
 python <skill>/tools/poster_check.py polish poster.html
 ```
 
-This is a **soft** gate (exits 0 by default; pass `--strict` to fail on warnings). It surfaces three failure modes that the hard alignment gate cannot see — figure sizing relative to its aspect ratio, typography orphans, and column whitespace pretending to be balance. See **§Visual polish gates** below for the rule for each WARN class and the correct fix. Fix every WARN unless you explicitly judge it acceptable for this poster.
+This is a **soft** gate (exits 0 by default; pass `--strict` to fail on warnings). It surfaces failure modes that the hard alignment gate cannot see — figure sizing relative to its aspect ratio, typography orphans, column whitespace pretending to be balance, `<br>`-in-flex collapse, and header-logo problems (broken / oversized / QR-height mismatch / title squeeze). See **§Visual polish gates** below for the rule for each WARN class and the correct fix. Fix every WARN unless you explicitly judge it acceptable for this poster.
 
 Other polish:
 - **`text-wrap: balance`** on banner/takeaways prose — fixes ragged-right and single-word-orphan lines.
-- Match QR visual height to adjacent institutional logo (same `--u` value).
 
 **Step 6.5 — Final review (strongly recommended)**: send the rendered PDF (or its high-res PNG slices) AND the HTML to the same kind of reviewer used in Step 1.5 (external LLM if available, self-audit otherwise). Same evidence-pack rule. The reviewer prompt focuses on three things distinct from Step 1.5:
 1. **Visual rhetoric**: does the poster's narrative carry? Are the headline numbers prominent? Is the framework banner readable from 2 m?
@@ -314,6 +336,50 @@ A `<br>` that is a **direct child of a `display: flex` / `inline-flex` element i
 
 `polish` warns **LAYOUT/FLEX-BR** when any flex/inline-flex element has a direct `<br>` child, reporting the computed `flex-direction` so the fix is obvious. **Fix:** wrap each line in its own `<span>` (or `<div>`) and set `flex-direction: column` with `align-items: center` / `text-align: center`; or, if the element doesn't need to be flex, make it a plain block where `<br>` works normally. Never rely on `<br>` for layout inside a flex box.
 
+### Gate E — Header logos (affiliation / venue) & title squeeze
+
+Logos live in the header, outside any card or hero panel, so Gates A–D never see them. The failure modes are real and silent: a 404'd logo prints **blank**; a wide wordmark rendered at seal height becomes enormous and **squeezes the title** (the header grid is `auto 1fr auto` — an oversized right block steals width from the `1fr` title track instead of overflowing); a transparent dark mark **vanishes** on a dark header; a white-background JPG leaves a **stray white rectangle** on a colored one.
+
+**Sizing.** The shipped `.logo-slot` uses a fixed height (so a low-res logo still upscales to target) plus a width cap with `object-fit: contain` as the extreme-AR safety net, and three size classes. Pick the class from the file's aspect ratio (the Step 2 logo inspection):
+
+| Logo AR (w/h) | Shape | Class on `.logo-slot` |
+|---|---|---|
+| `< 0.7` | Tall stacked mark | `logo-tall` |
+| `0.7 – 1.4` | Square seal / crest | `logo-square` |
+| `1.4 – 2.5` | Mid wordmark | *(none — default)* |
+| `≥ 2.5` | Wide wordmark (university name banner) | `logo-wide` |
+
+`logo-wide` is **intentionally shorter than the QR** (≈ 68 % of its height) so a long wordmark doesn't out-mass it — that's why the QR-match gate below gives it a band instead of a strict match. The classes are starting defaults, not law: override per poster with inline `style="--logo-h: …; --logo-wmax: …"`, and let the rendered header crop (Step 5) be the final arbiter.
+
+**Background (chip).** Decide from the Step 2 logo inspection + the header's own color:
+
+| File analysis | Header zone | Treatment |
+|---|---|---|
+| transparent, dark marks (`p90 < ~120`) | dark / colored | wrap in `.logo-chip` (white) |
+| transparent, light marks (`p10 > ~200`) | light | wrap in `.logo-chip.logo-chip-dark` |
+| opaque, white edge majority | non-white | wrap in `.logo-chip` — the rounded padding absorbs the white box into a deliberate chip |
+| transparent, contrast already fine | any | no chip |
+| opaque white background | white / near-white | no chip needed |
+| gradient / image header, or unsure | — | default to a chip (safer) |
+
+```html
+<!-- wide wordmark with a bare white background on a colored header -->
+<div class="logo-slot logo-wide">
+  <div class="logo-chip"><img src="images/univ-wordmark.png" alt="University"></div>
+</div>
+```
+
+The chip wraps the `<img>` *inside* the `.logo-slot`, so the size class still bounds the image. Multiple logos: keep them in one `.right-block` and give them the **same** size class so the strip reads level. **Portrait posters: never place a wide wordmark and the QR side by side** — the narrow header can't afford both (HEADER/TITLE-SQUEEZED will fire, by design); stack them or drop one. A custom **venue logo** (inside `.venue-badge`) gets the same chip workflow and the broken-image check, but not the QR height match — it sits left of the title at its own scale.
+
+**What `polish` checks** (all soft WARNs; venue badge: first two only):
+
+- **LOGO/BROKEN** — a non-SVG header logo with zero natural size failed to load and will be blank in print (the FIG/BROKEN blind spot this gate closes).
+- **LOGO/WIDE** — a logo wider than `--logo-max-width-ratio` (default **22 %**) of the header width crowds the title. Fix: set the right size class (`logo-wide` caps a wordmark), not a hand-tuned pixel width.
+- **LOGO/QR-MISMATCH** — a non-wide logo whose height differs from the QR's by more than `--logo-qr-tol` (default **15 %**), or a `logo-wide` slot outside the **55–85 %** band of QR height. The header strip should read level. Skipped when there's no QR.
+- **HEADER/TITLE-SQUEEZED** — the aggregate signal: the right block (`.right-block` / `.right-stack`) exceeds `--rightblock-max-ratio` (default **32 %**) of header width, or the title block drops below `--title-min-ratio` (default **45 %**). Individual logos can each pass while their sum still crowds the title — this catches the sum. Fix: shrink/stack the side blocks or drop an asset.
+
+The defaults are calibrated against the size classes, so a logo sized by the recommended class never trips its own gate. Gate E only sees logos inside the **header** (`data-measure-role="header"`) under the `.logo-slot` / `.venue-badge` class names — when restyling, keep those classes on the wrappers (a hand-rolled `.aff-logo` class makes the logo invisible to the gate). **Bare-white detection is workflow-only, not a gate** — whether a logo "sits on a non-white background" isn't robustly decidable from static analysis, so apply the chip per the table above and verify on the rendered crop; don't expect `polish` to catch a missed chip.
+
 ## Universal pitfalls (apply to all templates)
 
 1. **`<` raw in MathJax inline** → may be HTML-parsed before MathJax sees it (mode-dependent). Prefer `\lt` everywhere. Preflight catches `(?<!\\)<(?![=/!])` inside `$…$` / `$$…$$` / `\(…\)` / `\[…\]` — i.e. raw `<` NOT preceded by a backslash and NOT followed by `=` / `/` / `!`. The `<=` case is intentionally exempt (single MathJax token, parsed atomically — no HTML-tokenizer ambiguity); preflight stays quiet about it, but `\le` reads more naturally in print.
@@ -355,7 +421,7 @@ tools/
 - `poster_check.py`:
   - `measure` — **hard** alignment gate (column-bottom spread < 5 px, gap-to-footer in [30, 50] px, intercard gap in [12, 50] px inside each column, canvas-fill ∈ [95 %, 101 %] as a coarse diagnostic, and poster bbox aligns to the page within ±2 px — the bbox-alignment check is the authoritative full-canvas requirement).
   - `preflight` — static HTML lint (LaTeX residue, math `<`, missing images, role validation).
-  - `polish` — **soft** visual gate (figure sizing by AR, broken images, typography orphans, space-between fill, `<br>`-in-flex collapse). Warns by default; `--strict` to fail. Hard-fails if the poster has no `[data-measure-role]` markup at all (silent PASS would be a worse bug).
+  - `polish` — **soft** visual gate (figure sizing by AR, broken images, typography orphans, space-between fill, `<br>`-in-flex collapse, header logos: broken / oversized / QR mismatch / title squeeze). Warns by default; `--strict` to fail. Hard-fails if the poster has no `[data-measure-role]` markup at all (silent PASS would be a worse bug).
   - `verify-final` — `pdfinfo`-based PDF sanity (page count, dimensions, file size).
 - `render_preview.py` — Playwright print-emulated PDF + scaled PNG thumbnail.
 
