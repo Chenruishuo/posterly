@@ -2,7 +2,7 @@
 
 > Build academic conference posters as a single HTML/CSS file, rendered to print-ready PDF via headless Chromium.
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![License: AGPL v3](https://img.shields.io/badge/License-AGPL_v3-blue.svg)](LICENSE)
 ![Python: 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)
 ![Agent skill](https://img.shields.io/badge/coding_agent-skill-7B2CBF.svg)
 
@@ -172,4 +172,16 @@ The three knobs you'll actually touch:
 
 ## License
 
-MIT. See [LICENSE](LICENSE).
+posterly is licensed as a whole under the **GNU Affero General Public License
+v3.0** (AGPL-3.0) © 2026 Ruishuo Chen — see [LICENSE](LICENSE). You may use,
+modify, and commercialize it, **but any distributed or network-deployed (SaaS)
+derivative must release its complete corresponding source under the same
+license**. This is deliberate: it keeps posterly open and prevents closed-source
+commercial exploitation.
+
+This repository also vendors a few **MIT-licensed** gate tools from
+[ARIS](https://github.com/wanshuiyin/Auto-claude-code-research-in-sleep); those
+specific files remain available under their original MIT license. MIT is
+GPL/AGPL-compatible, so the project as a whole is AGPL-3.0 while the vendored
+files stay individually MIT. Details: [NOTICE.md](NOTICE.md) and
+[LICENSES/](LICENSES/).

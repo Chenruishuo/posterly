@@ -1,10 +1,25 @@
 # NOTICE — third-party provenance
 
-posterly is **MIT © 2026 Ruishuo Chen** (see `LICENSE`). It additionally vendors a set of
-poster-quality "gate" tools, three tokenized templates, and one component catalog from **ARIS**
-(Auto-claude-code-research-in-sleep), whose `paper-poster-html` skill is itself a fork of
-posterly. This file records the vendor boundary so the relationship stays clean and
-attribution is preserved in both directions.
+posterly is licensed **as a whole under AGPL-3.0 © 2026 Ruishuo Chen** (see `LICENSE`). It
+additionally vendors a set of poster-quality "gate" tools, three tokenized templates, and one
+component catalog from **ARIS** (Auto-claude-code-research-in-sleep), whose `paper-poster-html`
+skill is itself a fork of posterly. Those ARIS files are **MIT-licensed**; MIT is
+GPL/AGPL-compatible, so they are lawfully combined into this AGPL project while remaining
+individually available under their original MIT terms (see below). This file records the vendor
+boundary so the relationship stays clean and attribution is preserved in both directions.
+
+## Licensing of this combined work
+
+- The project **as a whole** is **AGPL-3.0** (`LICENSE`). Any distributed or network-deployed
+  (SaaS) derivative of posterly must release its complete corresponding source under AGPL-3.0.
+- The **body-unmodified ARIS tools** below (`style_check.py`, `asset_check.py`,
+  `extract_pdf_figures.py`, `preprocess_figures.py`) are verbatim **MIT © 2026 wanshuiyin** and
+  remain **additionally available under MIT** (`LICENSES/aris-MIT.txt`) — anyone may extract just
+  those files and use them under MIT. AGPL copyleft applies to posterly as a whole, not to these
+  individual third-party files in isolation.
+- The **adapted** files (templates, `COMPONENTS.md`, `run_gates.py`) are derivative works
+  combining posterly-original material with ARIS's MIT contribution; as part of posterly they are
+  distributed under AGPL-3.0, with the MIT origin attributed below.
 
 ## Vendored from ARIS (MIT)
 

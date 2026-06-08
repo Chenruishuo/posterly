@@ -2,9 +2,10 @@
 # ---------------------------------------------------------------------------
 # Vendored from ARIS (Auto-claude-code-research-in-sleep), skill paper-poster-html.
 #   Origin : https://github.com/wanshuiyin/Auto-claude-code-research-in-sleep
-#   License: MIT (c) 2026 wanshuiyin -- full text in ../LICENSES/aris-MIT.txt
-#   Vendored into posterly and ADAPTED (asset gate opt-in / no silent false-pass;
-#   see ../NOTICE.md). The other vendored gate scripts keep ARIS bodies unmodified.
+#   Upstream base: MIT (c) 2026 wanshuiyin -- full text in ../LICENSES/aris-MIT.txt
+#   Vendored into posterly and ADAPTED (asset gate opt-in / no silent false-pass).
+#   As an adapted derivative this file ships as part of posterly under AGPL-3.0; see
+#   ../NOTICE.md. The other vendored gate scripts keep ARIS bodies unmodified (MIT).
 # ---------------------------------------------------------------------------
 """run_gates - canonical gate orchestrator for HTML academic posters.
 

@@ -3,7 +3,7 @@ name = "posterly"
 version = "0.1.0"
 description = "Build academic conference posters as a single HTML/CSS file, rendered to print-ready PDF via headless Chromium. A Claude Code skill — not a hosted service, no signup."
 readme = "README.md"
-license = { text = "MIT" }
+license = { text = "AGPL-3.0-only" }
 authors = [{ name = "Ruishuo Chen", email = "crs25@mails.tsinghua.edu.cn" }]
 requires-python = ">=3.10"
 keywords = ["poster", "academic", "conference", "claude-code", "skill", "html", "css", "playwright"]
@@ -11,7 +11,7 @@ classifiers = [
     "Development Status :: 4 - Beta",
     "Environment :: Console",
     "Intended Audience :: Science/Research",
-    "License :: OSI Approved :: MIT License",
+    "License :: OSI Approved :: GNU Affero General Public License v3",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.10",

@@ -18,7 +18,8 @@ every fix into a bounded edit (swap a known component, flip a known variant, ret
 instead of unbounded markup invention. COMPONENTS.md is what makes fix vocabulary item (b)
 ("whole-instance swap/add/delete, component set drawn from COMPONENTS.md") well-defined.
 
-These component classes are posterly's own (MIT © 2026 Ruishuo Chen). The ARIS fork that wrote
+These component classes are posterly's own (© 2026 Ruishuo Chen — AGPL-3.0 as part of posterly).
+The ARIS fork that wrote
 this catalog only de-gradients them, tokenizes their colors/sizes, and strips inline `style=`;
 class names did not change, so the catalog applies to posterly's templates directly.
 
