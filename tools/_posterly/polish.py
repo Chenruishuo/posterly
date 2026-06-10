@@ -7,11 +7,15 @@ Three gates the hard alignment gate cannot see:
     columns align. The defaults match the documented "aim for" lower
     bounds in SKILL.md so any figure inside the recommended range
     passes cleanly.
-  - **Gate B: typography orphans.** ``1.18-1.30× ↑`` whose ``↑``
-    wrapped alone onto its own line. Detected on elements with
+  - **Gate B: typography orphans + prose widows.** (1) ``1.18-1.30× ↑``
+    whose ``↑`` wrapped alone onto its own line. Detected on elements with
     ``[class*="stat"]`` / ``[class*="num"]`` / ``.takeaway-num`` /
     ``.headline-num`` that end with a known orphan-prone glyph but
-    lack ``white-space: nowrap``.
+    lack ``white-space: nowrap``. (2) ``WIDOW``: a ``.callout`` /
+    ``.body-text`` / ``.caption`` / ``.section-title`` (or a ``<br>``
+    segment of one) that wraps so its last visual line holds a single
+    word -- measured by counting visible tokens per visual line, with
+    ``&nbsp;``-glued tails counted as multiple words.
   - **Gate C: space-between fill.** ``justify-content: space-between``
     on a column with one short card produces a giant whitespace gap
     that reads as "this column ran out of things to say". Detected
@@ -457,7 +461,138 @@ _POLISH_JS = r"""
     });
   });
 
-  return {figures, orphans, cols, cards, flexbr, besideVoids,
+  // ---- 8) Prose widows: a wrapped text block whose LAST visual line is a
+  //         SINGLE word. `measure` checks card bottoms; section 2's orphan
+  //         scan only sees a trailing GLYPH on a stat/num element. Neither
+  //         sees a `.callout`/`.body-text`/`.caption`/`.section-title` that
+  //         wraps to a one-word last line -- the artefact SKILL.md Gate B
+  //         forbids. We count visible TOKENS on each `<br>`-delimited
+  //         segment's last visual line (token count, not whitespace presence
+  //         -- a collapsed wrap-space renders a zero-width rect on the next
+  //         line and would mask a real widow). Robust to inline
+  //         <strong>/<code> splitting a word's rects, to `text-align:
+  //         justify`, and to sub-pixel / mixed-font-size line tops.
+  const widows = [];
+  const WIDOW_SEL = '.callout, .body-text, .caption, .section-title,'
+                  + ' .card p, .card li';
+  document.querySelectorAll(WIDOW_SEL).forEach(el => {
+    // Scan only the most specific prose leaf: if this element CONTAINS another
+    // candidate (a .callout wrapping a <p class="body-text">), skip it -- the
+    // descendant is scanned on its own, so we never double-report one widow.
+    if (el.querySelector(WIDOW_SEL)) return;
+    const cs = getComputedStyle(el);
+    const ws = (cs.whiteSpace || '').toLowerCase();
+    if (ws.indexOf('nowrap') !== -1 || ws.indexOf('pre') !== -1) return;
+    if ((cs.direction || '') === 'rtl') return;               // "last word" geometry unclear in RTL
+    const wm = cs.writingMode || '';
+    if (wm && wm.indexOf('horizontal') === -1) return;        // vertical text out of scope
+    // Equation SVG / figure rows are not prose -- skip to avoid noise.
+    if (el.querySelector('mjx-container, .MathJax, math, img, svg, canvas, table')) return;
+
+    // Split the element's own text into `<br>`-delimited paragraphs, each
+    // keeping a flat string + a DOM map (so a word split across inline tags
+    // stays ONE token). A widow can sit at the end of an EARLY segment (the
+    // statement above a <br>question), so we check every segment, not just
+    // the block's final visual line.
+    const paras = [];
+    let cur = {flat: '', segs: []};
+    const tw = document.createTreeWalker(
+      el, NodeFilter.SHOW_TEXT | NodeFilter.SHOW_ELEMENT);
+    for (let n = tw.nextNode(); n; n = tw.nextNode()) {
+      if (n.nodeType === 1) {
+        if (n.tagName === 'BR') { paras.push(cur); cur = {flat: '', segs: []}; }
+        continue;
+      }
+      // Skip the section-number badge (.num): a flex item whose center-y would
+      // corrupt line grouping and whose digit would fuse into the first token.
+      if (n.parentElement && n.parentElement.closest('.num')) continue;
+      const v = n.nodeValue;
+      if (!v) continue;
+      cur.segs.push({node: n, base: cur.flat.length, text: v});
+      cur.flat += v;
+    }
+    paras.push(cur);
+
+    paras.forEach(para => {
+      const norm = para.flat.replace(/\s+/g, ' ').trim();
+      if (norm.length === 0 || norm.length > 220) return;     // skip empty / long running prose
+      // Tokenise on \S+. JS `\s` includes U+00A0, so an &nbsp;-glued tail
+      // (a recommended Gate B fix) is >1 token and will NOT flag.
+      const toks = [];
+      const re = /\S+/g;
+      let m;
+      while ((m = re.exec(para.flat)) !== null) {
+        toks.push({s: m.index, e: m.index + m[0].length, t: m[0]});
+      }
+      if (toks.length < 2) return;                            // 0/1-word segment can't widow
+
+      const rangeFor = (a, b) => {
+        const rng = document.createRange();
+        let set = 0;
+        for (const sg of para.segs) {
+          const sStart = sg.base, sEnd = sg.base + sg.text.length;
+          if (!(set & 1) && a >= sStart && a < sEnd) {
+            rng.setStart(sg.node, a - sStart); set |= 1;
+          }
+          if ((set & 1) && b >= sStart && b <= sEnd) {
+            rng.setEnd(sg.node, b - sStart); set |= 2; break;
+          }
+        }
+        return (set === 3) ? rng : null;
+      };
+
+      // Each VISIBLE rect becomes a line CELL carrying its token index, so a
+      // long token that itself wraps across two lines (break-word / hyphenation)
+      // contributes a cell to BOTH lines instead of collapsing the line model.
+      const cells = [];                                       // {cy, h, ti}
+      for (let ti = 0; ti < toks.length; ti++) {
+        const rng = rangeFor(toks[ti].s, toks[ti].e);
+        if (!rng) continue;
+        const rects = rng.getClientRects();
+        for (let i = 0; i < rects.length; i++) {
+          const r = rects[i];
+          if (r.width <= 0.5 || r.height <= 0.5) continue;    // drop zero-width wrap-space artefacts
+          cells.push({cy: (r.top + r.bottom) / 2, h: r.height, ti: ti});
+        }
+      }
+      if (cells.length < 2) return;
+
+      // Group cells into visual lines by center-y within a line-height
+      // tolerance (NOT top +/- 2px: <sup>, mixed font-size and sub-pixel
+      // rounding shift tops within one line). Each line keeps the SET of token
+      // indices with a visible rect on it; a one-token last line is a widow.
+      const hs = cells.map(c => c.h).sort((a, b) => a - b);
+      const medH = hs.length ? hs[Math.floor((hs.length - 1) / 2)] : 0;
+      const tol = Math.max(3, medH * 0.6);
+      cells.sort((a, b) => a.cy - b.cy);
+      const lines = [];
+      let line = null;
+      for (const c of cells) {
+        if (line && (c.cy - line.cy) <= tol) {
+          line.n += 1;
+          line.cy += (c.cy - line.cy) / line.n;
+          line.tis.add(c.ti);
+        } else {
+          line = {cy: c.cy, n: 1, tis: new Set([c.ti])};
+          lines.push(line);
+        }
+      }
+      if (lines.length < 2) return;                           // single visual line: nothing to widow
+      const last = lines[lines.length - 1];
+      if (last.tis.size === 1) {
+        const ti = last.tis.values().next().value;
+        widows.push({
+          tag: el.tagName.toLowerCase(),
+          cls: el.className || '',
+          word: String(toks[ti].t).slice(0, 32),
+          lines: lines.length,
+          text: (norm.length > 60) ? ('...' + norm.slice(-57)) : norm,
+        });
+      }
+    });
+  });
+
+  return {figures, orphans, cols, cards, flexbr, besideVoids, widows,
           logos, qrs, header_w: headerW, header_cx: headerCx,
           header_content_left: headerContentLeft,
           header_content_right: headerContentRight, headerBlocks};
@@ -777,6 +912,22 @@ def cmd_polish(args: argparse.Namespace) -> int:
             f"before the trailing glyph."
         )
 
+    # ---- Gate B (prose): single-word last line in a wrapped text block ----
+    # The wrap-geometry sibling of the stat/num orphan above: a `.callout` /
+    # `.body-text` / `.caption` / `.section-title` (or a `<br>`-delimited
+    # segment of one) whose last visual line holds ONE word. SKILL.md Gate B
+    # forbids this; the stat/num scan can't see it. An &nbsp;-glued tail is
+    # >1 token by construction, so the recommended fix never re-trips this.
+    for w in data.get("widows", []):
+        warns.append(
+            f"WIDOW: <{ascii_safe(w['tag'])} class='{ascii_safe(w['cls'])}'> "
+            f"wraps to a last line holding a SINGLE word "
+            f"('{ascii_safe(w['word'])}'), a one-word last line (SKILL.md "
+            f"Gate B). Glue the last two tokens with &nbsp; or reword so the "
+            f"break falls at a phrase boundary. Context: "
+            f"'{ascii_safe(w['text'])}'."
+        )
+
     # ---- Gate C: space-between fill ----
     for c in data.get("cols", []):
         col_h = float(c["column_h"])
@@ -970,6 +1121,7 @@ def cmd_polish(args: argparse.Namespace) -> int:
     print(f"[polish] {ascii_safe(html_path.name)}")
     print(f"  figures checked     : {len(data.get('figures', []))}")
     print(f"  stat-like elements  : {len(data.get('orphans', []))}")
+    print(f"  prose widows        : {len(data.get('widows', []))}")
     print(f"  space-between cols  : {len(data.get('cols', []))}")
     print(f"  cards checked       : {len(data.get('cards', []))}")
     print(f"  beside-text floats  : {len(data.get('besideVoids', []))}")
