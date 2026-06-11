@@ -49,7 +49,7 @@ _HTML = """<!DOCTYPE html>
   * { margin: 0; box-sizing: border-box; }
   body { font-family: Georgia, serif; }
   .card { padding: 10px; }
-  .callout { width: 240px; font-size: 30px; line-height: 1.3; }
+  .callout, .caption { width: 240px; font-size: 30px; line-height: 1.3; }
 </style></head>
 <body>
   <div data-measure-role="poster">
@@ -66,9 +66,40 @@ _HTML = """<!DOCTYPE html>
            visual line (the original incident shape). Second segment is one
            token so it is skipped. -->
       <div class="callout" id="d">alpha beta antidisestablishmentword.<br><strong>Done.</strong></div>
-      <!-- E: contains an inline <svg> (equation/figure row) -> SKIPPED even
-           though its text would otherwise widow. -->
+      <!-- E: trailing inline <svg> -> the opaque cell lands on/after the last
+           text line, so the last judged line is not pure text -> NO widow.
+           (Pre-incident behavior skipped the whole block; same verdict here,
+           different mechanism.) -->
       <div class="callout" id="e">alpha beta skipmelongwordplease.<svg width="12" height="12"></svg></div>
+      <!-- F: regression for the eb181286 "one." incident -- inline math EARLY
+           in the text must NOT hide a pure-text lone last word. -->
+      <div class="callout" id="f">draw <mjx-container>K</mjx-container> actions and pick strandedregressionword.</div>
+      <!-- G: a .caption between 220 and 400 chars -- the old 220-char cap hid
+           the incident caption (231 chars); display text now caps at 400. -->
+      <div class="caption" id="g">The quick brown fox jumps over the lazy dog near the river
+           bank while the camera records every motion frame for later offline
+           analysis and careful manual review of all seven dynamic environments
+           considered in the study finalstrandedcaptionword.</div>
+      <!-- H: TALL opaque cells (display math) must not inflate the line-group
+           tolerance and merge the stranded text line away (Codex MAJOR-1). -->
+      <div class="callout" id="h">alpha
+           <mjx-container style="display:inline-block;width:10px;height:500px"></mjx-container>
+           <mjx-container style="display:inline-block;width:10px;height:500px"></mjx-container>
+           <mjx-container style="display:inline-block;width:10px;height:500px"></mjx-container>
+           <mjx-container style="display:inline-block;width:10px;height:500px"></mjx-container>
+           beta tallmathstrandedword.</div>
+      <!-- I: a <br> INSIDE a table cell must not split the OUTER prose into
+           segments and orphan the trailing word (Codex MAJOR-2). -->
+      <div class="callout" id="i">alpha
+           <table style="display:inline-table;width:20px;height:20px"><tr><td>x<br>y</td></tr></table>
+           tableinnerbrstrandedword.</div>
+      <!-- J: a visibility:hidden trailing opaque paints nothing -- the lone
+           word IS visually stranded and must still flag (Codex MAJOR-3). -->
+      <div class="callout" id="j">alpha beta hiddensvgstrandedword.<svg style="visibility:hidden" width="12" height="12"></svg></div>
+      <!-- K: UNSPACED opaques fuse the surrounding text into one token; the
+           token's Range must not smuggle the tall opaque rects in as TEXT
+           cells and re-inflate the tolerance (Codex round-2 MAJOR). -->
+      <div class="callout" id="k">alpha<mjx-container style="display:inline-block;width:10px;height:500px;vertical-align:middle"></mjx-container><mjx-container style="display:inline-block;width:10px;height:500px;vertical-align:middle"></mjx-container><mjx-container style="display:inline-block;width:10px;height:500px;vertical-align:middle"></mjx-container><mjx-container style="display:inline-block;width:10px;height:500px;vertical-align:middle"></mjx-container>beta unspacedmathstrandedword.</div>
     </div>
   </div>
   </div>
@@ -93,11 +124,25 @@ def test_widow_geometry_end_to_end(tmp_path, capsys) -> None:
     combined = "".join(capsys.readouterr())
 
     assert rc == 0                                  # soft gate, warn-only
-    # A (real widow) and D (first-segment widow) flag; B/C/E do not.
-    assert "prose widows        : 2" in combined
+    # A (real widow), D (first-segment widow), F (math early in text),
+    # G (caption in the 220-400 char band), H (tall opaque vs tolerance),
+    # I (<br> inside table), J (hidden trailing svg), K (unspaced-math token
+    # Range) flag; B/C/E do not.
+    assert "prose widows        : 8" in combined
     assert "supercalifragilisticword." in combined       # A
     assert "antidisestablishmentword." in combined       # D first segment
     # B: an &nbsp;-glued tail is multi-token -> must NOT flag.
     assert "intractable." not in combined
-    # E: element contains <svg> -> skipped entirely.
+    # E: opaque <svg> sits on/after the last text line -> not judgeable -> no flag.
     assert "skipmelongwordplease." not in combined
+    # F: inline math EARLY must not hide a pure-text lone last word (the
+    # eb181286 "one." incident).
+    assert "strandedregressionword." in combined
+    # G: display-text cap is 400, not 220 -- the long caption is measured.
+    assert "finalstrandedcaptionword." in combined
+    # H/I/J/K: Codex-audit regressions (tolerance skew / inner <br> /
+    # hidden svg / unspaced-math token Range).
+    assert "tallmathstrandedword." in combined
+    assert "tableinnerbrstrandedword." in combined
+    assert "hiddensvgstrandedword." in combined
+    assert "unspacedmathstrandedword." in combined

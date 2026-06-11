@@ -486,26 +486,54 @@ _POLISH_JS = r"""
     if ((cs.direction || '') === 'rtl') return;               // "last word" geometry unclear in RTL
     const wm = cs.writingMode || '';
     if (wm && wm.indexOf('horizontal') === -1) return;        // vertical text out of scope
-    // Equation SVG / figure rows are not prose -- skip to avoid noise.
-    if (el.querySelector('mjx-container, .MathJax, math, img, svg, canvas, table')) return;
+    // Math / figure elements do NOT hide the whole block any more (a caption
+    // mixing inline $math$ with a lone trailing word slipped through that
+    // blanket skip -- the eb181286 "one." incident). They join the line model
+    // as OPAQUE cells: their text (if any) stays out of the token stream, but
+    // their rects vote in line grouping, and a last line that itself carries
+    // opaque content is skipped (its "word count" would be meaningless).
+    const OPAQUE = 'mjx-container, .MathJax, math, img, svg, canvas, table';
+    // Display text (.caption / .callout) gets a higher length cap than running
+    // prose: a one-word last line under a figure is prominent even in a long
+    // caption, and the 220-char cap was exactly why the incident caption
+    // (231 chars) was never measured.
+    const cap = el.matches('.caption, .callout') ? 400 : 220;
 
     // Split the element's own text into `<br>`-delimited paragraphs, each
     // keeping a flat string + a DOM map (so a word split across inline tags
-    // stays ONE token). A widow can sit at the end of an EARLY segment (the
-    // statement above a <br>question), so we check every segment, not just
-    // the block's final visual line.
+    // stays ONE token) + the opaque elements seen in that segment. A widow
+    // can sit at the end of an EARLY segment (the statement above a
+    // <br>question), so we check every segment, not just the block's final
+    // visual line.
     const paras = [];
-    let cur = {flat: '', segs: []};
+    let cur = {flat: '', segs: [], ops: []};
     const tw = document.createTreeWalker(
       el, NodeFilter.SHOW_TEXT | NodeFilter.SHOW_ELEMENT);
     for (let n = tw.nextNode(); n; n = tw.nextNode()) {
       if (n.nodeType === 1) {
-        if (n.tagName === 'BR') { paras.push(cur); cur = {flat: '', segs: []}; }
+        // OPAQUE interiors are structure we must not interpret: a <br> inside
+        // a <table> cell must NOT split the OUTER prose into segments (it
+        // would orphan the trailing text into a 1-token segment and mask a
+        // real widow). Skip everything below an opaque root; the root itself
+        // passes this test and is recorded.
+        if (n.parentElement && n.parentElement.closest(OPAQUE)) continue;
+        if (n.tagName === 'BR') { paras.push(cur); cur = {flat: '', segs: [], ops: []}; continue; }
+        // Record the OUTERMOST opaque element (nested <svg> in <mjx-container>
+        // was filtered above). visibility:hidden opaques still occupy layout
+        // but paint nothing -- a lone word next to one IS visually stranded,
+        // so they must not vote.
+        if (n.matches && n.matches(OPAQUE)
+            && getComputedStyle(n).visibility !== 'hidden') {
+          cur.ops.push(n);
+        }
         continue;
       }
       // Skip the section-number badge (.num): a flex item whose center-y would
       // corrupt line grouping and whose digit would fuse into the first token.
       if (n.parentElement && n.parentElement.closest('.num')) continue;
+      // Text living INSIDE an opaque element (a <table> cell, MathML token)
+      // is represented by the opaque rect, not the token stream.
+      if (n.parentElement && n.parentElement.closest(OPAQUE)) continue;
       const v = n.nodeValue;
       if (!v) continue;
       cur.segs.push({node: n, base: cur.flat.length, text: v});
@@ -515,7 +543,7 @@ _POLISH_JS = r"""
 
     paras.forEach(para => {
       const norm = para.flat.replace(/\s+/g, ' ').trim();
-      if (norm.length === 0 || norm.length > 220) return;     // skip empty / long running prose
+      if (norm.length === 0 || norm.length > cap) return;     // skip empty / long running prose
       // Tokenise on \S+. JS `\s` includes U+00A0, so an &nbsp;-glued tail
       // (a recommended Gate B fix) is >1 token and will NOT flag.
       const toks = [];
@@ -524,21 +552,31 @@ _POLISH_JS = r"""
       while ((m = re.exec(para.flat)) !== null) {
         toks.push({s: m.index, e: m.index + m[0].length, t: m[0]});
       }
-      if (toks.length < 2) return;                            // 0/1-word segment can't widow
+      // 0/1-word segment can't widow. Documented exception: a segment that is
+      // ONLY display math plus one trailing word ("<mjx>...</mjx> one.") is
+      // treated as a one-word paragraph, not a wrap -- same verdict as case
+      // "Short." (the text never wrapped, so nothing was stranded BY a wrap).
+      if (toks.length < 2) return;
 
-      const rangeFor = (a, b) => {
-        const rng = document.createRange();
-        let set = 0;
+      const rectsFor = (a, b) => {
+        // PER-TEXT-NODE ranges: a single Range spanning from one text node to
+        // another also returns the rects of any element BETWEEN its endpoints
+        // -- for an unspaced "alpha<mjx/>beta" token that smuggles the tall
+        // opaque rect in as a TEXT cell, poisoning the line-height median the
+        // tolerance is built from. Measuring each text segment separately can
+        // never cross an opaque subtree.
+        const out = [];
         for (const sg of para.segs) {
           const sStart = sg.base, sEnd = sg.base + sg.text.length;
-          if (!(set & 1) && a >= sStart && a < sEnd) {
-            rng.setStart(sg.node, a - sStart); set |= 1;
-          }
-          if ((set & 1) && b >= sStart && b <= sEnd) {
-            rng.setEnd(sg.node, b - sStart); set |= 2; break;
-          }
+          const lo = Math.max(a, sStart), hi = Math.min(b, sEnd);
+          if (lo >= hi) continue;
+          const rng = document.createRange();
+          rng.setStart(sg.node, lo - sStart);
+          rng.setEnd(sg.node, hi - sStart);
+          const rects = rng.getClientRects();
+          for (let i = 0; i < rects.length; i++) out.push(rects[i]);
         }
-        return (set === 3) ? rng : null;
+        return out;
       };
 
       // Each VISIBLE rect becomes a line CELL carrying its token index, so a
@@ -546,13 +584,21 @@ _POLISH_JS = r"""
       // contributes a cell to BOTH lines instead of collapsing the line model.
       const cells = [];                                       // {cy, h, ti}
       for (let ti = 0; ti < toks.length; ti++) {
-        const rng = rangeFor(toks[ti].s, toks[ti].e);
-        if (!rng) continue;
-        const rects = rng.getClientRects();
+        const rects = rectsFor(toks[ti].s, toks[ti].e);
         for (let i = 0; i < rects.length; i++) {
           const r = rects[i];
           if (r.width <= 0.5 || r.height <= 0.5) continue;    // drop zero-width wrap-space artefacts
           cells.push({cy: (r.top + r.bottom) / 2, h: r.height, ti: ti});
+        }
+      }
+      // Opaque cells (ti = -1): vote in line grouping, mark their line, but
+      // never count as a "word".
+      for (const op of para.ops) {
+        const rects = op.getClientRects();
+        for (let i = 0; i < rects.length; i++) {
+          const r = rects[i];
+          if (r.width <= 0.5 || r.height <= 0.5) continue;
+          cells.push({cy: (r.top + r.bottom) / 2, h: r.height, ti: -1});
         }
       }
       if (cells.length < 2) return;
@@ -561,7 +607,10 @@ _POLISH_JS = r"""
       // tolerance (NOT top +/- 2px: <sup>, mixed font-size and sub-pixel
       // rounding shift tops within one line). Each line keeps the SET of token
       // indices with a visible rect on it; a one-token last line is a widow.
-      const hs = cells.map(c => c.h).sort((a, b) => a - b);
+      // Tolerance derives from TEXT cells only: tall opaque cells (display
+      // math) would inflate the median height and merge a real text last line
+      // into the line above, masking the widow.
+      const hs = cells.filter(c => c.ti >= 0).map(c => c.h).sort((a, b) => a - b);
       const medH = hs.length ? hs[Math.floor((hs.length - 1) / 2)] : 0;
       const tol = Math.max(3, medH * 0.6);
       cells.sort((a, b) => a.cy - b.cy);
@@ -571,15 +620,17 @@ _POLISH_JS = r"""
         if (line && (c.cy - line.cy) <= tol) {
           line.n += 1;
           line.cy += (c.cy - line.cy) / line.n;
-          line.tis.add(c.ti);
         } else {
-          line = {cy: c.cy, n: 1, tis: new Set([c.ti])};
+          line = {cy: c.cy, n: 1, tis: new Set(), op: false};
           lines.push(line);
         }
+        if (c.ti >= 0) line.tis.add(c.ti); else line.op = true;
       }
       if (lines.length < 2) return;                           // single visual line: nothing to widow
       const last = lines[lines.length - 1];
-      if (last.tis.size === 1) {
+      // A last line carrying opaque content (math/figure) is not judgeable as
+      // a one-WORD line -- skip it; pure-text last lines are always judged.
+      if (last.tis.size === 1 && !last.op) {
         const ti = last.tis.values().next().value;
         widows.push({
           tag: el.tagName.toLowerCase(),
