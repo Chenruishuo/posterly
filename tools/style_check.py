@@ -7,17 +7,18 @@
 # ---------------------------------------------------------------------------
 """style_check — the style HARD gate for HTML academic posters.
 
-Implements the 12 style rules of DESIGN_FINAL.md §3 (plus the §12.5 nit-1
+Implements the 13 style rules of DESIGN_FINAL.md §3 (plus the §12.5 nit-1
 refinement on rule 8) split across two gates:
 
-  Source gate (rules 1,2,3,5,6,7,8,9,10,11) — pure static analysis. We
+  Source gate (rules 1,2,3,5,6,7,8,9,10,11,13) — pure static analysis. We
     parse the HTML with ``html.parser`` to walk tags+attributes, extract
     the ``<style>`` blocks, strip CSS comments, locate the design-token
     block via the canonical comment pair, and then scan for: color
     literals outside the token block, forbidden ``style=`` attributes,
     gradients, font-family stacks against the whitelist, font-size values
-    against the ``--fs-*`` scale, font-size token count, and the
-    data-attribute / inline-SVG contracts.
+    against the ``--fs-*`` scale, font-size token count, the
+    data-attribute / inline-SVG contracts, and (rule 13) BEM-modifier
+    variant classes used in the markup but missing their CSS rule.
 
   Render gate (rules 4 and 12) — needs computed style, so it lazy-imports
     Playwright, prints-emulates the poster at the @page viewport (reusing
@@ -98,6 +99,22 @@ FS_VAR_REF_RE = re.compile(r"var\(\s*--fs-\d+\s*\)")
 #: it is a HARD fail (an arbitrary per-element font-size override sneaking
 #: past the token scale).
 VARIANT_SUFFIX_RE = re.compile(r"\.[A-Za-z][\w-]*--[A-Za-z][\w-]*")
+
+#: A BEM-modifier class TOKEN (no leading dot), e.g. ``eqn--large``,
+#: ``keybox--4``, ``eqn-anatomy--row``. Used by rule 13 to find variant
+#: classes in an HTML ``class="..."`` attribute. NOTE the suffix is
+#: ``[\w-]+`` (a digit after ``--`` is allowed) -- unlike VARIANT_SUFFIX_RE
+#: above, which governs the font-size calc exemption and only accepts an
+#: alpha suffix. ``keybox--4`` (numeric suffix) is exactly the case rule 13
+#: must catch, so it needs the looser grammar.
+MODIFIER_TOKEN_RE = re.compile(r"[A-Za-z][\w-]*--[\w-]+")
+
+#: The same token as a class SELECTOR fragment (leading dot, token captured),
+#: for extracting the variants a stylesheet DEFINES. Matches ``.keybox--4``
+#: and the modifier part of a compound ``.keybox.keybox--4``. A variant
+#: defined only via an attribute selector (``[class~="x--y"]``) or native CSS
+#: nesting (``&.x--y``) is not recognized -- the templates never use those.
+MODIFIER_SELECTOR_RE = re.compile(r"\.([A-Za-z][\w-]*--[\w-]+)")
 
 #: A `calc(... var(--fs-N) ...)` expression inside a font-size value — the
 #: only legal non-bare-token form, and only inside a variant rule.
@@ -433,7 +450,7 @@ class RuleResult:
 def run_source_gate(
     html_text: str, html_path: Path
 ) -> tuple[list[RuleResult], _PosterParser, str | None]:
-    """Run rules 1,2,3,5,6,7,8,9,10,11 (the static rules).
+    """Run rules 1,2,3,5,6,7,8,9,10,11,13 (the static rules).
 
     Returns ``(results, parser, token_block_or_None)``. The parser and
     located token block are returned so the render gate can reuse them
@@ -804,6 +821,48 @@ def run_source_gate(
             "COMPONENTS.md-catalogued structural diagrams are allowed."
         )
     results.append(r11)
+
+    # --- Rule 13 (hard): every BEM-modifier class used must be defined -----
+    # A `block--modifier` class present in the markup but with no matching
+    # `.block--modifier` rule in the stylesheet is a dangling class: the rule
+    # was dropped (or the class mistyped) while the markup kept the hook, so
+    # the variant silently no-ops. The cautionary case: a `.keybox.keybox--4`
+    # rule dropped from the generated CSS left a 4-tile keybox falling back to
+    # the base 3-column grid, orphaning the 4th tile into a near-empty second
+    # row (a "3+1" hole). One-directional: USED implies DEFINED; a
+    # predefined-but-unused variant (templates ship these for opt-in) is fine
+    # and ignored. The logo subtree is exempt (a user-supplied logo export may
+    # carry arbitrary classes), matching the rule 1/2/11 exemptions.
+    #
+    # Convention assumption: variants are defined via class selectors
+    # (`.x--y`, incl. compound `.b.x--y` and inside `@media`/`:is()`). A
+    # variant defined ONLY via an attribute selector (`[class~="x--y"]`) or
+    # native CSS nesting (`&.x--y`) is not recognized here -- the templates
+    # never use those forms.
+    r13 = RuleResult(13, "hard", "variant class used must be defined")
+    used_variants: set[str] = set()
+    for el in parser.elements:
+        if el["inside_logo"]:
+            continue
+        for tok in el["attrs"].get("class", "").split():
+            if MODIFIER_TOKEN_RE.fullmatch(tok):
+                used_variants.add(tok)
+    defined_variants: set[str] = set()
+    for selector, _body in _iter_css_rules(css_nc):
+        for m in MODIFIER_SELECTOR_RE.finditer(selector):
+            defined_variants.add(m.group(1))
+    dangling = sorted(used_variants - defined_variants)
+    if dangling:
+        shown = ", ".join(dangling[:6]) + (" ..." if len(dangling) > 6 else "")
+        r13.fail(
+            f"variant class(es) used in HTML with no matching CSS rule: "
+            f"{shown}. A `block--modifier` class with no `.block--modifier` "
+            f"rule is a dropped or mistyped variant -- the markup keeps the "
+            f"hook but the styling no-ops (e.g. `keybox--4` falling back to "
+            f"the base 3-column grid, orphaning a 4th tile into an empty "
+            f"second row). Add the variant's CSS rule, or remove the class."
+        )
+    results.append(r13)
 
     return results, parser, token_block_text
 
@@ -1293,9 +1352,9 @@ def cmd_style_check(args: argparse.Namespace) -> int:
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
         prog="style_check",
-        description="Style HARD gate for HTML academic posters: 12 rules "
+        description="Style HARD gate for HTML academic posters: 13 rules "
                     "(DESIGN_FINAL.md §3 + §12.5 nit 1). Source gate "
-                    "(rules 1-3,5-11) is pure static analysis; render gate "
+                    "(rules 1-3,5-11,13) is pure static analysis; render gate "
                     "(rules 4,12) print-emulates via Playwright.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="exit codes: 0=PASS (no hard fail), 1=hard fail, "

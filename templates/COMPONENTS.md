@@ -216,18 +216,26 @@ Gate name shorthand (DESIGN_FINAL §3–§7):
   each a big number over a small caption. The at-a-glance numeric hook. Tiles stretch to equal
   height and **vertically center** their content, so a 1-line tile's number aligns with a
   2-line neighbour's instead of sitting top-ragged (custom tile grids must do the same).
-- **Allowed variants**: count is set by content (2–4 items); no separate variant classes.
-  Each item is `.kb-item > .kb-num + .kb-label`.
+- **Allowed variants**: 2–3 items render on the base `.keybox` (a 3-column grid). **4 items
+  REQUIRE the `keybox--4` variant** (`<div class="keybox keybox--4">`, see §`keybox--4` below) to
+  switch the grid to 4 columns — without it the 4th tile falls into a near-empty second row (the
+  base grid is 3-col, so 4 items lay out 3+1). Whichever you use, the **item count must fill its
+  rows**: never ship a keybox whose items leave a half-empty trailing row. Each item is
+  `.kb-item > .kb-num + .kb-label`.
 - **Required data attributes**: none.
 - **Token usage**: `.kb-item` → `--bg-emphasis` bg, `--accent` top-border; `.kb-num` →
   `--accent` (`--fs-6`, sans); `.kb-label` → `--text-secondary` (`--fs-1`, sans).
-- **Inspected by**: `style` (rule 6 sans, rule 8 token sizes, rule 4 single accent family),
-  `polish` (Gate B typography orphans — a trailing `↑ × % ↓` glyph on `.kb-num` that could wrap
-  alone must carry `.nowrap`), `measure`.
+- **Inspected by**: `style` (rule 6 sans, rule 8 token sizes, rule 4 single accent family,
+  **rule 13** — a `keybox--4` used in the markup must have its `.keybox.keybox--4` rule in the
+  stylesheet), `polish` (Gate B typography orphans — a trailing `↑ × % ↓` glyph on `.kb-num` that
+  could wrap alone must carry `.nowrap`), `measure`.
 - **Allowed fix operations**: (a), (b) add/remove the strip, (c) edit stats from results,
-  (f) `.nowrap` on an orphan-prone number.
+  (f) `.nowrap` on an orphan-prone number, or toggle `keybox--4` for a 4-up strip.
 - **Anti-patterns**: a lone trailing glyph wrapping to its own line (polish Gate B → add
-  `.nowrap`); fabricated stats (claim audit); a per-number color/size override (rules 8/4).
+  `.nowrap`); fabricated stats (claim audit); a per-number color/size override (rules 8/4);
+  **4 tiles on the base `.keybox` without `keybox--4`** — they orphan 3+1; **the `keybox--4`
+  class in the HTML but its `.keybox.keybox--4` rule dropped from the stylesheet** (a dead class →
+  silent fallback to 3 columns → 3+1 orphan; this is a HARD rule-13 failure).
 
 ## takeaways-strip (`.takeaways-strip`, landscape templates)
 
@@ -454,8 +462,13 @@ a human-gated, catalogued, re-run-from-Phase-3 step can extend it.
 
 ### `keybox--4`
 - **Purpose**: 4-up stat/property tiles (e.g. params / complexity / loss type / guarantee).
-- **Contract**: all four tiles identical styling; numbers must trace to the paper.
-- **Anti-patterns**: per-tile colors; tiles restating the banner stats verbatim.
+- **Contract**: all four tiles identical styling; numbers must trace to the paper. The
+  `.keybox.keybox--4 { grid-template-columns: repeat(4, 1fr) }` rule MUST be present in the
+  stylesheet — the class alone is inert without it (base `.keybox` is 3-col → a 4-tile strip
+  orphans 3+1). `style` rule 13 fails a `keybox--4` used in HTML with no matching rule.
+- **Anti-patterns**: per-tile colors; tiles restating the banner stats verbatim; a 4-tile strip
+  on the base `.keybox` (no `--4`), or `keybox--4` present but its CSS rule dropped — both orphan
+  the 4th tile into an empty second row.
 
 ### `algo`
 - **Purpose**: compact numbered procedure list — **only when the paper itself states an
