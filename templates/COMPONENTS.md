@@ -645,12 +645,12 @@ or the class is inert and the 4-tile strip orphans 3+1 (`style` rule 13 hard-fai
     font-family: var(--font-sans); font-weight: 800; font-size: var(--fs-6); color: var(--accent-deep); }
   .gallery-strip .gs-title .num { display: inline-flex; align-items: center; justify-content: center;
     width: calc(22*var(--u)); height: calc(22*var(--u)); border-radius: 50%;
-    background: var(--accent); color: #fff; font-size: var(--fs-5); font-weight: 700; }
+    background: var(--accent); color: white; font-size: var(--fs-5); font-weight: 700; }
   .gallery-strip .gs-figs { display: flex; flex-wrap: wrap; align-items: flex-end;
     justify-content: center; gap: calc(3*var(--u)) calc(7*var(--u)); }
   .gallery-strip .gs-item { display: flex; flex-direction: column; align-items: center; gap: calc(1.5*var(--u)); }
   .gallery-strip .gs-item img { height: calc(33*var(--u)); width: auto; border-radius: calc(2*var(--u));
-    border: calc(1*var(--u)) solid var(--border-soft); background: #fff; }
+    border: calc(1*var(--u)) solid var(--border-soft); background: var(--bg-card); }
   .gallery-strip .gs-label { font-family: var(--font-sans); font-size: var(--fs-1);
     color: var(--text-secondary); text-align: center; line-height: 1.1; }
   /* base mode: keep the title on its own top row */
@@ -677,7 +677,7 @@ or the class is inert and the 4-tile strip orphans 3+1 (`style` rule 13 hard-fai
       <span class="gs-title-text" data-vrail-title>Synchro&shy;nization Results</span>
     </div>
     <div class="gs-figs">
-      <figure class="gs-item"><img src="images/ant.png" data-source="paper" alt="Ant environment"><figcaption class="gs-label">Ant</figcaption></figure>
+      <figure class="gs-item"><img src="images/ant.png" data-source="paper" data-asset-id="ant" alt="Ant environment"><figcaption class="gs-label">Ant</figcaption></figure>
       <!-- … more .gs-item figures … -->
     </div>
   </section>

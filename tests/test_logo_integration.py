@@ -236,7 +236,8 @@ def test_centered_title_no_offcenter(tmp_path, capsys) -> None:
 
 def test_header_overflow_warns(tmp_path, capsys) -> None:
     """Both side tracks fat but balanced (280px | minmax(50%,auto) | 280px on
-    a 1000px header): the title stays ~centred (3% offset, under the 6% floor)
+    a 1000px header): the title stays ~centred (3% offset, under _args_off's
+    explicit 6% test threshold -- the shipped default is 3%)
     and each side is 28% (< the 32% right-block limit), yet 280+500+280=1060px
     overflows the 1000px header by ~60px. Only HEADER/OVERFLOW catches it --
     the gap the ratio and offset gates leave open."""
@@ -251,4 +252,4 @@ def test_header_overflow_warns(tmp_path, capsys) -> None:
 
     assert rc == 0                                  # soft, warn-only
     assert "HEADER/OVERFLOW" in combined
-    assert "HEADER/TITLE-OFFCENTER" not in combined   # 3% offset < 6% floor
+    assert "HEADER/TITLE-OFFCENTER" not in combined   # 3% offset < _args_off's explicit 6%
