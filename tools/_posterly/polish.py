@@ -499,6 +499,13 @@ _POLISH_JS = r"""
     // candidate (a .callout wrapping a <p class="body-text">), skip it -- the
     // descendant is scanned on its own, so we never double-report one widow.
     if (el.querySelector(WIDOW_SEL)) return;
+    // A gallery-strip--vrail rail title is a DELIBERATELY narrow stacked column
+    // (each word on its own horizontal line, an over-long word broken with a soft
+    // hyphen at a syllable boundary the AGENT judges). Its short last line is
+    // intentional, not a runt -- where to break is an authoring judgment the agent
+    // makes, not a geometry a gate can score -- so it is marked data-vrail-title to
+    // opt out of the widow check. See SKILL.md Gate B.
+    if (el.hasAttribute('data-vrail-title')) return;
     const cs = getComputedStyle(el);
     const ws = (cs.whiteSpace || '').toLowerCase();
     if (ws.indexOf('nowrap') !== -1 || ws.indexOf('pre') !== -1) return;

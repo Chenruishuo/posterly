@@ -584,3 +584,102 @@ or the class is inert and the 4-tile strip orphans 3+1 (`style` rule 13 hard-fai
 - **Allowed fix ops**: swap logo file, adjust the row's height token, drop a logo.
 - **Anti-patterns**: fabricated/approximated seals; logos so small they read as dirt
   (< ~40u); using the logo row to smuggle decorative graphics.
+
+### `gallery-strip` (+ `gallery-strip--vrail`) (added 2026-06-16, user-checkpointed)
+- **Purpose**: a full-width bottom strip showing a *row of small paper figures* — environment
+  thumbnails / qualitative samples / a "benchmark suite" gallery — the at-a-glance "what this was
+  tested on" exit. Distinct from **takeaways-strip** (text takeaways) and **figure-card** (one
+  figure inside a column). Optional; use only when a row of small example images genuinely earns
+  the bottom band.
+- **Variants**: `--vrail` — the title (number badge + short title) moves to a **narrow left
+  rail** where its words **stack one per horizontal line** (every word reads normally — NOT
+  rotated), so the figure row reclaims the height a horizontal title row would eat and the images
+  **enlarge** (recipe sizes them ~52u vs the 33u base). **Use `--vrail` ONLY on this wide,
+  short, full-width strip** — never on a narrow column card, where the rail eats the scarce
+  horizontal width and the prose gets tighter, not the figures bigger.
+- **Required data attributes**: `data-measure-role="footer-strip"` on the section; each `<img>`
+  carries `data-source` provenance + a meaningful `alt` (same contract as figure-card).
+- **Token usage**: `--bg-emphasis` (flat strip bg, de-gradient per rule 5), `--border-soft`
+  (border + image frame), `--accent` (left bar + `.num` circle), `--accent-deep` (title),
+  `--font-sans` (title + labels), `--text-secondary` (labels / optional subtitle). Sizes
+  `--fs-6` (title) / `--fs-1` (labels).
+- **Inspected by**: `measure` (footer-gap band, full-width span), `style` (rule 5 flat bg, rule 6
+  fonts), `asset` (per-`<img>` provenance + total figure-area band), `polish` (FIG/* sizing by
+  aspect ratio). **The `--vrail` title carries `data-vrail-title`, which opts it out of `polish`'s
+  WIDOW check — its short stacked lines (and any soft-hyphen word break) are intentional, not
+  runts. See SKILL.md Gate B.**
+- **Allowed fix ops**: (b) add/remove the whole strip, (g) asset fixes (re-crop / swap figures),
+  toggle `--vrail`, rebalance figure count / height, edit labels.
+- **Vertical-rail title rules (the `--vrail` craft)**:
+  - Every word stays **horizontal and upright** — the rail is a *narrow column of text*, NOT
+    rotated/sideways text. Size the rail width to roughly the **longest word** so the title's
+    words wrap **one per line**; `text-align: center` so they stack symmetrically (this also evens
+    out uneven word lengths). The number badge (`.num` circle) sits **upright at the top** of the
+    rail.
+  - **An over-long word that won't fit the rail width is broken with a soft hyphen** `&shy;`
+    (`Synchro&shy;nization`), placed at a sensible syllable boundary **you (the agent) judge** —
+    where to break is an authoring call, so pick a clean break and never strand a single letter.
+    Do **not** rely on `hyphens: auto`: the headless Chromium that renders the gate and the final
+    PDF has no hyphenation dictionary, so `auto` silently no-ops and the word overflows the rail.
+  - Keep the rail title **short** (≤ ~3 words). A long subtitle does **not** go in the rail — put
+    it as a small horizontal caption under the figure row, or drop it. If a title is so long it
+    needs several hyphenated breaks to fit, that is the signal to **shorten it or keep the title
+    horizontal**, not to cram it into the rail.
+- **Anti-patterns**: `--vrail` on a narrow column card (eats horizontal width); **rotating /
+  sidewaysing the title text** (`writing-mode: vertical-rl` or upright-stacked letters — the words
+  must read normally); relying on `hyphens: auto` (no-ops in the headless renderer → the word
+  overflows); a hyphen break that strands a single letter; a long title / long subtitle crammed
+  into the rail; a `linear-gradient` strip bg (rule 5); inventing example figures the paper does
+  not contain (asset provenance).
+- **Recipe** (the strip is not shipped in the templates — copy and adapt, as you would author any
+  footer-strip; all colors via tokens):
+  ```css
+  .gallery-strip {                       /* base: horizontal title row, wrapping figure row */
+    display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: center;
+    gap: calc(3*var(--u)) calc(7*var(--u)); background: var(--bg-emphasis);
+    border: calc(1*var(--u)) solid var(--border-soft);
+    border-left: calc(6*var(--u)) solid var(--accent);
+    border-radius: calc(5*var(--u)); padding: calc(5*var(--u)) calc(12*var(--u));
+  }
+  .gallery-strip .gs-title { display: flex; align-items: center; gap: calc(6*var(--u));
+    font-family: var(--font-sans); font-weight: 800; font-size: var(--fs-6); color: var(--accent-deep); }
+  .gallery-strip .gs-title .num { display: inline-flex; align-items: center; justify-content: center;
+    width: calc(22*var(--u)); height: calc(22*var(--u)); border-radius: 50%;
+    background: var(--accent); color: #fff; font-size: var(--fs-5); font-weight: 700; }
+  .gallery-strip .gs-figs { display: flex; flex-wrap: wrap; align-items: flex-end;
+    justify-content: center; gap: calc(3*var(--u)) calc(7*var(--u)); }
+  .gallery-strip .gs-item { display: flex; flex-direction: column; align-items: center; gap: calc(1.5*var(--u)); }
+  .gallery-strip .gs-item img { height: calc(33*var(--u)); width: auto; border-radius: calc(2*var(--u));
+    border: calc(1*var(--u)) solid var(--border-soft); background: #fff; }
+  .gallery-strip .gs-label { font-family: var(--font-sans); font-size: var(--fs-1);
+    color: var(--text-secondary); text-align: center; line-height: 1.1; }
+  /* base mode: keep the title on its own top row */
+  .gallery-strip:not(.gallery-strip--vrail) .gs-title { flex: 0 0 100%; }
+
+  /* --vrail: title -> narrow left rail (words stack one per HORIZONTAL line); the
+     figure row takes the full strip height -> bigger images */
+  .gallery-strip--vrail { flex-wrap: nowrap; align-items: stretch; gap: calc(8*var(--u)); }
+  .gallery-strip--vrail .gs-title { flex: 0 0 auto; flex-direction: column;
+    align-items: center; justify-content: center;
+    width: calc(46*var(--u)); }   /* ~ the longest word -> words wrap one per line; tune per title */
+  .gallery-strip--vrail .gs-title .gs-title-text {
+    display: block; width: 100%; text-align: center; line-height: 1.15; }
+    /* words read normally (no rotation); break an over-long word with &shy; in the markup */
+  .gallery-strip--vrail .gs-figs { flex: 1 1 auto; flex-wrap: nowrap; }
+  .gallery-strip--vrail .gs-figs img { height: calc(52*var(--u)); }   /* enlarged vs the 33u base */
+  ```
+  ```html
+  <section class="gallery-strip gallery-strip--vrail" data-measure-role="footer-strip">
+    <!-- data-vrail-title opts the narrow stacked title out of the WIDOW check; an
+         over-long word breaks with a soft hyphen (&shy;) at an agent-judged point. -->
+    <div class="gs-title">
+      <span class="num">&#9632;</span>
+      <span class="gs-title-text" data-vrail-title>Synchro&shy;nization Results</span>
+    </div>
+    <div class="gs-figs">
+      <figure class="gs-item"><img src="images/ant.png" data-source="paper" alt="Ant environment"><figcaption class="gs-label">Ant</figcaption></figure>
+      <!-- … more .gs-item figures … -->
+    </div>
+  </section>
+  <!-- long subtitle (if kept) goes here as a small horizontal caption, NOT in the rail -->
+  ```

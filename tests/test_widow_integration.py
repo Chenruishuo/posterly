@@ -120,6 +120,14 @@ _HTML = """<!DOCTYPE html>
            reads as 18% and false-warns; with the text-only measure it is 100%
            and clears (Codex MAJOR). -->
       <div class="callout" id="n">tiny text <svg width="600" height="10"></svg> noflagN.</div>
+      <!-- O: a gallery-strip--vrail rail title is a DELIBERATELY narrow stacked
+           column (each word on its own horizontal line, an over-long word broken
+           with a soft hyphen). Its short last line is intentional, so it carries
+           data-vrail-title to opt out of the widow check. Uses .section-title
+           (which IS in the gate's selector) at the same narrow width that makes
+           case A flag, so this shape WOULD runt without the attribute -- the test
+           pins the attribute skip, not mere selector non-membership. -->
+      <div class="section-title" id="o" data-vrail-title style="width: 240px">alpha __PEN__ vskip.</div>
     </div>
   </div>
   </div>
@@ -168,3 +176,7 @@ def test_widow_geometry_end_to_end(tmp_path, capsys) -> None:
     # N: a wide inline opaque must not inflate the measure -> the text last line
     # fills the TEXT measure and is not a runt (guards the Codex MAJOR fix).
     assert "noflagN." not in combined
+    # O: a gallery-strip--vrail rail title marked data-vrail-title is exempt -> a
+    # deliberately narrow stacked title is not a runt. Pins the data-vrail-title
+    # skip (same narrow shape as case A, which DOES flag, minus the attribute).
+    assert "vskip." not in combined
