@@ -660,28 +660,37 @@ or the class is inert and the 4-tile strip orphans 3+1 (`style` rule 13 hard-fai
   ```
 
 ### `gallery-strip` (added 2026-06-16, user-checkpointed)
-- **Purpose**: a full-width bottom strip showing a *row of small paper figures* — environment
-  thumbnails / qualitative samples / a "benchmark suite" gallery — the at-a-glance "what this was
-  tested on" exit. Distinct from **takeaways-strip** (text takeaways) and **figure-card** (one
-  figure inside a column). Optional; use only when a row of small example images genuinely earns
-  the bottom band.
+- **Purpose**: a full-width bottom strip showing a *row of small task / example thumbnails* —
+  environment thumbnails / qualitative samples / a "benchmark suite" gallery — the at-a-glance
+  "what this was tested on" exit. Distinct from **takeaways-strip** (text takeaways) and
+  **figure-card** (one *quota* paper figure inside a column). Optional; use only when a row of
+  small example images genuinely earns the bottom band.
 - **Reclaiming title-row height**: to give the figures the height a horizontal title row would
   eat, add the **`vrail`** modifier (above) to the section — the figures then fill one un-wrapping
   row and **enlarge** (~52u vs the 33u base). The rail mechanics and craft rules live in the
   `vrail` entry; here it is just a toggle.
 - **Required data attributes**: `data-measure-role="footer-strip"` on the section; each `<img>`
-  carries `data-source` provenance + a meaningful `alt` (same contract as figure-card).
+  carries a meaningful `alt`. The thumbnails are **decorative task / environment identifiers, NOT
+  quota paper figures** — so they carry **no `data-source` / `data-asset-id`** and stay invisible
+  to the `asset` gate. Do **not** mark them `data-source="paper"` to make them "count": a thumbnail
+  this small can never satisfy the per-figure area floor (an env icon renders at ~0.25% of the
+  poster, a frame strip ~0.88% — both far under the 1.5% floor), and marking eight of them also
+  over-inflates the total-figure-area band, flipping the asset gate from PASS to FAIL. A genuine
+  result/method figure that *should* count belongs in a **figure-card**, not here.
 - **Token usage**: `--bg-emphasis` (flat strip bg, de-gradient per rule 5), `--border-soft`
   (border + image frame), `--accent` (left bar + `.num` circle), `--accent-deep` (title),
   `--font-sans` (title + labels), `--text-secondary` (labels / optional subtitle). Sizes
   `--fs-6` (title) / `--fs-1` (labels).
 - **Inspected by**: `measure` (footer-gap band, full-width span), `style` (rule 5 flat bg, rule 6
-  fonts), `asset` (per-`<img>` provenance + total figure-area band), `polish` (FIG/* sizing by
-  aspect ratio).
-- **Allowed fix ops**: (b) add/remove the whole strip, (g) asset fixes (re-crop / swap figures),
-  toggle `vrail`, rebalance figure count / height, edit labels.
-- **Anti-patterns**: a `linear-gradient` strip bg (rule 5); inventing example figures the paper
-  does not contain (asset provenance).
+  fonts), `polish` (FIG/* sizing by aspect ratio). **Not** inspected by `asset` — with no
+  `data-source`, the thumbnails are invisible to the paper-figure gate (provenance + area quota).
+- **Allowed fix ops**: (b) add/remove the whole strip, swap / re-crop a thumbnail, toggle
+  `vrail`, rebalance figure count / height, edit labels.
+- **Anti-patterns**: a `linear-gradient` strip bg (rule 5); **marking the thumbnails
+  `data-source="paper"`** (they hard-fail the asset area floor and flip the gate to FAIL — see
+  *Required data attributes*); inventing example images the work does not contain — since `asset`
+  no longer guards these, that honesty is **on you (the agent)**: use only genuine task /
+  environment images from the paper, never fabricated or stock art.
 - **Recipe** (the strip is not shipped in the templates — copy and adapt, as you would author any
   footer-strip; all colors via tokens; pair with the `vrail` modifier above for the rail title):
   ```css
@@ -724,7 +733,7 @@ or the class is inert and the 4-tile strip orphans 3+1 (`style` rule 13 hard-fai
       <span class="rail-title-text" data-vrail-title>Synchro&shy;nization Results</span>
     </div>
     <div class="gs-figs rail-body">
-      <figure class="gs-item"><img src="images/ant.png" data-source="paper" data-asset-id="ant" alt="Ant environment"><figcaption class="gs-label">Ant</figcaption></figure>
+      <figure class="gs-item"><img src="images/ant.png" alt="Ant environment"><figcaption class="gs-label">Ant</figcaption></figure>
       <!-- … more .gs-item figures … -->
     </div>
   </section>
