@@ -9,13 +9,16 @@ and the WIDTH-based runt test -- is only exercised here against a real
 headless Chromium.
 
 Determinism: the gate now flags by the last line's WIDTH (a last line filling
-< 30% of the widest line is a stranded runt), NOT by word count. So the "must
+< 35% of the widest line is a stranded runt), NOT by word count. So the "must
 flag" cases end with a word LONGER than the callout placed SECOND-TO-LAST: it
 overflows its line and forces a SHORT final marker onto a line of its own,
 where the marker fills a tiny fraction of the (penult-width) measure regardless
 of small font-metric differences across machines. The "must not flag" cases
-either fill the last line (a single long word, a wide glued tail) or carry an
-opaque cell on the last line. Skipped when Playwright / Chromium isn't installed.
+either fill the last line (a single long word, a wide glued tail, or a tiny
+word fused to a WIDE inline equation) or carry MEDIA (a figure/icon/table) or a
+punctuation-only equation tail on the last line. A short text tail ending in
+inline MATH (e.g. "by λ.") DOES flag -- only media/pure-equation tails are
+exempt. Skipped when Playwright / Chromium isn't installed.
 """
 from __future__ import annotations
 
@@ -57,6 +60,7 @@ _HTML = """<!DOCTYPE html>
   body { font-family: Georgia, serif; }
   .card { padding: 10px; }
   .callout, .caption { width: 240px; font-size: 30px; line-height: 1.3; }
+  .mono { width: 16ch; font-family: monospace; }   /* exact 15ch / 5ch split */
 </style></head>
 <body>
   <div data-measure-role="poster">
@@ -75,7 +79,8 @@ _HTML = """<!DOCTYPE html>
            is skipped. -->
       <div class="callout" id="d">alpha __PEN__ flagD.<br><strong>Done.</strong></div>
       <!-- E: trailing inline <svg> (VISIBLE) lands on the last line -> the last
-           line carries an opaque cell -> not judgeable -> NO widow. -->
+           line carries MEDIA (a figure/icon/table) -> not judgeable -> NO widow.
+           (Inline MATH does NOT exempt a line; see case P.) -->
       <div class="callout" id="e">alpha __PEN__ flagE.<svg width="12" height="12"></svg></div>
       <!-- F: regression for the eb181286 "one." incident -- inline math EARLY
            in the text must NOT hide a pure-text stranded last line. -->
@@ -128,6 +133,34 @@ _HTML = """<!DOCTYPE html>
            case A flag, so this shape WOULD runt without the attribute -- the test
            pins the attribute skip, not mere selector non-membership. -->
       <div class="section-title" id="o" data-vrail-title style="width: 240px">alpha __PEN__ vskip.</div>
+      <!-- P: a short stranded last line that ENDS IN INLINE MATH (the
+           MobiHoc "traded off by λ." incident). The long penult strands a
+           short "flagP λ ." tail; the math symbol on it must NOT exempt the
+           line -- inline math reads as part of the sentence, so the runt is
+           judged by its FULL visual width (text + math) and flags. The blanket
+           `if (last.op) return` skip used to hide this. -->
+      <div class="callout" id="p">alpha beta __PEN__ flagP&nbsp;<mjx-container>x</mjx-container>.</div>
+      <!-- Q: a last line that is PURELY a trailing equation (no text token)
+           is intentional trailing content, not a stranded word -> NO widow.
+           Distinguishes P (text + math) from a deliberate lone trailing math. -->
+      <div class="callout" id="q">alpha qskip __PEN__ <mjx-container>y</mjx-container></div>
+      <!-- R: a single-word last line at exactly 5ch / 15ch = 33.3% of the
+           measure. Above the OLD 30% cut (would NOT flag) but below the new
+           35% cut (must flag) -- pins the threshold raise. Monospace makes the
+           5/15 ratio exact and font-metric-independent. -->
+      <div class="callout mono" id="r">Rmeasurewidth15 flagR</div>
+      <!-- S: a deliberate trailing equation followed by a SENTENCE PERIOD. The
+           last line's only text token is "." (punctuation, no word), so it is
+           an intentional lone-equation tail, NOT a stranded word -> NO widow.
+           Distinguishes it from P ("flagP" is a real word). The "Sskip" word
+           sits in the penult, so it only surfaces if S wrongly flags. -->
+      <div class="callout" id="s">alpha Sskip __PEN__ <mjx-container>z</mjx-container>.</div>
+      <!-- T: a tiny word ("tx") fused (&nbsp;) to a WIDE inline equation on the
+           last line. Text ALONE is < 35% of the measure, but text + math FILLS
+           the line (> 35%) -> NO widow. Pins lastW = FULL extent (text + math):
+           a regression to text-only width would wrongly flag this. "tx" is
+           glued to a 170px math box; the 15ch mono penult is the measure. -->
+      <div class="callout mono" id="t">Tfullextentwide tx&nbsp;<mjx-container style="display:inline-block;width:170px;height:28px;vertical-align:middle"></mjx-container></div>
     </div>
   </div>
   </div>
@@ -155,8 +188,9 @@ def test_widow_geometry_end_to_end(tmp_path, capsys) -> None:
     # Flag: A (basic runt), D (first-segment runt), F (math early), G (caption
     # in the 220-400 band), H (tall opaque vs tolerance), I (<br> inside table),
     # J (hidden trailing svg stays pure text), K (unspaced-math token Range),
-    # L (short TWO-word last line). Nine in all.
-    assert "prose widows        : 9" in combined
+    # L (short TWO-word last line), P (text+math last line), R (33% < new 35%
+    # cut). Eleven in all.
+    assert "prose widows        : 11" in combined
     assert "flagA." in combined                            # A
     assert "flagD." in combined                            # D first segment
     assert "flagF." in combined                            # F math early
@@ -166,6 +200,8 @@ def test_widow_geometry_end_to_end(tmp_path, capsys) -> None:
     assert "flagJ." in combined                            # J hidden svg
     assert "flagK." in combined                            # K unspaced math
     assert "is L2." in combined                            # L two-word runt
+    assert "flagP" in combined                             # P text + inline math
+    assert "flagR" in combined                             # R 33% < 35% cut
     # Do NOT flag:
     # B: &nbsp; glues the marker to the wide penult -> wide last line.
     assert "noflagB." not in combined
@@ -180,3 +216,13 @@ def test_widow_geometry_end_to_end(tmp_path, capsys) -> None:
     # deliberately narrow stacked title is not a runt. Pins the data-vrail-title
     # skip (same narrow shape as case A, which DOES flag, minus the attribute).
     assert "vskip." not in combined
+    # Q: a last line that is PURELY a trailing equation (no text token) is
+    # intentional content, not a runt -> must NOT flag (the lone "qskip" is in
+    # the penult, so it would only surface if Q wrongly flagged).
+    assert "qskip" not in combined
+    # S: a trailing equation + sentence period (last-line text is "." only, no
+    # word) -> intentional lone-equation tail -> must NOT flag.
+    assert "Sskip" not in combined
+    # T: tiny word fused to a WIDE inline equation -> text+math fills the line
+    # -> must NOT flag (pins lastW = full extent, not text-only).
+    assert "Tfullextentwide" not in combined

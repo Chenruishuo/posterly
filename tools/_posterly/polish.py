@@ -14,10 +14,12 @@ Three gates the hard alignment gate cannot see:
     lack ``white-space: nowrap``. (2) ``WIDOW``: a ``.callout`` /
     ``.body-text`` / ``.caption`` / ``.section-title`` (or a ``<br>``
     segment of one) that wraps so its last visual line is a stranded
-    runt -- filling less than 30% of the widest line. Judged by the last
+    runt -- filling less than 35% of the widest line. Judged by the last
     line's WIDTH as a fraction of the measure (not word count), so a short
     two-word tail flags and a single long word filling the line does not;
-    an ``&nbsp;``-glued tail widens the last line above the threshold.
+    an ``&nbsp;``-glued tail widens the last line above the threshold. A
+    trailing figure/icon/table keeps the last line unjudgeable, but a short
+    text tail ending in inline math (``by $\\lambda$.``) is caught.
   - **Gate C: space-between fill.** ``justify-content: space-between``
     on a column with one short card produces a giant whitespace gap
     that reads as "this column ran out of things to say". Detected
@@ -491,7 +493,7 @@ _POLISH_JS = r"""
   //         Robust to inline <strong>/<code> splitting a word's rects, to
   //         `text-align: justify`, and to sub-pixel / mixed-font-size line tops.
   const widows = [];
-  const RUNT_FRAC = 0.30;   // last line < 30% of the measure = stranded runt
+  const RUNT_FRAC = 0.35;   // last line < 35% of the measure = stranded runt
   const WIDOW_SEL = '.callout, .body-text, .caption, .section-title,'
                   + ' .card p, .card li';
   document.querySelectorAll(WIDOW_SEL).forEach(el => {
@@ -516,9 +518,18 @@ _POLISH_JS = r"""
     // mixing inline $math$ with a lone trailing word slipped through that
     // blanket skip -- the eb181286 "one." incident). They join the line model
     // as OPAQUE cells: their text (if any) stays out of the token stream, but
-    // their rects vote in line grouping, and a last line that itself carries
-    // opaque content is skipped (its width as a "runt" would be meaningless).
+    // their rects vote in line grouping. A last line is then skipped only when
+    // it carries figure/icon/table MEDIA, or is opaque with no real WORD -- a
+    // lone trailing equation, even with a sentence period (see the last-line
+    // gate below); a text tail with a real word ending in math IS judged.
     const OPAQUE = 'mjx-container, .MathJax, math, img, svg, canvas, table';
+    // Of those, FIGURE-class opaques (image / icon / canvas / table) are real
+    // media, not prose: a last line trailing one is unjudgeable (its width as a
+    // "runt" is meaningless and a trailing inline icon may be deliberate). Inline
+    // MATH (mjx-container / .MathJax / math) is NOT media -- it reads as part of
+    // the sentence, so a short text fragment ending in math ("by $\\lambda$.")
+    // IS a stranded runt and must be judged.
+    const MEDIA = 'img, svg, canvas, table';
     // Display text (.caption / .callout) gets a higher length cap than running
     // prose: a short stranded last line under a figure is prominent even in a
     // long caption, and the 220-char cap was exactly why the incident caption
@@ -570,8 +581,11 @@ _POLISH_JS = r"""
     paras.forEach(para => {
       const norm = para.flat.replace(/\s+/g, ' ').trim();
       if (norm.length === 0 || norm.length > cap) return;     // skip empty / long running prose
-      // Tokenise on \S+. JS `\s` includes U+00A0, so an &nbsp;-glued tail
-      // (a recommended Gate B fix) is >1 token and will NOT flag.
+      // Tokenise on \S+ (JS `\s` includes U+00A0, so `&nbsp;` is a SEPARATOR
+      // here -- a glued pair is two tokens). Token COUNT no longer decides;
+      // the WIDTH test below does. The recommended `&nbsp;` glue still helps,
+      // by pulling the prior word down so the last line fills more of the
+      // measure -- not by changing the token count.
       const toks = [];
       const re = /\S+/g;
       let m;
@@ -619,14 +633,16 @@ _POLISH_JS = r"""
         }
       }
       // Opaque cells (ti = -1): vote in line grouping, mark their line, but
-      // never count as a "word".
+      // never count as a "word". `media` distinguishes a figure/icon/table
+      // (its last line stays unjudgeable) from inline math (judged with text).
       for (const op of para.ops) {
+        const isMedia = !!(op.matches && op.matches(MEDIA));
         const rects = op.getClientRects();
         for (let i = 0; i < rects.length; i++) {
           const r = rects[i];
           if (r.width <= 0.5 || r.height <= 0.5) continue;
           cells.push({cy: (r.top + r.bottom) / 2, h: r.height, ti: -1,
-                      l: r.left, r: r.right});
+                      l: r.left, r: r.right, media: isMedia});
         }
       }
       if (cells.length < 2) return;
@@ -634,7 +650,8 @@ _POLISH_JS = r"""
       // Group cells into visual lines by center-y within a line-height
       // tolerance (NOT top +/- 2px: <sup>, mixed font-size and sub-pixel
       // rounding shift tops within one line). Each line keeps the SET of token
-      // indices with a visible rect on it; a one-token last line is a widow.
+      // indices with a visible rect on it; the WIDTH test below judges the last
+      // line (token count no longer decides).
       // Tolerance derives from TEXT cells only: tall opaque cells (display
       // math) would inflate the median height and merge a real text last line
       // into the line above, masking the widow.
@@ -649,45 +666,62 @@ _POLISH_JS = r"""
           line.n += 1;
           line.cy += (c.cy - line.cy) / line.n;
         } else {
-          line = {cy: c.cy, n: 1, tis: new Set(), op: false,
-                  lo: Infinity, hi: -Infinity};
+          line = {cy: c.cy, n: 1, tis: new Set(), op: false, media: false,
+                  lo: Infinity, hi: -Infinity, flo: Infinity, fhi: -Infinity};
           lines.push(line);
         }
-        // Only TEXT cells set the line's measured extent: an inline opaque
-        // (display math / figure / table) wider than the prose must NOT inflate
-        // the `measure` and make a normal text last line look like a runt
-        // (Codex MAJOR). Opaque cells still vote in grouping (via cy) above and
-        // mark the line opaque here.
+        // Only TEXT cells set the line's measured extent (`lo`/`hi`): an inline
+        // opaque (display math / figure / table) wider than the prose must NOT
+        // inflate the `measure` and make a normal text last line look like a
+        // runt (Codex MAJOR). `flo`/`fhi` track the FULL visual extent (text +
+        // opaque) and is used ONLY to size a text+math last line (case "by λ.").
+        // Opaque cells still vote in grouping (via cy) above; `media` marks a
+        // figure/icon/table line (kept unjudgeable), `op` marks any opaque.
+        if (c.l < line.flo) line.flo = c.l;                   // full L/R extent
+        if (c.r > line.fhi) line.fhi = c.r;                   // (text + opaque)
         if (c.ti >= 0) {
           line.tis.add(c.ti);
           if (c.l < line.lo) line.lo = c.l;                   // text L/R extent
           if (c.r > line.hi) line.hi = c.r;                   // of the visual line
         } else {
           line.op = true;
+          if (c.media) line.media = true;
         }
       }
       if (lines.length < 2) return;                           // single visual line: nothing to widow
       const last = lines[lines.length - 1];
-      // A last line carrying opaque content (math/figure) is OUTSIDE this
-      // prose-runt contract -- a lone trailing equation/figure is intentional
-      // content, not a stranded word, so judging it by text width would be
-      // ambiguous (and risk false-flagging deliberate trailing math). Skip it;
-      // pure-text last lines are always judged.
-      if (last.op) return;
+      // A last line carrying a FIGURE / icon / table (real media) is OUTSIDE
+      // this prose-runt contract -- its width as a "runt" is meaningless and a
+      // trailing inline icon may be deliberate, so it stays unjudgeable.
+      if (last.media) return;
+      // A last line carrying opaque content whose only text is PUNCTUATION
+      // (a lone trailing equation/figure, optionally with a sentence period:
+      // "$eq$." or "$eq$,") is intentional trailing content, not a stranded
+      // word -- skip it. A real WORD on the line (a letter/digit token, e.g.
+      // "by" in "by λ.") keeps the line judged.
+      const lastHasWord = Array.from(last.tis)
+        .some(ti => /[\p{L}\p{N}]/u.test(toks[ti].t));
+      if (last.op && !lastHasWord) return;
+      // Otherwise the last line is prose: pure text, OR text plus an inline
+      // MATH symbol (mjx-container) that reads as part of the sentence. A short
+      // tail ending in math ("traded off by $\\lambda$.") IS a stranded runt, so
+      // we judge it by its FULL visual extent (text + math), not text alone --
+      // the old blanket `if (last.op) return` hid exactly this case.
       // WIDTH-based runt test (replaces the old "exactly one token" rule). The
-      // MEASURE is the widest typeset line; a last line filling less than
+      // MEASURE is the widest typeset TEXT line (opaque widths excluded so an
+      // inline figure can't inflate it); a last line filling less than
       // RUNT_FRAC of it is a stranded runt -- regardless of word COUNT. This
       // catches a SHORT two-word tail ("= OMAD-only.") the token rule missed,
       // and clears a SINGLE long word that fills the line (width ~= measure)
       // which the token rule wrongly flagged.
       const measure = Math.max(...lines.map(l => l.hi - l.lo));
-      const lastW = last.hi - last.lo;
+      const lastW = last.fhi - last.flo;
       if (measure > 0 && (lastW / measure) < RUNT_FRAC) {
         const ord = Array.from(last.tis).sort((a, b) => a - b);
         widows.push({
           tag: el.tagName.toLowerCase(),
           cls: el.className || '',
-          frac: Math.round(lastW / measure * 100),
+          frac: Math.floor(lastW / measure * 100),   // floor: a flagged (<35%) line never displays "35%"
           word: ord.map(ti => toks[ti].t).join(' ').slice(0, 40),
           lines: lines.length,
           text: (norm.length > 60) ? ('...' + norm.slice(-57)) : norm,
@@ -1082,7 +1116,7 @@ def cmd_polish(args: argparse.Namespace) -> int:
     # ---- Gate B (prose): a stranded RUNT last line (width-based) ----
     # The wrap-geometry sibling of the stat/num orphan above: a `.callout` /
     # `.body-text` / `.caption` / `.section-title` (or a `<br>`-delimited
-    # segment of one) whose last visual line fills < ~30% of the typeset
+    # segment of one) whose last visual line fills < ~35% of the typeset
     # measure. Judged by WIDTH, not word count, so a short TWO-word tail flags
     # while a single LONG word that fills the line does not. SKILL.md Gate B
     # forbids this; the stat/num scan can't see it. Gluing the last two tokens
@@ -1092,7 +1126,7 @@ def cmd_polish(args: argparse.Namespace) -> int:
         warns.append(
             f"WIDOW: <{ascii_safe(w['tag'])} class='{ascii_safe(w['cls'])}'> "
             f"wraps to a stranded last line that fills only "
-            f"{int(w['frac'])}% of the text width ('{ascii_safe(w['word'])}'), "
+            f"{int(w['frac'])}% of the typeset width ('{ascii_safe(w['word'])}'), "
             f"a runt (SKILL.md Gate B). Pull a word down -- glue the last two "
             f"tokens with &nbsp;, or reword so the last line carries more of "
             f"the measure. Context: '{ascii_safe(w['text'])}'."
