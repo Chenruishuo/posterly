@@ -12,9 +12,12 @@ Three gates the hard alignment gate cannot see:
     ``[class*="stat"]`` / ``[class*="num"]`` / ``.takeaway-num`` /
     ``.headline-num`` that end with a known orphan-prone glyph but
     lack ``white-space: nowrap``. (2) ``WIDOW``: a ``.callout`` /
-    ``.body-text`` / ``.caption`` / ``.section-title`` (or a ``<br>``
-    segment of one) that wraps so its last visual line is a stranded
-    runt -- filling less than 35% of the widest line. Judged by the last
+    ``.body-text`` / ``.caption`` / ``.section-title`` / ``.card p`` /
+    ``.card li`` / ``.fb-text`` (or a ``<br>`` segment of one) that wraps
+    so its last visual line is a stranded runt -- filling less than 35%
+    of the widest line (the framework banner ``.fb-text`` carries a higher
+    ~80% bar: it must read as a filled rectangle, not merely avoid a runt).
+    Judged by the last
     line's WIDTH as a fraction of the measure (not word count), so a short
     two-word tail flags and a single long word filling the line does not;
     an ``&nbsp;``-glued tail widens the last line above the threshold. A
@@ -485,17 +488,27 @@ _POLISH_JS = r"""
   //         stranded RUNT -- it fills less than RUNT_FRAC of the typeset
   //         measure. `measure` checks card bottoms; section 2's orphan scan
   //         only sees a trailing GLYPH on a stat/num element. Neither sees a
-  //         `.callout`/`.body-text`/`.caption`/`.section-title` that wraps to
-  //         a short last line -- the artefact SKILL.md Gate B forbids. We
-  //         judge by the last line's WIDTH as a fraction of the widest line
+  //         `.callout`/`.body-text`/`.caption`/`.section-title`/`.card p`/`.card li`/
+  //         `.fb-text` that wraps to a short last line -- the artefact SKILL.md Gate
+  //         B forbids.
+  //         We judge by the last line's WIDTH as a fraction of the widest line
   //         (NOT word count): a short two-word tail is as ugly as a one-word
   //         one, while a single long word that fills the line is not stranded.
+  //         The framework banner (.fb-text) is the poster's most prominent block,
+  //         so it gets a much higher bar (BANNER_FILL_FRAC): not just "not a runt"
+  //         but a near-full last line -- a filled rectangle.
   //         Robust to inline <strong>/<code> splitting a word's rects, to
   //         `text-align: justify`, and to sub-pixel / mixed-font-size line tops.
   const widows = [];
   const RUNT_FRAC = 0.35;   // last line < 35% of the measure = stranded runt
+  // The framework banner (.fb-text) is the poster's single most prominent text
+  // block; a merely "not-a-runt" last line still reads as a ragged box there. It
+  // gets a much higher bar -- aim for a near-full last line (a filled rectangle),
+  // reached by tuning the .fb-text width so the text reflows (SKILL.md Gate B),
+  // NOT by justification. Still a soft warning, never a hard fail.
+  const BANNER_FILL_FRAC = 0.80;
   const WIDOW_SEL = '.callout, .body-text, .caption, .section-title,'
-                  + ' .card p, .card li';
+                  + ' .card p, .card li, .fb-text';
   document.querySelectorAll(WIDOW_SEL).forEach(el => {
     // Scan only the most specific prose leaf: if this element CONTAINS another
     // candidate (a .callout wrapping a <p class="body-text">), skip it -- the
@@ -530,11 +543,13 @@ _POLISH_JS = r"""
     // the sentence, so a short text fragment ending in math ("by $\\lambda$.")
     // IS a stranded runt and must be judged.
     const MEDIA = 'img, svg, canvas, table';
-    // Display text (.caption / .callout) gets a higher length cap than running
-    // prose: a short stranded last line under a figure is prominent even in a
-    // long caption, and the 220-char cap was exactly why the incident caption
-    // (231 chars) was never measured.
-    const cap = el.matches('.caption, .callout') ? 400 : 220;
+    // Display text (.caption / .callout / .fb-text) gets a higher length cap
+    // than running prose: a short stranded last line is prominent in display
+    // copy even when the block is long -- a caption under a figure, or the
+    // framework-banner blurb. The 220-char cap was exactly why an incident
+    // caption (231 chars) and a 269-char banner .fb-text (whose last line filled
+    // only 17% of the measure) were never measured.
+    const cap = (el.matches('.caption, .callout') || el.closest('.fb-text')) ? 400 : 220;
 
     // Split the element's own text into `<br>`-delimited paragraphs, each
     // keeping a flat string + a DOM map (so a word split across inline tags
@@ -716,15 +731,24 @@ _POLISH_JS = r"""
       // which the token rule wrongly flagged.
       const measure = Math.max(...lines.map(l => l.hi - l.lo));
       const lastW = last.fhi - last.flo;
-      if (measure > 0 && (lastW / measure) < RUNT_FRAC) {
+      // The banner (.fb-text) must read as a FILLED rectangle, not merely avoid a
+      // runt -- so it is judged against the higher BANNER_FILL_FRAC; all other
+      // prose keeps the RUNT_FRAC runt bar. `closest` (not `matches`) so banner
+      // text nested in a sub-candidate (.body-text/.caption inside .fb-text, which
+      // would make the gate scan the child, not the .fb-text parent) still gets
+      // the banner bar rather than silently falling back to the runt bar.
+      const isBanner = !!el.closest('.fb-text');
+      const threshold = isBanner ? BANNER_FILL_FRAC : RUNT_FRAC;
+      if (measure > 0 && (lastW / measure) < threshold) {
         const ord = Array.from(last.tis).sort((a, b) => a - b);
         widows.push({
           tag: el.tagName.toLowerCase(),
           cls: el.className || '',
-          frac: Math.floor(lastW / measure * 100),   // floor: a flagged (<35%) line never displays "35%"
+          frac: Math.floor(lastW / measure * 100),   // floor: a flagged line never displays its own threshold %
           word: ord.map(ti => toks[ti].t).join(' ').slice(0, 40),
           lines: lines.length,
           text: (norm.length > 60) ? ('...' + norm.slice(-57)) : norm,
+          banner: isBanner,   // banner -> "fill the rectangle" message; else the runt message
         });
       }
     });
@@ -1115,22 +1139,39 @@ def cmd_polish(args: argparse.Namespace) -> int:
 
     # ---- Gate B (prose): a stranded RUNT last line (width-based) ----
     # The wrap-geometry sibling of the stat/num orphan above: a `.callout` /
-    # `.body-text` / `.caption` / `.section-title` (or a `<br>`-delimited
-    # segment of one) whose last visual line fills < ~35% of the typeset
-    # measure. Judged by WIDTH, not word count, so a short TWO-word tail flags
+    # `.body-text` / `.caption` / `.section-title` / `.card p` / `.card li` /
+    # `.fb-text` (or a `<br>`-delimited segment of one) whose last visual line
+    # fills < ~35% of the typeset measure for ordinary prose -- the `.fb-text`
+    # banner uses the higher ~80% BANNER_FILL_FRAC (see the per-item `banner`
+    # branch below). Judged by WIDTH, not word count, so a short TWO-word tail flags
     # while a single LONG word that fills the line does not. SKILL.md Gate B
     # forbids this; the stat/num scan can't see it. Gluing the last two tokens
     # with &nbsp; pulls the prior word down onto the last line and widens it
-    # above the threshold, so the recommended fix still clears the gate.
+    # above the threshold, so the recommended fix still clears the gate. The
+    # framework banner (`.fb-text`) carries a `banner` flag and a higher bar
+    # (BANNER_FILL_FRAC): it must read as a FILLED rectangle, so it gets a
+    # width-tuning message instead of the runt/glue one.
     for w in data.get("widows", []):
-        warns.append(
-            f"WIDOW: <{ascii_safe(w['tag'])} class='{ascii_safe(w['cls'])}'> "
-            f"wraps to a stranded last line that fills only "
-            f"{int(w['frac'])}% of the typeset width ('{ascii_safe(w['word'])}'), "
-            f"a runt (SKILL.md Gate B). Pull a word down -- glue the last two "
-            f"tokens with &nbsp;, or reword so the last line carries more of "
-            f"the measure. Context: '{ascii_safe(w['text'])}'."
-        )
+        if w.get("banner"):
+            warns.append(
+                f"BANNER WIDOW: <{ascii_safe(w['tag'])} class='{ascii_safe(w['cls'])}'> "
+                f"the framework banner is the poster's most prominent block, but its "
+                f"last line fills only {int(w['frac'])}% of the typeset width "
+                f"('{ascii_safe(w['word'])}') -- it should read as a filled rectangle "
+                f"(SKILL.md Gate B). Tune the .fb-text width (its flex ratio against "
+                f".banner-stats) so the text reflows to a near-full last line without "
+                f"starving the stat boxes; reword only if width alone can't. "
+                f"Context: '{ascii_safe(w['text'])}'."
+            )
+        else:
+            warns.append(
+                f"WIDOW: <{ascii_safe(w['tag'])} class='{ascii_safe(w['cls'])}'> "
+                f"wraps to a stranded last line that fills only "
+                f"{int(w['frac'])}% of the typeset width ('{ascii_safe(w['word'])}'), "
+                f"a runt (SKILL.md Gate B). Pull a word down -- glue the last two "
+                f"tokens with &nbsp;, or reword so the last line carries more of "
+                f"the measure. Context: '{ascii_safe(w['text'])}'."
+            )
 
     # ---- Gate C: space-between fill ----
     for c in data.get("cols", []):
