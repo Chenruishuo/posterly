@@ -618,6 +618,10 @@
     color: var(--text-secondary);
     margin-top: calc(2 * var(--u));
     line-height: 1.15;
+    /* Reserve two label lines (2lh tracks this line-height, 1.15 here)
+       so 1-line and 2-line labels occupy the same height and the big
+       numbers align across tiles. Keep labels <= 2 lines. */
+    min-height: 2lh;
   }
 
   /* =========================================================

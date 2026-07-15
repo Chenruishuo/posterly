@@ -143,7 +143,7 @@ The paper source is the only required input — hand over the LaTeX project dire
 posterly/
 ├── SKILL.md             ← workflow your agent follows when you /posterly
 ├── tools/
-│   ├── poster_check.py  ← preflight / measure / polish / verify-final CLIs
+│   ├── poster_check.py  ← preflight / measure / pack / polish / verify-final CLIs
 │   ├── render_preview.py← print-emulated PDF + thumbnail PNG
 │   └── _posterly/       ← internal modules
 ├── templates/           ← landscape_4col, landscape_hero, portrait_2col
@@ -156,14 +156,16 @@ posterly/
 └── tests/               ← pytest suite (canvas / preflight / polish / verify-final)
 ```
 
-The four sanity-check CLIs at a glance:
+The six sanity-check CLIs at a glance:
 
 - `preflight`     — static lint: LaTeX residue, raw `<` inside math, missing local images, remote-image warnings (a print poster should be self-contained), missing `data-measure-role` markup.
-- `measure`       — print-emulated geometry: column-bottom spread, gap to footer, poster bbox aligned to the page.
+- `measure`       — print-emulated geometry: column-bottom spread, gap to footer, poster bbox aligned to the page. On failure it prints the shared passing band + per-column safe deltas and an edit-targets block (source line + anchor per card); a persistent circuit breaker stops a non-converging loop after 30 consecutive failures (exit 3).
+- `pack`          — advisory feasibility pre-check (run once before the measure loop): probes each card figure at its Gate A width-band endpoints in the browser and names columns that figure sizing alone can't bring into band.
+- `fit-logos`     — advisory, read-only logo packer: proposes the max-uniform-height row arrangement for the header logos as a class+CSS snippet; the agent judges optical weight and applies it by hand — or not at all.
 - `polish`        — soft visual checks: figure-AR sizing, broken/zero-size images (FIG/BROKEN), typography orphans, space-between fill, card whitespace (CARD/TRAILING — blank below a stretched card's content; CARD/INNER-VOID — a void in the middle of a stretched equal-height card whose tail is bottom-pinned).
 - `verify-final`  — `pdfinfo`-based PDF sanity: page count, dimensions, file size.
 
-Three further gates layer on top, documented in `SKILL.md`: `run_gates.py` (the default Step-4 loop driver — runs every gate into one report), `style_check.py` (a hard design-token gate, on by default), and `asset_check.py` (real-figure provenance, opt-in via `--manifest`). The four `poster_check.py` CLIs above are the minimal fallback for a non-tokenized / imported template.
+Three further gates layer on top, documented in `SKILL.md`: `run_gates.py` (the default Step-4 loop driver — runs every gate into one report), `style_check.py` (a hard design-token gate, on by default), and `asset_check.py` (real-figure provenance, opt-in via `--manifest`). The `poster_check.py` CLIs above are the minimal fallback for a non-tokenized / imported template.
 
 Detailed thresholds and tuning flags are in `SKILL.md`. See `templates/README.md` for the template gallery and the conventions a new template must follow.
 

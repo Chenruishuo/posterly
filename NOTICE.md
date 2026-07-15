@@ -67,6 +67,26 @@ ARIS's venue color-token packs (`templates/tokens/*.json`) were intentionally **
 posterly derives its palette from poster signals (logo / figure / brand) under WCAG AA,
 rather than from fixed per-venue presets.
 
+## ResearchStudio-inspired, original posterly work (not a copy)
+
+Five loop-convergence mechanisms were inspired by **ResearchStudio**'s `paper2poster` skill
+(https://github.com/ai-nuts/ResearchStudio, `ResearchStudio-Reel/skills/paper2poster`) after a
+2026-07 side-by-side review. **No code or prose was copied** — the mechanisms were re-designed
+for posterly's human-in-the-loop workflow and implemented from scratch against posterly's own
+`_posterly` engine (paper2poster shares distant ancestry with that engine but diverged long
+ago):
+
+- the **shared-passing-band + safe-delta hints** in `measure` (their `needPx`/`needPxRange`;
+  posterly's version couples the spread and gap constraints into one band),
+- the **on-disk measure circuit breaker** (`_posterly/budget.py`; their `.fill_budget.json` —
+  posterly counts *consecutive failures* and auto-resets on PASS / 12 h idle),
+- the **`pack` column-feasibility pre-check** (their static floor arithmetic; posterly instead
+  probes the Gate A band endpoints live in the browser),
+- the **edit-targets block** (their `EDIT TARGETS` verbatim-source dump; posterly emits source
+  line numbers + math-stripped anchors instead, since MathJax mutates the DOM),
+- the **keybox two-line label reservation** (their `.stat-mini .lbl { min-height: 2.4em }`;
+  posterly uses `2lh` so each template's own line-height is tracked).
+
 ## Upstream-sync rule
 
 When pulling new ARIS releases of these tools, preserve the vendor boundary: re-vendor the

@@ -13,6 +13,9 @@ venv/
 *_preview.pdf
 *_preview.png
 
+# measure-loop circuit-breaker state (per-poster, transient)
+.*.posterly_budget.json
+
 # Editor + OS
 .vscode/
 .idea/

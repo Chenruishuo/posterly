@@ -335,8 +335,35 @@ _POLISH_JS = r"""
         if (inAbs(el)) return;
         // tagName is upper-case for HTML, but case-preserved (lower) for
         // SVG elements -- normalise before the replaced-tag test.
-        if (!REPLACED.test(el.tagName.toUpperCase()) && el.children.length) {
-          return;  // a non-replaced container: skip (only leaves + media)
+        if (!REPLACED.test(el.tagName.toUpperCase())) {
+          if (el.children.length) {
+            return;  // a non-replaced container: skip (only leaves + media)
+          }
+          // A text-bearing leaf with NO visible paint of its own
+          // (transparent bg, no border/shadow): its visual content is
+          // exactly its text, which the Range walk above already
+          // measured. Counting the whole box would let a tall reserved
+          // box (e.g. the keybox label's `min-height: 2lh` slot) read
+          // as "content" and mask a real trailing void. A PAINTED leaf
+          // (callout pill, tinted bar) keeps the box bump -- its
+          // background visibly extends to the box edge.
+          if ((el.textContent || '').trim()) {
+            const ls = window.getComputedStyle(el);
+            const bg = ls.backgroundColor || '';
+            // An invisible box paints nothing regardless of bg/border.
+            const invisible = ls.visibility === 'hidden'
+              || parseFloat(ls.opacity) === 0;
+            const painted = !invisible && (
+              (bg && bg !== 'transparent'
+                  && bg !== 'rgba(0, 0, 0, 0)')
+              || (ls.backgroundImage && ls.backgroundImage !== 'none')
+              || (ls.boxShadow && ls.boxShadow !== 'none')
+              || (parseFloat(ls.borderTopWidth) || 0) > 0
+              || (parseFloat(ls.borderRightWidth) || 0) > 0
+              || (parseFloat(ls.borderBottomWidth) || 0) > 0
+              || (parseFloat(ls.borderLeftWidth) || 0) > 0);
+            if (!painted) return;
+          }
         }
         bump(el.getBoundingClientRect());
       });

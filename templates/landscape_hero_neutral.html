@@ -707,6 +707,10 @@
     color: var(--text-secondary);
     margin-top: calc(2 * var(--u));
     line-height: 1.1;
+    /* Reserve two label lines (2lh tracks this line-height) so 1-line
+       and 2-line labels occupy the same height and the big numbers
+       align across tiles. Keep labels <= 2 lines (COMPONENTS §keybox). */
+    min-height: 2lh;
   }
 
   /* Optional takeaways strip (delete the section if not needed).

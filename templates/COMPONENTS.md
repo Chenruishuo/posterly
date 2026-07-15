@@ -277,6 +277,11 @@ Gate name shorthand (DESIGN_FINAL §3–§7):
   each a big number over a small caption. The at-a-glance numeric hook. Tiles stretch to equal
   height and **vertically center** their content, so a 1-line tile's number aligns with a
   2-line neighbour's instead of sitting top-ragged (custom tile grids must do the same).
+  `.kb-label` additionally reserves **two label lines** (`min-height: 2lh`) so a 1-line and a
+  2-line label occupy identical height and the big numbers land at the same y across the row.
+  **Contract: keep every label ≤ 2 lines** — a 3-line label exceeds the two-line reservation
+  (its tile's content grows taller than its siblings') and the row reads ragged again
+  (shorten the label: drop adjectives, abbreviate, `M`/`B` units).
 - **Allowed variants**: 2–3 items render on the base `.keybox` (a 3-column grid). **4 items
   REQUIRE the `keybox--4` variant** (`<div class="keybox keybox--4">`, see §`keybox--4` below) to
   switch the grid to 4 columns — without it the 4th tile falls into a near-empty second row (the
@@ -587,6 +592,28 @@ or the class is inert and the 4-tile strip orphans 3+1 (`style` rule 13 hard-fai
 - **Allowed fix ops**: swap logo file, adjust the row's height token, drop a logo.
 - **Anti-patterns**: fabricated/approximated seals; logos so small they read as dirt
   (< ~40u); using the logo row to smuggle decorative graphics.
+
+### `logo-pack` — advisor-generated multi-row logo packing (added 2026-07-15)
+- **Purpose**: the markup+CSS shape that `poster_check.py fit-logos` proposes when ≥3
+  institution marks of mixed AR pack better in rows than in one `logo-row`: a
+  flex-column wrapper of `logo-row`s, every mark still inside a `.logo-slot` (so Gate E
+  keeps seeing it), heights set by ONE shared CSS rule (uniform height — marks enlarge
+  together). Emitted in `var(--u)` units when the template defines `--u`.
+- **Contract**: same as `logo-row` above (real files, `data-color-exempt="logo"`,
+  meaningful `alt`); the advisor's snippet is a *starting proposal* — the optical-weight
+  judgment (lockup vs wordmark) stays with the author, and the tool never edits the file.
+- **Tokens**: layout-only CSS; the height/gap rules ride `var(--u)`.
+- **Inspected by**: Gate E via the preserved `.logo-slot` wrappers (`<img>` marks only —
+  an inline-SVG mark is not gated; verify by eye); style rule 2 satisfied by construction
+  (no inline styles).
+- **Allowed fix ops**: re-run `fit-logos` after logo changes, cap the shared height near
+  the QR, demote a too-wide wordmark to a width-normalized `logo-stack` (its own row
+  does not shrink it — the uniform height only grows when a row empties).
+- **Anti-patterns**: pasting the snippet without the optical-weight check; keeping the
+  zone's OLD logo children alongside the pack, or hand-wrapping the pack in yet another
+  `logo-row` (the snippet *replaces* the zone's inner content — when the discovered zone
+  is itself a `.logo-row`, `.logo-row > .logo-pack > .logo-row` is the expected shape);
+  re-introducing inline `style=` to tweak one mark.
 
 ### `vrail` — vertical-rail title (a content-agnostic band modifier) (added 2026-06-16, user-checkpointed)
 - **Purpose**: a layout *modifier* for a **wide, short, full-width band** that moves the band's

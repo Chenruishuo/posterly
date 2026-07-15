@@ -56,6 +56,63 @@ class SettleResult:
     the ``$…$`` is most likely prose, not math)."""
 
 
+_UNDECODABLE_IMGS_JS = r"""
+async () => {
+  // Broken-image probe: `img.decode()` resolves only for an image that
+  // actually decoded pixels, and rejects for a dead raster OR a dead
+  // SVG -- including the case where the browser renders the <img> as
+  // an alt-text box (non-zero bbox, zero pixels), which defeats every
+  // natural-size / rendered-box heuristic. Merged with the load-error
+  // srcs captured by the init script installed in
+  // open_print_emulated_page, so an <img> a handler already removed
+  // from the DOM is still reported. Authoritative for images that
+  // settle within the per-image bound below; a timed-out decode falls
+  // back to the callers' heuristics.
+  const bad = new Set(window.__posterly_img_errors || []);
+  // Per-image time bound: decode() on a lazy remote image can trigger
+  // a fresh network fetch AFTER network-idle and pend indefinitely --
+  // a timed-out decode counts as OK (conservative; the size heuristics
+  // still apply), never as broken.
+  const bounded = (p, ms) =>
+    Promise.race([p, new Promise(res => setTimeout(res, ms))]);
+  await Promise.all([...document.images].map(im =>
+    bounded(im.decode().then(() => null, () => {
+      const src = im.getAttribute('src') || '';
+      if (src) bad.add(src);
+    }), 3000)
+  ));
+  return [...bad];
+}
+"""
+
+# Installed BEFORE navigation (add_init_script) so image load failures
+# are captured even if a handler removes the <img> before the probes
+# run. Capture phase: an <img>'s error event does not bubble, but it
+# does pass a capturing window listener.
+_IMG_ERROR_CAPTURE_JS = r"""
+window.__posterly_img_errors = [];
+window.addEventListener('error', (e) => {
+  const t = e.target;
+  if (t && t.tagName === 'IMG') {
+    const src = t.getAttribute('src') || '';
+    if (src) window.__posterly_img_errors.push(src);
+  }
+}, true);
+"""
+
+
+def undecodable_img_srcs(page) -> list[str]:
+    """`src` of every <img> that failed to load (captured at load time)
+    or whose ``decode()`` rejects within the probe's per-image 3s bound
+    -- authoritative for images that settle in time; a timed-out decode
+    is NOT listed (callers' size heuristics still apply). Best-effort:
+    an evaluation failure returns []."""
+    try:
+        return list(page.evaluate(_UNDECODABLE_IMGS_JS))
+    except Exception:
+        return []
+
+
 def open_print_emulated_page(p, viewport_px: tuple[int, int]):
     """Launch headless Chromium, open a context+page at the viewport,
     emulate print media. Returns ``(browser, ctx, page)``.
@@ -71,6 +128,10 @@ def open_print_emulated_page(p, viewport_px: tuple[int, int]):
     page = ctx.new_page()
     page.emulate_media(media="print")
     page.set_viewport_size({"width": w, "height": h})
+    try:
+        page.add_init_script(_IMG_ERROR_CAPTURE_JS)
+    except Exception:
+        pass  # probes fall back to decode()-only detection
     return browser, ctx, page
 
 

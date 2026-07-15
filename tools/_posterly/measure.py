@@ -18,10 +18,12 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import sys
 from pathlib import Path
 from typing import Any
 
+from . import budget as _budget
 from . import canvas as _canvas
 from . import render as _render
 from .textutil import ascii_safe
@@ -70,13 +72,33 @@ def intercard_gaps(cards: list[dict]) -> list[float]:
 _MEASURE_JS = r"""
 () => {
   const nodes = Array.from(document.querySelectorAll('[data-measure-role]'));
+  let cardOrdinal = 0;
   return nodes.map(n => {
     const r = n.getBoundingClientRect();
     const cs = window.getComputedStyle(n);
+    const role = n.getAttribute('data-measure-role') || '';
+    // Edit-target anchor for cards: the section-title text (fallback:
+    // the card's own text), with MathJax containers stripped -- typeset
+    // math mutates the DOM, so its innerText would not match the source
+    // HTML the agent greps. This is a LOCATOR, not verbatim source.
+    let anchor = '';
+    let cardIdx = -1;
+    if (role === 'card') {
+      cardIdx = cardOrdinal++;
+      const src = n.querySelector('.section-title') || n;
+      const clone = src.cloneNode(true);
+      clone.querySelectorAll(
+        'mjx-container, mjx-assistive-mml, script, style'
+      ).forEach(e => e.remove());
+      anchor = (clone.textContent || '')
+        .replace(/\s+/g, ' ').trim().slice(0, 60);
+    }
     return {
-      role: n.getAttribute('data-measure-role') || '',
+      role: role,
       tag:  n.tagName.toLowerCase(),
       cls:  n.className || '',
+      anchor: anchor,
+      card_idx: cardIdx,
       x: r.left, y: r.top, w: r.width, h: r.height,
       bottom: r.bottom, right: r.right,
       // For the content-clipping gate: the computed overflow plus the
@@ -100,44 +122,325 @@ def compute_adjustment_hints(
     *,
     min_gap: float,
     max_gap: float,
-    keep_tol_px: float = 5.0,
-) -> tuple[float, float, list[tuple[str, float, str]]]:
+    max_spread: float,
+    epsilon: float = 0.5,
+) -> tuple[tuple[float, float], list[tuple[str, float, str]]]:
     """Per-column adjustment hints for a failed measure run.
 
-    Returns ``(target_gap, target_bottom, adjustments)`` where
-    ``adjustments`` is one ``(name, current_bottom, hint)`` per column /
-    hero row. ``hint`` is one of:
+    Returns ``((band_lo, band_hi), adjustments)`` where ``adjustments``
+    is one ``(name, current_bottom, hint)`` per column / hero row.
 
-      * ``"keep"`` -- |delta| <= ``keep_tol_px``; not worth touching
-        because a single wrapped line of body text is ~25 px and edits
-        below that don't reliably change the column bottom. Callers
-        should pass the gate's ``--max-spread`` here so the keep band
-        tracks the gate: a column the spread check would tolerate is
-        never flagged for an edit.
-      * ``"grow ~N px"`` -- column needs to be taller (delta > 0).
-      * ``"trim ~N px"`` -- column needs to be shorter (delta < 0).
+    ``[band_lo, band_hi]`` is the **shared passing band**: when every
+    column bottom lands inside this ONE band, both gates pass by
+    construction -- the band sits inside the footer-gap window
+    ``[strip_top - max_gap, strip_top - min_gap]``, and its width is
+    ``max_spread - epsilon``, so the worst-case pairwise spread of
+    in-band columns stays strictly under ``max_spread`` (the gate is a
+    strict ``<``; ``epsilon`` keeps the two-columns-at-opposite-edges
+    case from landing exactly ON the threshold).
 
-    The target is ``strip_top - (min_gap + max_gap) / 2``: aim for the
-    centre of the gap band so a small post-edit drift in either direction
-    still passes the gate. Pure function so the rule is unit-testable
-    without spinning up Chromium.
+    Per column, ``hint`` is one of:
+
+      * ``"keep"`` -- the bottom is already inside the shared band.
+        NOTE: deliberately NOT ``|delta| <= max_spread``: two columns at
+        opposite edges of a ±max_spread tolerance would both read
+        "keep" while their pairwise spread is 2x the gate.
+      * ``"grow ~N px [safe +lo..+hi]"`` / ``"trim ~N px [safe ...]"``
+        -- the point estimate targets the band centre; the safe range
+        is the full signed-delta interval into the band, integer-
+        rounded INWARD (never widened past the true band).
+
+    Pure function so the rule is unit-testable without Chromium.
     """
-    target_gap = (min_gap + max_gap) / 2.0
-    target_bottom = strip_top - target_gap
+    center = strip_top - (min_gap + max_gap) / 2.0
+    half = max(0.0, (max_spread - epsilon) / 2.0)
+    band_lo = max(center - half, strip_top - max_gap)
+    band_hi = min(center + half, strip_top - min_gap)
+    if band_lo > band_hi:  # degenerate flags (e.g. min_gap > max_gap)
+        band_lo = band_hi = center
+
     out: list[tuple[str, float, str]] = []
     for name, b in bottoms:
-        delta = target_bottom - b  # +ve grow, -ve trim
-        if abs(delta) <= keep_tol_px:
-            hint = "keep"
-        elif delta > 0:
-            hint = f"grow ~{int(round(delta))} px"
-        else:
-            hint = f"trim ~{int(round(-delta))} px"
-        out.append((name, b, hint))
-    return target_gap, target_bottom, out
+        if band_lo <= b <= band_hi:
+            out.append((name, b, "keep"))
+            continue
+        delta = center - b  # +ve grow, -ve trim
+        d_lo = math.ceil(band_lo - b)   # inward rounding:
+        d_hi = math.floor(band_hi - b)  # never overpromise the band
+        verb = "grow" if delta > 0 else "trim"
+        if d_lo > d_hi:
+            # No whole-pixel delta lands inside the band (band narrower
+            # than 1 px after inward rounding). Do NOT call anything
+            # "safe" here -- give the fractional target instead, with
+            # the fewest decimals whose DISPLAYED value still lands
+            # in-band (a legal --max-spread 0.5 collapses the band to
+            # a point, where two decimals can miss; six decimals leave
+            # a <=5e-7 px residual, not actionable in CSS anyway).
+            for prec in (2, 3, 4, 5, 6):
+                if band_lo <= b + round(delta, prec) <= band_hi:
+                    break
+            out.append((
+                name, b,
+                f"{verb} ~{int(round(abs(delta)))} px "
+                f"(no whole-px safe delta; aim {delta:+.{prec}f} px)",
+            ))
+            continue
+        out.append((
+            name, b,
+            f"{verb} ~{int(round(abs(delta)))} px "
+            f"[safe {d_lo:+d}..{d_hi:+d}]",
+        ))
+    return (band_lo, band_hi), out
+
+
+def format_band(lo: float, hi: float) -> str:
+    """Display the band rounded INWARD (lower edge up, upper edge
+    down): after snapping edges within 2 ULP of a display grid point
+    onto it, the printed range is never wider than the true one. Two
+    decimals for normal bands, six for the sub-0.05px bands a tiny
+    --max-spread can produce. A band narrower than 1e-6 px collapses
+    to its centre (a <=5e-7 px approximation -- the only case where
+    the display is not strictly inside the band)."""
+    bp = 2 if (hi - lo) >= 0.05 else 6
+    scale = 10.0 ** bp
+
+    def _snap(scaled: float) -> float:
+        # An on-grid edge can scale to just above its integer
+        # (2500.01 * 100 = 250001.00000000003) and get needlessly
+        # ceil'd a whole step inward -- snap near-integer products.
+        nearest = round(scaled)
+        if abs(scaled - nearest) <= 2 * math.ulp(scaled):
+            return float(nearest)
+        return scaled
+
+    disp_lo = math.ceil(_snap(lo * scale)) / scale
+    disp_hi = math.floor(_snap(hi * scale)) / scale
+    if disp_lo > disp_hi:  # inward rounding inverted a hairline band
+        disp_lo = disp_hi = round((lo + hi) / 2, 6)
+    return f"{disp_lo:.{bp}f}..{disp_hi:.{bp}f}"
+
+
+def source_card_lines(html_text: str) -> list[int]:
+    """Source line number of each ``data-measure-role="card"`` opening
+    tag, in source order (== DOM order for static poster HTML).
+
+    Reuses preflight's stack-based role scanner. Returns ``[]`` when the
+    HTML can't be parsed -- callers must then omit line numbers rather
+    than print wrong ones.
+    """
+    from .preflight import _RoleNestingChecker
+    try:
+        parser = _RoleNestingChecker()
+        parser.feed(html_text)
+    except Exception:
+        return []
+    return [ln for role, _p, ln, _t in parser.roles if role == "card"]
+
+
+def format_edit_targets(
+    columns: list[dict[str, Any]],
+    card_lines: list[int],
+    total_dom_cards: int,
+    *,
+    bottom_tol: float = 0.5,
+) -> list[str]:
+    """Human lines for the edit-targets block (pure, unit-testable).
+
+    ``columns``: one dict per column --
+      ``{"name", "hint", "cards": [{"card_idx", "x", "y", "bottom",
+      "h", "anchor"}, ...]}`` (cards in any order; sorted here).
+    ``card_lines``: source line per DOM card ordinal; used only when its
+    length matches ``total_dom_cards`` (otherwise the mapping is not
+    trustworthy and line numbers are omitted).
+    Cards whose bottom ties the column bottom (within ``bottom_tol``)
+    are ALL marked -- several cards can define the bottom jointly.
+    """
+    have_lines = len(card_lines) == total_dom_cards and total_dom_cards > 0
+    out: list[str] = []
+    out.append(
+        "[measure] edit targets -- cards per column, top-to-bottom."
+    )
+    out.append(
+        "  Locate by source line (L<n>) or by grepping the quoted anchor;"
+    )
+    out.append(
+        "  do NOT re-read the whole file. Anchors are section-title text"
+    )
+    out.append(
+        "  with math stripped -- confirm uniqueness before editing."
+    )
+    for col in columns:
+        hint = col.get("hint") or ""
+        out.append(f"  {col['name']}" + (f" ({hint}):" if hint else ":"))
+        cards = sorted(
+            col.get("cards", []), key=lambda c: (c["y"], c["x"])
+        )
+        col_bottom = max((c["bottom"] for c in cards), default=None)
+        for c in cards:
+            line = (
+                f"L{card_lines[c['card_idx']]}"
+                if have_lines and 0 <= c["card_idx"] < len(card_lines)
+                else "L?"
+            )
+            mark = (
+                "   <- bottom card (sets the column bottom)"
+                if col_bottom is not None
+                and abs(c["bottom"] - col_bottom) <= bottom_tol
+                else ""
+            )
+            anchor = ascii_safe(c.get("anchor") or "")
+            out.append(
+                f"    card#{c['card_idx']:<3d} {line:<7s} "
+                f"h={c['h']:6.0f}px  \"{anchor}\"{mark}"
+            )
+    return out
+
+
+def group_layout(
+    data: list[dict[str, Any]],
+) -> tuple[
+    dict[int, dict[str, Any]],
+    list[dict[str, Any]],
+    list[dict[str, Any]],
+    list[dict[str, Any]],
+]:
+    """Group raw ``[data-measure-role]`` boxes into the layout model.
+
+    Returns ``(columns, heros, footer_strips, footers)``. ``columns`` is
+    ``{index: {"box", "cards", "last_card_bottom"}}`` with cards
+    attached to the column whose x-range contains the card's horizontal
+    midpoint. Shared by ``measure`` and ``pack`` so both read the same
+    geometry the same way.
+    """
+    columns: dict[int, dict[str, Any]] = {}
+    heros: list[dict[str, Any]] = []
+    footer_strips: list[dict[str, Any]] = []
+    footers: list[dict[str, Any]] = []
+
+    col_index = 0
+    for el in data:
+        role = el["role"]
+        if role == "column":
+            columns[col_index] = {"box": el, "last_card_bottom": None}
+            col_index += 1
+        elif role == "hero":
+            heros.append(el)
+        elif role == "footer-strip":
+            footer_strips.append(el)
+        elif role == "footer":
+            footers.append(el)
+
+    def x_overlaps(card: dict, box: dict) -> bool:
+        cx_mid = card["x"] + card["w"] / 2
+        return box["x"] <= cx_mid <= box["x"] + box["w"]
+
+    for el in data:
+        if el["role"] != "card":
+            continue
+        for _ci, col in columns.items():
+            if x_overlaps(el, col["box"]):
+                col.setdefault("cards", []).append(el)
+                prev = col["last_card_bottom"]
+                if prev is None or el["bottom"] > prev:
+                    col["last_card_bottom"] = el["bottom"]
+                break
+
+    return columns, heros, footer_strips, footers
+
+
+def pick_strip(
+    footer_strips: list[dict[str, Any]],
+    footers: list[dict[str, Any]],
+    target: float,
+) -> tuple[dict[str, Any] | None, str | None]:
+    """The strip the footer-gap gate anchors on: the footer-strip (or,
+    failing that, footer) whose top sits nearest ``target``."""
+    def _pick_nearest(strips: list[dict[str, Any]],
+                      tgt: float) -> dict[str, Any] | None:
+        if not strips:
+            return None
+        return min(strips, key=lambda s: abs(s["y"] - tgt))
+
+    if footer_strips:
+        return _pick_nearest(footer_strips, target), "footer-strip"
+    if footers:
+        return _pick_nearest(footers, target), "footer"
+    return None, None
 
 
 def cmd_measure(args: argparse.Namespace) -> int:
+    """Budget-aware wrapper: the geometry gate lives in
+    ``_measure_once``; this adds the consecutive-failure circuit
+    breaker (see ``_posterly.budget``)."""
+    html_path = Path(args.html).resolve()
+    if not html_path.exists():
+        _eprint(f"ERROR: HTML not found: {ascii_safe(html_path)}")
+        return 2
+
+    cap = int(
+        getattr(args, "measure_budget", _budget.DEFAULT_MEASURE_BUDGET)
+        or 0
+    )
+    bpath = _budget.budget_path(html_path)
+    if getattr(args, "reset_budget", False):
+        # Honoured even with --measure-budget 0: deleting the state is
+        # exactly what the flag asks for. A FAILED removal (after the
+        # zero-write fallback also failed) must not let the stale count
+        # fire a phantom pre-render breaker right after we claimed a
+        # fresh start -- disable the budget for this run.
+        warn = _budget.clear(bpath, html_path.name)
+        if warn is None:
+            print("[measure] budget reset (--reset-budget)")
+        else:
+            _eprint(f"[measure] budget-state warning: {warn} -- "
+                    "circuit breaker DISABLED for this run")
+            cap = 0
+    if cap > 0:
+        count, warn = _budget.load_count(bpath, html_path.name)
+        if warn:
+            _eprint(f"[measure] budget-state warning: {warn}")
+        if count >= cap:
+            _eprint(_budget.breaker_banner(count, cap, pre_render=True))
+            return _budget.EXIT_BUDGET_EXHAUSTED
+
+    rc, measured = _measure_once(args, html_path)
+
+    if cap > 0:
+        if rc == 0:
+            warn = _budget.clear(bpath, html_path.name)
+            if warn:
+                _eprint(
+                    f"[measure] budget-state warning: {warn} -- a "
+                    "later run may inherit this stale count; remove "
+                    f"{bpath.name} by hand or pass --reset-budget"
+                )
+        elif rc == 1 and measured:
+            count, warn = _budget.load_count(bpath, html_path.name)
+            count += 1
+            warn2 = _budget.record_failure(bpath, html_path.name, count)
+            for w in (warn, warn2):
+                if w:
+                    _eprint(f"[measure] budget-state warning: {w}")
+            print(
+                f"[measure] consecutive failed measurements: "
+                f"{count}/{cap} (resets on PASS or --reset-budget)"
+            )
+            if count >= cap:
+                _eprint(_budget.breaker_banner(count, cap))
+                return _budget.EXIT_BUDGET_EXHAUSTED
+    return rc
+
+
+def _measure_once(
+    args: argparse.Namespace, html_path: Path
+) -> tuple[int, bool]:
+    """One render + gate evaluation.
+
+    Returns ``(rc, measured)``. ``measured`` is True only when the page
+    produced geometry (the JS probe ran) -- the budget wrapper counts
+    only those failures; environment/navigation problems are not loop
+    iterations.
+    """
     try:
         from playwright.sync_api import sync_playwright
         from playwright.sync_api import TimeoutError as PWTimeoutError
@@ -145,12 +448,7 @@ def cmd_measure(args: argparse.Namespace) -> int:
         _eprint("ERROR: playwright not installed. Run:")
         _eprint("  python -m pip install playwright")
         _eprint("  python -m playwright install chromium")
-        return 2
-
-    html_path = Path(args.html).resolve()
-    if not html_path.exists():
-        _eprint(f"ERROR: HTML not found: {ascii_safe(html_path)}")
-        return 2
+        return 2, False
 
     resolved = _canvas.resolve_canvas(
         html_path, args.canvas, label="[measure]"
@@ -162,7 +460,7 @@ def cmd_measure(args: argparse.Namespace) -> int:
             "`--canvas <W>x<H>in` / `--canvas 'A0 portrait'`. "
             "Refusing to silently fall back."
         )
-        return 2
+        return 2, False
     canvas, viewport = resolved
 
     with sync_playwright() as p:
@@ -190,7 +488,7 @@ def cmd_measure(args: argparse.Namespace) -> int:
         if fail is not None:
             browser.close()
             _eprint(f"FAIL: {fail}")
-            return 1
+            return 1, False
         if nav_timed_out:
             browser.close()
             _eprint(
@@ -200,7 +498,7 @@ def cmd_measure(args: argparse.Namespace) -> int:
                 "(CDN image, web font, MathJax) is the usual cause -- "
                 "inline assets, or raise --mathjax-timeout-ms."
             )
-            return 1
+            return 1, False
 
         data = page.evaluate(_MEASURE_JS)
         browser.close()
@@ -235,7 +533,7 @@ def cmd_measure(args: argparse.Namespace) -> int:
             "needs it to verify the canvas-fill, and preflight already "
             "rejects pages without it."
         )
-        return 1
+        return 1, True
     vw, vh = viewport
     fill_w = poster_box["w"] / vw
     fill_h = poster_box["h"] / vh
@@ -251,7 +549,7 @@ def cmd_measure(args: argparse.Namespace) -> int:
             f"keeps the screen-mode unit scale in print. Common cause "
             f"when too large: hardcoded `width` exceeds `@page size`."
         )
-        return 1
+        return 1, True
     # Positional check: poster must be anchored to the page's origin
     # within `--position-tol-px`. A `transform: translateX(50 px)` would
     # silently clip the right side of the print PDF; size alone can't
@@ -286,7 +584,7 @@ def cmd_measure(args: argparse.Namespace) -> int:
             "Also check: put `@media print` AFTER the screen "
             "`.poster` rule."
         )
-        return 1
+        return 1, True
 
     # Content-clipping gate (HARD). Everything below reads each element's
     # border-box edge -- but `overflow` other than `visible` DECOUPLES that
@@ -345,40 +643,9 @@ def cmd_measure(args: argparse.Namespace) -> int:
             "has min-height auto -> 0, so flexbox shrinks it and clips the "
             "overflow."
         )
-        return 1
+        return 1, True
 
-    columns: dict[int, dict[str, Any]] = {}
-    heros: list[dict[str, Any]] = []
-    footer_strips: list[dict[str, Any]] = []
-    footers: list[dict[str, Any]] = []
-
-    col_index = 0
-    for el in data:
-        role = el["role"]
-        if role == "column":
-            columns[col_index] = {"box": el, "last_card_bottom": None}
-            col_index += 1
-        elif role == "hero":
-            heros.append(el)
-        elif role == "footer-strip":
-            footer_strips.append(el)
-        elif role == "footer":
-            footers.append(el)
-
-    def x_overlaps(card: dict, box: dict) -> bool:
-        cx_mid = card["x"] + card["w"] / 2
-        return box["x"] <= cx_mid <= box["x"] + box["w"]
-
-    for el in data:
-        if el["role"] != "card":
-            continue
-        for ci, col in columns.items():
-            if x_overlaps(el, col["box"]):
-                col.setdefault("cards", []).append(el)
-                prev = col["last_card_bottom"]
-                if prev is None or el["bottom"] > prev:
-                    col["last_card_bottom"] = el["bottom"]
-                break
+    columns, heros, footer_strips, footers = group_layout(data)
 
     empty_cols = [
         ci for ci, col in columns.items()
@@ -390,7 +657,7 @@ def cmd_measure(args: argparse.Namespace) -> int:
             f"{['col' + str(i) for i in empty_cols]}. "
             "Add cards or pass --allow-empty-column."
         )
-        return 1
+        return 1, True
 
     # Intra-column whitespace gate (HARD). The spread/gap gates only read
     # the LAST card's bottom -- `justify-content: space-between` (or a big
@@ -448,28 +715,14 @@ def cmd_measure(args: argparse.Namespace) -> int:
             "ERROR: no columns or hero found. "
             'Did you add data-measure-role="column"?'
         )
-        return 2
+        return 2, True
 
     bs = [b for _, b in bottoms]
     spread = max(bs) - min(bs)
 
     max_bottom = max(bs)
 
-    def _pick_nearest(strips: list[dict[str, Any]],
-                      target: float) -> dict[str, Any] | None:
-        if not strips:
-            return None
-        return min(strips, key=lambda s: abs(s["y"] - target))
-
-    if footer_strips:
-        next_strip = _pick_nearest(footer_strips, max_bottom)
-        next_name = "footer-strip"
-    elif footers:
-        next_strip = _pick_nearest(footers, max_bottom)
-        next_name = "footer"
-    else:
-        next_strip = None
-        next_name = None
+    next_strip, next_name = pick_strip(footer_strips, footers, max_bottom)
 
     gap_range: tuple[float, float] | None = None
     gaps: list[tuple[str, float]] = []
@@ -543,32 +796,37 @@ def cmd_measure(args: argparse.Namespace) -> int:
 
     if ok:
         print("[measure] PASS")
-        return 0
+        return 0, True
 
     # Failure path: surface per-column adjustment hints so the next
     # iteration is a directed edit, not a guess. The math is mechanical
-    # (strip_top - target_gap = target_bottom; signed delta per column),
-    # but readers reliably mis-derive it under time pressure -- a fixed
-    # gate failure was costing roughly an extra rebuild per loop. Only
-    # print when the geometry is sane enough to give a meaningful target:
-    # we need a footer-strip/footer (the anchor) and at least one column
-    # bottom. Skip when the only failure is `spread`-without-strip; the
-    # raw column dump above is already actionable in that case.
+    # (shared passing band inside the gap window; signed delta per
+    # column), but readers reliably mis-derive it under time pressure --
+    # a fixed gate failure was costing roughly an extra rebuild per
+    # loop. Only print when the geometry is sane enough to give a
+    # meaningful target: we need a footer-strip/footer (the anchor) and
+    # at least one column bottom. Skip when the only failure is
+    # `spread`-without-strip; the raw column dump above is already
+    # actionable in that case.
+    adjustments: list[tuple[str, float, str]] = []
     if next_strip is not None and bottoms:
-        target_gap, target_bottom, adjustments = compute_adjustment_hints(
+        (band_lo, band_hi), adjustments = compute_adjustment_hints(
             bottoms,
             next_strip["y"],
             min_gap=args.min_gap,
             max_gap=args.max_gap,
-            keep_tol_px=args.max_spread,
+            max_spread=args.max_spread,
         )
 
         print()
         print("[measure] suggested adjustments:")
         print(
-            f"  target col bottom = {target_bottom:.0f} px"
-            f"  (footer-strip/footer top {next_strip['y']:.0f} px"
-            f"  - target gap {target_gap:.0f} px)"
+            f"  shared passing band: {format_band(band_lo, band_hi)} px "
+            "(EVERY column bottom must land in"
+        )
+        print(
+            "  this one band; then gap and spread both pass. Anchor: "
+            f"{next_name} top {next_strip['y']:.0f} px)"
         )
         for name, b, hint in adjustments:
             print(f"  {name:6s}  {b:8.2f} px -> {hint}")
@@ -584,5 +842,51 @@ def cmd_measure(args: argparse.Namespace) -> int:
             " column first."
         )
 
+    # Edit-targets block: only for the fill/alignment failures where
+    # "which card do I edit" is the next question (spread / footer gap /
+    # intercard). Canvas-scale, position, and clip failures get their
+    # own targeted messages above -- card targets would misdirect the
+    # fix toward content. Printed even without a footer anchor (a
+    # spread-only failure still needs a card to grow/trim).
+    fill_failure = (
+        spread >= args.max_spread
+        or bool(icg_problems)
+        or bool(icg_tight)
+        or (
+            next_strip is not None and gap_range is not None
+            and (gap_range[0] < args.min_gap or gap_range[1] > args.max_gap)
+        )
+    )
+    if fill_failure:
+        try:
+            html_text = html_path.read_text(
+                encoding="utf-8", errors="replace"
+            )
+            card_lines = source_card_lines(html_text)
+        except OSError:
+            card_lines = []
+        total_dom_cards = sum(1 for el in data if el["role"] == "card")
+        hint_by_name = {name: hint for name, _b, hint in adjustments}
+        target_cols = []
+        for ci, col in sorted(columns.items()):
+            target_cols.append({
+                "name": f"col{ci}",
+                "hint": hint_by_name.get(f"col{ci}", ""),
+                "cards": [
+                    {
+                        "card_idx": c.get("card_idx", -1),
+                        "x": c["x"], "y": c["y"],
+                        "bottom": c["bottom"], "h": c["h"],
+                        "anchor": c.get("anchor", ""),
+                    }
+                    for c in col.get("cards", [])
+                ],
+            })
+        print()
+        for line in format_edit_targets(
+            target_cols, card_lines, total_dom_cards
+        ):
+            print(line)
+
     _eprint("[measure] FAIL -- alignment gate not met")
-    return 1
+    return 1, True

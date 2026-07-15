@@ -1,12 +1,28 @@
 #!/usr/bin/env python3
 """poster_check — unified CLI for HTML academic posters.
 
-Four subcommands:
+Six subcommands:
 
   measure        Print-emulate HTML in headless Chromium, measure all
                  ``[data-measure-role]`` elements, report column-bottom
                  spread and gap to the next horizontal strip. The HARD
                  alignment gate (spread < 5 px is non-negotiable).
+                 Carries the loop circuit breaker: consecutive failed
+                 measurements are counted on disk; at the cap it exits
+                 3 instead of measuring again (``--measure-budget`` /
+                 ``--reset-budget``).
+  pack           ADVISORY column-feasibility pre-check -- run ONCE
+                 before entering the measure loop. Probes each card
+                 figure at its Gate A width-band endpoints in the
+                 browser and reports which columns cannot reach the
+                 footer-gap window by figure resizing alone
+                 (REPACK_RECOMMENDED / FIGURE_ONLY_UNDERFILL).
+  fit-logos      ADVISORY logo-zone packer (read-only). Measures the
+                 header's logo zone and prints the row arrangement
+                 that maximises the one uniform mark height, plus a
+                 paste-ready snippet. Never edits the file: the agent
+                 judges the proposal (optical weight, Gate E) and
+                 applies it by hand -- or not at all.
   preflight      Static HTML scan: LaTeX residue, raw '<' inside
                  ``$…$`` / ``$$…$$`` / ``\\(…\\)`` / ``\\[…\\]``,
                  missing local images, missing data-measure-role.
@@ -33,8 +49,11 @@ _THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 if _THIS_DIR not in sys.path:
     sys.path.insert(0, _THIS_DIR)
 
+from _posterly import budget as _budget  # noqa: E402
 from _posterly import canvas as _canvas  # noqa: E402
+from _posterly import fitlogos as _fitlogos  # noqa: E402
 from _posterly import measure as _measure  # noqa: E402
+from _posterly import pack as _pack  # noqa: E402
 from _posterly import polish as _polish  # noqa: E402
 from _posterly import preflight as _preflight  # noqa: E402
 from _posterly import verify_final as _verify_final  # noqa: E402
@@ -43,8 +62,8 @@ from _posterly import verify_final as _verify_final  # noqa: E402
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
         prog="poster_check",
-        description="Measure / preflight / polish / verify a poster "
-                    "HTML+PDF pair.",
+        description="Measure / pack / preflight / polish / verify a "
+                    "poster HTML+PDF pair.",
     )
     sub = p.add_subparsers(dest="cmd", required=True)
 
@@ -146,7 +165,118 @@ def build_parser() -> argparse.ArgumentParser:
         "--json-out", default=None,
         help="dump raw measurement to JSON",
     )
+    pm.add_argument(
+        "--measure-budget", type=int,
+        default=_budget.DEFAULT_MEASURE_BUDGET,
+        help="circuit breaker: exit 3 after this many CONSECUTIVE "
+             "failed measurements on this poster. The counter persists "
+             "on disk next to the HTML, resets on the first PASS or "
+             "after 12h idle. 0 disables. (default %(default)s)",
+    )
+    pm.add_argument(
+        "--reset-budget", action="store_true",
+        help="zero the on-disk failure counter before measuring (a "
+             "deliberate fresh start, e.g. after a big re-pack). "
+             "Honoured even with --measure-budget 0: the state file is "
+             "cleared regardless of whether the breaker is enabled.",
+    )
     pm.set_defaults(func=_measure.cmd_measure)
+
+    # --- pack -------------------------------------------------------------
+    pk = sub.add_parser(
+        "pack",
+        help="ADVISORY column-feasibility pre-check (run once BEFORE "
+             "the measure loop)",
+    )
+    pk.add_argument("html", help="path to poster.html")
+    pk.add_argument(
+        "--canvas", type=_canvas.parse_canvas_arg, default=None,
+        help="override canvas (default: parse @page from HTML)",
+    )
+    pk.add_argument(
+        "--max-spread", type=float, default=5.0,
+        help="spread threshold used for the cross-column feasibility "
+             "bound (default 5.0; keep in sync with measure)",
+    )
+    pk.add_argument(
+        "--min-gap", type=float, default=30.0,
+        help="min gap to footer-strip/footer (default 30 px)",
+    )
+    pk.add_argument(
+        "--max-gap", type=float, default=50.0,
+        help="max gap to footer-strip/footer (default 50 px)",
+    )
+    pk.add_argument(
+        "--wide-min-ratio", type=float, default=_pack.AR_WIDE_MIN,
+        help="Gate A floor probed for wide figures (AR>1.3); keep in "
+             "sync with polish (default %(default)s)",
+    )
+    pk.add_argument(
+        "--square-min-ratio", type=float, default=_pack.AR_SQUARE_MIN,
+        help="Gate A floor probed for square figures (0.8<=AR<=1.3); "
+             "keep in sync with polish (default %(default)s)",
+    )
+    pk.add_argument(
+        "--tall-min-ratio", type=float, default=_pack.AR_TALL_MIN,
+        help="Gate A floor probed for tall figures (AR<0.8); keep in "
+             "sync with polish (default %(default)s)",
+    )
+    pk.add_argument(
+        "--settle-ms", type=int, default=500,
+        help="extra wait after layout settles (default 500)",
+    )
+    pk.add_argument(
+        "--mathjax-timeout-ms", type=int, default=15000,
+        help="hard timeout for MathJax typeset (default 15000)",
+    )
+    pk.add_argument(
+        "--strict", action="store_true",
+        help="exit 1 when any column is REPACK_RECOMMENDED / "
+             "FIGURE_ONLY_UNDERFILL or the cross-column bound trips "
+             "(default: always exit 0 -- advisory)",
+    )
+    pk.add_argument(
+        "--json-out", default=None,
+        help="write the pack report as JSON",
+    )
+    pk.set_defaults(func=_pack.cmd_pack)
+
+    # --- fit-logos ------------------------------------------------------
+    fl = sub.add_parser(
+        "fit-logos",
+        help="ADVISORY logo-zone packer: print the max-uniform-height "
+             "row arrangement for the header logos (read-only)",
+    )
+    fl.add_argument("html", help="path to poster.html")
+    fl.add_argument(
+        "--canvas", type=_canvas.parse_canvas_arg, default=None,
+        help="override canvas (default: parse @page from HTML)",
+    )
+    fl.add_argument(
+        "--zone", default=None,
+        help="CSS selector for the logo zone(s); default: any "
+             "[data-logo-zone], else .header .logo-row, else "
+             ".header .logo-slot",
+    )
+    fl.add_argument(
+        "--max-rows", type=int, default=_fitlogos.DEFAULT_MAX_ROWS,
+        help="row-partition search cap (default %(default)s)",
+    )
+    fl.add_argument(
+        "--hgap", type=float, default=None,
+        help="horizontal gap between marks in a row, px at true canvas "
+             "scale (default: the zone's own computed flex gap, else "
+             f"{_fitlogos.DEFAULT_HGAP_PX:.0f})",
+    )
+    fl.add_argument(
+        "--settle-ms", type=int, default=500,
+        help="extra wait after layout settles (default 500)",
+    )
+    fl.add_argument(
+        "--mathjax-timeout-ms", type=int, default=15000,
+        help="hard timeout for MathJax typeset (default 15000)",
+    )
+    fl.set_defaults(func=_fitlogos.cmd_fit_logos)
 
     # --- preflight ------------------------------------------------------
     pp = sub.add_parser(

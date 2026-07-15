@@ -110,6 +110,35 @@ def _tail(text: str, n: int = TAIL_LINES) -> str:
     return ascii_safe("\n".join(lines[-n:]))
 
 
+# Lines that open measure's structured fix-surface blocks. When present,
+# the summary keeps everything from the FIRST marker to the end (capped)
+# instead of the last-8-lines tail -- an 8-line tail would truncate the
+# per-column adjustments and edit targets that make a measure FAIL
+# actionable without re-running.
+_MEASURE_MARKERS = (
+    "[measure] suggested adjustments",
+    "[measure] edit targets",
+    "CIRCUIT BREAKER",
+)
+
+
+def _measure_tail(text: str, cap: int = 120) -> str:
+    """Measure-specific summary: from the first marker line to the end,
+    capped at ``cap`` lines (middle elided, verdict tail kept). Falls
+    back to the generic ``_tail`` when no marker is present."""
+    lines = [ln for ln in text.splitlines() if ln.strip()]
+    idxs = [
+        i for i, ln in enumerate(lines)
+        if any(m in ln for m in _MEASURE_MARKERS)
+    ]
+    if not idxs:
+        return ascii_safe("\n".join(lines[-TAIL_LINES:]))
+    block = lines[min(idxs):]
+    if len(block) > cap:
+        block = block[:cap - 4] + ["... (truncated) ..."] + block[-3:]
+    return ascii_safe("\n".join(block))
+
+
 def _now_iso() -> str:
     """UTC timestamp, second precision, ``Z`` suffix -- stable for diffs."""
     return (
@@ -254,16 +283,18 @@ def _parse_json_gate(stdout: str) -> dict[str, Any] | None:
 def _status_from_returncode(returncode: int, severity: str) -> str:
     """Map a child exit code to a gate status string.
 
-    0 -> PASS, 1 -> FAIL (hard) / WARN (soft polish), 2 -> SKIPPED
-    (environment error: missing playwright, missing script, etc.). The
-    soft/hard distinction only matters at exit 1: a soft gate that exits
-    1 *without* ``--strict`` would not have happened (it returns 0 on
+    0 -> PASS, 1 -> FAIL (hard) / WARN (soft polish), 3 -> FAIL
+    (measure's circuit breaker: the loop budget is exhausted -- a hard
+    stop, NOT an environment skip), 2 -> SKIPPED (environment error:
+    missing playwright, missing script, etc.). The soft/hard
+    distinction only matters at exit 1: a soft gate that exits 1
+    *without* ``--strict`` would not have happened (it returns 0 on
     warnings), so an exit-1 polish under ``--strict-polish`` is a real
     FAIL; we still resolve via severity for safety.
     """
     if returncode == 0:
         return "PASS"
-    if returncode == 1:
+    if returncode in (1, 3):
         return "FAIL" if severity == "hard" else "WARN"
     return "SKIPPED"
 
@@ -317,7 +348,12 @@ def _build_argv(
         return argv
 
     if gate == "measure":
-        return [py, str(scripts_dir / "poster_check.py"), "measure", html]
+        argv = [py, str(scripts_dir / "poster_check.py"), "measure", html]
+        if getattr(opts, "measure_budget", None) is not None:
+            argv += ["--measure-budget", str(opts.measure_budget)]
+        if getattr(opts, "reset_measure_budget", False):
+            argv += ["--reset-budget"]
+        return argv
 
     if gate == "polish":
         argv = [py, str(scripts_dir / "poster_check.py"), "polish", html]
@@ -363,11 +399,14 @@ def _summarize_gate(
         # the stderr/stdout tail so the report still says something useful.
         return _tail(stdout + "\n" + stderr), artifacts
 
-    # Vendored gate: heuristic stdout/stderr tail + exit code.
+    # Vendored gate: heuristic stdout/stderr tail + exit code. measure
+    # gets a marker-aware tail so its adjustments / edit-targets blocks
+    # survive into the report.
     combined = (stdout + "\n" + stderr).strip()
     return {
         "exit_code": returncode,
-        "tail": _tail(combined),
+        "tail": (_measure_tail(combined) if gate == "measure"
+                 else _tail(combined)),
     }, artifacts
 
 
@@ -434,12 +473,25 @@ def run_all(html_path: Path, opts: argparse.Namespace) -> dict[str, Any]:
         entry = run_gate(gate, scripts_dir, html_path, opts, report_json_dir)
         gates.append(entry)
         is_hard = entry["severity"] == "hard"
+        # measure's circuit breaker (exit 3) means "stop iterating NOW"
+        # -- honouring it only under --fail-fast would immediately spend
+        # another Chromium render on polish right after a banner that
+        # said to stop. Halt the remainder unconditionally.
+        breaker = (
+            gate == "measure"
+            and isinstance(entry["summary"], dict)
+            and entry["summary"].get("exit_code") == 3
+        )
         if entry["status"] == "FAIL" and is_hard:
             hard_failures += 1
-            if opts.fail_fast:
+            if opts.fail_fast or breaker:
                 # Stop scheduling further gates; mark the rest SKIPPED so
                 # the report still enumerates the full canonical sequence.
-                gates.extend(_skipped_remainder(gate))
+                gates.extend(_skipped_remainder(
+                    gate,
+                    reason=("measure circuit breaker (exit 3): loop "
+                            "budget exhausted" if breaker else None),
+                ))
                 break
         elif entry["status"] == "WARN":
             warnings += 1
@@ -474,13 +526,15 @@ def run_all(html_path: Path, opts: argparse.Namespace) -> dict[str, Any]:
     }
 
 
-def _skipped_remainder(stopped_at: str) -> list[dict[str, Any]]:
+def _skipped_remainder(
+    stopped_at: str, reason: str | None = None
+) -> list[dict[str, Any]]:
     """Build SKIPPED entries for every gate after ``stopped_at``.
 
-    Under ``--fail-fast`` we abort the run on the first hard failure but
-    still want the report to list the full canonical sequence, with the
-    not-run gates explicitly marked SKIPPED (reason: fail-fast) rather
-    than silently absent.
+    Under ``--fail-fast`` (or measure's circuit breaker) we abort the
+    run on the hard failure but still want the report to list the full
+    canonical sequence, with the not-run gates explicitly marked
+    SKIPPED (with the reason) rather than silently absent.
     """
     idx = CANONICAL_ORDER.index(stopped_at)
     out: list[dict[str, Any]] = []
@@ -490,7 +544,8 @@ def _skipped_remainder(stopped_at: str) -> list[dict[str, Any]]:
             "severity": GATE_SEVERITY[gate],
             "status": "SKIPPED",
             "command": [],
-            "summary": {"skipped": "fail-fast: a prior hard gate failed"},
+            "summary": {"skipped": reason or
+                        "fail-fast: a prior hard gate failed"},
             "artifacts": [],
         })
     return out
@@ -575,6 +630,17 @@ def build_parser() -> argparse.ArgumentParser:
              "<=2-hue-cluster (R4) and no-gradient (R5) design-opinion rules "
              "while keeping the operational discipline; pass '' to enforce "
              "all 13.",
+    )
+    p.add_argument(
+        "--measure-budget", type=int, default=None,
+        help="forwarded to poster_check.py measure --measure-budget "
+             "(circuit breaker cap; measure's own default applies when "
+             "omitted; 0 disables)",
+    )
+    p.add_argument(
+        "--reset-measure-budget", action="store_true",
+        help="forwarded to poster_check.py measure --reset-budget "
+             "(zero the on-disk consecutive-failure counter first)",
     )
     return p
 
