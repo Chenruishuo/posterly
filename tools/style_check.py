@@ -447,15 +447,57 @@ class RuleResult:
 # ---------------------------------------------------------------------------
 
 
+def resolve_font_whitelists(
+    tokens_path: Path | None,
+) -> tuple[set[str], set[str], set[str]]:
+    """Effective (serif, sans, mono) whitelists for rule 7.
+
+    A ``--tokens`` pack may carry ``"fonts": {"serif": [...], "sans":
+    [...], "mono": [...]}`` (IMPLEMENTATION_CONVENTIONS §F); families
+    listed there are ADDED to the built-in whitelists (lowercased), so a
+    themed poster can vendor its own faces without loosening the default
+    check for everyone else.
+    """
+    serif = set(SERIF_WHITELIST)
+    sans = set(SANS_WHITELIST)
+    mono = set(MONO_WHITELIST)
+    if tokens_path is not None:
+        try:
+            doc = json.loads(tokens_path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError) as e:
+            _eprint(f"WARNING: could not read --tokens "
+                    f"{ascii_safe(tokens_path)}: {ascii_safe(e)}; "
+                    f"font whitelists stay at the built-in defaults.")
+            return serif, sans, mono
+        fonts = doc.get("fonts") or {}
+        for key, dst in (("serif", serif), ("sans", sans), ("mono", mono)):
+            fams = fonts.get(key)
+            if isinstance(fams, list):
+                dst.update(
+                    str(f).strip().lower() for f in fams if str(f).strip()
+                )
+    return serif, sans, mono
+
+
 def run_source_gate(
-    html_text: str, html_path: Path
+    html_text: str, html_path: Path,
+    font_whitelists: tuple[set[str], set[str], set[str]] | None = None,
 ) -> tuple[list[RuleResult], _PosterParser, str | None]:
     """Run rules 1,2,3,5,6,7,8,9,10,11,13 (the static rules).
 
+    ``font_whitelists`` overrides the built-in (serif, sans, mono) sets
+    for rule 7 — pass ``resolve_font_whitelists(tokens_path)`` to let a
+    tokens pack extend them; ``None`` keeps the defaults.
+
     Returns ``(results, parser, token_block_or_None)``. The parser and
     located token block are returned so the render gate can reuse them
-    (token block holds the :root --accent/--gold for hue centers fallback).
+    (token block holds the :root --accent/--emph for hue centers fallback).
     """
+    if font_whitelists is None:
+        font_whitelists = (
+            set(SERIF_WHITELIST), set(SANS_WHITELIST), set(MONO_WHITELIST)
+        )
+    serif_wl, sans_wl, mono_wl = font_whitelists
     parser = _PosterParser()
     parser.feed(html_text)
     parser.close()
@@ -647,21 +689,21 @@ def run_source_gate(
 
     wl_problems: list[str] = []
     if serif_def is not None:
-        bad = [f for f in serif_def if f not in SERIF_WHITELIST]
+        bad = [f for f in serif_def if f not in serif_wl]
         if bad:
             wl_problems.append(
                 f"--font-serif has non-whitelisted family/ies: "
                 f"{', '.join(bad)}"
             )
     if sans_def is not None:
-        bad = [f for f in sans_def if f not in SANS_WHITELIST]
+        bad = [f for f in sans_def if f not in sans_wl]
         if bad:
             wl_problems.append(
                 f"--font-sans has non-whitelisted family/ies: "
                 f"{', '.join(bad)}"
             )
     if mono_def is not None:
-        bad = [f for f in mono_def if f not in MONO_WHITELIST]
+        bad = [f for f in mono_def if f not in mono_wl]
         if bad:
             wl_problems.append(
                 f"--font-mono has non-whitelisted family/ies: "
@@ -677,7 +719,7 @@ def run_source_gate(
             if "var(" in val:
                 continue  # token reference — checked via the token def
             fams = _families(val)
-            allowed = SERIF_WHITELIST | SANS_WHITELIST | MONO_WHITELIST
+            allowed = serif_wl | sans_wl | mono_wl
             bad = [f for f in fams if f not in allowed]
             if bad:
                 wl_problems.append(
@@ -1144,14 +1186,14 @@ def run_render_gate(
 
     centers = cluster_hues(hues, radius_deg=cluster_radius_deg)
     target_hues = [h for h in (
-        hue_centers.get("accent"), hue_centers.get("gold")
+        hue_centers.get("accent"), hue_centers.get("emph")
     ) if h is not None]
     problems: list[str] = []
     if len(centers) > 2:
         problems.append(
             f"{len(centers)} non-neutral hue clusters "
             f"({', '.join('%.0f deg' % c for c in centers)}); at most 2 "
-            "(accent + gold) are allowed."
+            "(accent + emph) are allowed."
         )
     if target_hues:
         for c in centers:
@@ -1165,8 +1207,8 @@ def run_render_gate(
                 )
     else:
         problems.append(
-            "no accent/gold hue centers available (pass --tokens or define "
-            "--accent/--gold in :root) — cannot verify cluster proximity"
+            "no accent/emph hue centers available (pass --tokens or define "
+            "--accent/--emph in :root) — cannot verify cluster proximity"
         )
     if problems:
         r4.fail("; ".join(problems[:4]))
@@ -1201,12 +1243,14 @@ def run_render_gate(
 def resolve_hue_centers(
     tokens_path: Path | None, token_block_text: str | None
 ) -> dict[str, float]:
-    """Resolve accent/gold hue centers for rule 4.
+    """Resolve accent/emph hue centers for rule 4.
 
     Priority: ``--tokens`` JSON ``hue_centers`` block (authoritative,
-    IMPLEMENTATION_CONVENTIONS §F), then derive from the JSON's accent/gold
-    base hexes, then fall back to parsing ``--accent`` / ``--gold`` literals
-    out of the :root token block.
+    IMPLEMENTATION_CONVENTIONS §F), then derive from the JSON's accent/emph
+    base hexes, then fall back to parsing ``--accent`` / ``--emph`` literals
+    out of the :root token block. ``gold`` (JSON keys) and ``--gold``
+    (:root) are accepted as legacy aliases for emph — posters generated
+    before the emphasis-register rename still check clean.
     """
     centers: dict[str, float] = {}
     if tokens_path is not None:
@@ -1217,33 +1261,42 @@ def resolve_hue_centers(
                     f": {ascii_safe(e)}; falling back to :root.")
             doc = {}
         hc = doc.get("hue_centers") or {}
-        for key in ("accent", "gold"):
-            if key in hc:
+        for key, jkeys in (("accent", ("accent",)), ("emph", ("emph", "gold"))):
+            for jk in jkeys:
+                if jk not in hc:
+                    continue
                 try:
-                    centers[key] = float(hc[key]) % 360.0
+                    centers[key] = float(hc[jk]) % 360.0
+                    break
                 except (TypeError, ValueError):
                     pass
         # Derive from base hexes if hue_centers omitted a key.
-        for key, sub in (("accent", "accent"), ("gold", "gold")):
+        for key, subs in (("accent", ("accent",)), ("emph", ("emph", "gold"))):
             if key in centers:
                 continue
-            base = (doc.get(sub) or {}).get("base")
-            h = _hue_from_hex(base) if base else None
-            if h is not None:
-                centers[key] = h
-    # Fallback: parse --accent / --gold from the :root token block.
-    if token_block_text:
-        for key, var in (("accent", "--accent"), ("gold", "--gold")):
-            if key in centers:
-                continue
-            m = re.search(
-                re.escape(var) + r"\s*:\s*(#[0-9a-fA-F]{3,8})",
-                token_block_text,
-            )
-            if m:
-                h = _hue_from_hex(m.group(1))
+            for sub in subs:
+                base = (doc.get(sub) or {}).get("base")
+                h = _hue_from_hex(base) if base else None
                 if h is not None:
                     centers[key] = h
+                    break
+    # Fallback: parse --accent / --emph (legacy --gold) from :root.
+    if token_block_text:
+        for key, variants in (
+            ("accent", ("--accent",)), ("emph", ("--emph", "--gold"))
+        ):
+            if key in centers:
+                continue
+            for var in variants:
+                m = re.search(
+                    re.escape(var) + r"\s*:\s*(#[0-9a-fA-F]{3,8})",
+                    token_block_text,
+                )
+                if m:
+                    h = _hue_from_hex(m.group(1))
+                    if h is not None:
+                        centers[key] = h
+                        break
     return centers
 
 
@@ -1312,7 +1365,8 @@ def cmd_style_check(args: argparse.Namespace) -> int:
 
     # --- Source gate (always runs) --------------------------------------
     source_results, _parser, token_block_text = run_source_gate(
-        html_text, html_path
+        html_text, html_path,
+        font_whitelists=resolve_font_whitelists(tokens_path),
     )
 
     # --- Render gate (rules 4, 12) --------------------------------------
@@ -1389,8 +1443,10 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument(
         "--tokens", default=None,
         help="tokens JSON (IMPLEMENTATION_CONVENTIONS §F); its "
-             "hue_centers/accent/gold drive rule 4. Default: derive accent/"
-             "gold hue from the :root token block.",
+             "hue_centers/accent/emph drive rule 4 ('gold' accepted as a "
+             "legacy alias for emph), and its fonts.serif/sans/mono lists "
+             "EXTEND the rule-7 whitelists. Default: derive accent/emph "
+             "hue from the :root token block.",
     )
     p.add_argument(
         "--json", default=None,

@@ -6,23 +6,23 @@ posterly's token system, palette values carried over as a starting pool.)*
 
 posterly templates already centralize every chrome color in the `:root`
 token block, so a re-theme is mostly a **token swap**: rewrite
-`--accent` / `--accent-deep` / `--accent-light` / `--accent-soft` — plus,
-*when the clash rule fires* (warm accent), the `--gold`/`--gold-soft`
-register pair, which today needs one CSS check beyond the token block (see
-the caveat in Mechanism 1). This file records the three mechanisms worth
-keeping when the theme-pack work lands, plus a field-tested accent pool.
+`--accent` / `--accent-deep` / `--accent-light` / `--accent-soft` (and
+check `--accent-ink`, Mechanism 3) — plus the `--emph`/`--emph-soft`/
+`--emph-ink` register triple (Mechanism 1). This file records the three
+mechanisms worth keeping as the design-axes work lands, plus a
+field-tested accent pool.
 
 ## Mechanism 1 — the result register stays FIXED across themes
 
 Their `--callout` (a crimson "this is the number" cue) is deliberately **not**
-swapped by any theme; posterly's analog is **`--gold` / `--gold-soft`** (the
-`.ours` row, `★` callouts, `.keyword-gold`). Keep it constant when re-theming:
+swapped by any theme; posterly's analog is **`--emph` / `--emph-soft`** (the
+`.ours` row, `★` callouts, `.keyword-emph`). Keep it constant when re-theming:
 the reader's "result highlight" association survives across a wave of posters
 (the *hue-distinction* side of that promise is what the clash resolution below
 exists to protect — see the mixed-wave trade-off). **SKILL.md's clash rule
 still wins** (§Palette derivation: a *warm* accent — red/orange/yellow, so the
 burgundy/rust/plum rows below — requires swapping the secondary to a deep cool
-neutral, e.g. `#3D4A5C`, with `--gold-soft` re-derived as its ~90% white
+neutral, e.g. `#3D4A5C`, with `--emph-soft` re-derived as its ~90% white
 tint). For a **single-hue-family wave** resolve the register per SKILL.md
 first, then hold that choice fixed. For a **mixed warm/cool wave** (the hash
 pick below will happily land blue AND rust in one batch) the two rules can't
@@ -35,17 +35,18 @@ The invariant is "the result register does not churn within a wave", not
 "the register is always gold" — which is also how this coexists with the
 theme-pack de-fingerprinting note ("gold demoted to optional").
 
-**Caveat — swapping the register is NOT yet a pure token swap.** Today's
-templates pair the two families directly, in BOTH directions:
-`.callout.gold { background: var(--gold); color: var(--accent-deep) }`
-(register as ground, accent as ink) and
-`.callout strong { color: var(--gold) }` on an accent-colored band
-(register as ink on accent ground). Move `--gold` to a deep cool neutral
-and either direction becomes dark-on-dark (~1.0–1.6:1 against every accent
-in the pool). Until the theme-pack Phase 1 decoupling adds a register-ink
-token, a register swap requires **auditing every `var(--gold)` /
-`var(--gold-soft)` use in the template CSS** and re-deriving each pairing's
-ink at 4.5:1 — a handful of deliberate CSS touches, not a redesign.
+**Caveat — the two register⇄accent pairings still need a contrast check.**
+The templates pair the two families in BOTH directions:
+`.callout.emph { background: var(--emph); color: var(--emph-ink) }`
+(register as ground) and `.callout strong { color: var(--emph) }` on an
+accent-colored band (register as ink on accent ground). The Phase-1
+decoupling routed the first direction through **`--emph-ink`** (default
+`var(--accent-deep)`), so a register swap is now: set `--emph`, re-derive
+`--emph-soft` (~90% white tint), and re-check `--emph-ink` at 4.5:1 on the
+new fill (a deep cool register usually wants a light ink instead of
+accent-deep — dark-on-dark reads ~1.0–1.6:1). The second direction has no
+token of its own: after any swap, eyeball `--emph`-as-ink on the accent
+band once (Mechanism 3's `ink()` math applies).
 
 ## Mechanism 2 — deterministic seed pick, never "model picks a color"
 
@@ -87,11 +88,11 @@ def ink(accent_hex: str) -> str:
 
 Constraint on the pool itself: every accent dark + saturated enough that
 white-on-accent clears **4.5:1** AND the accent still reads as a distinct
-`h2`/border color on white cards. **Not yet wired**: today's templates
-hard-code white on the accent in a few chrome spots and define no
-`--accent-ink` — replacing those literals with `var(--accent-ink)` belongs to
-the theme-pack Phase 1 token decoupling; until then a *custom* pale accent
-needs a manual contrast check.
+`h2`/border color on white cards. **Wired in Phase 1**: the templates
+define `--accent-ink` (default `#FFFFFF`) and every ink-on-accent chrome
+spot (chips, callout body, table heads, banner labels) references it — a
+*custom* pale accent just recomputes the token with the `ink()` snippet
+above instead of hunting literals.
 
 ## Field-tested accent pool (9 bundles)
 

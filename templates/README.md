@@ -4,7 +4,7 @@ Each template is a **self-contained, neutral** HTML file: no lab branding, no pa
 
 Every layout-critical element carries `data-measure-role` so the measurement script can locate columns / hero / footer regions across templates.
 
-Component contracts live in `COMPONENTS.md`; re-theming mechanisms and a field-tested accent pool live in `THEMES.md` (a theme is a `:root` token swap — the result register `--gold` stays fixed across themes).
+Component contracts live in `COMPONENTS.md`; re-theming mechanisms and a field-tested accent pool live in `THEMES.md` (a theme is a `:root` token swap — the result register `--emph` is chosen per poster / per wave, then held fixed within the wave; `--accent-ink` / `--emph-ink` carry the ink on those fills, and `--rs` scales every corner radius, 1 = shipped soft look, 0 = square).
 
 ## Scaffolds, not finished posters
 

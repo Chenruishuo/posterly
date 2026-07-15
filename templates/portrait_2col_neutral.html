@@ -97,10 +97,14 @@
     --accent-deep:   #1F4566;
     --accent-light:  #E8F1F8;
     --accent-soft:   #D7E5F0;
+    --accent-ink:   #FFFFFF;  /* ink ON the accent (chips, callout, thead) */
 
-    /* Secondary accent for "ours / best" emphasis (table .ours row, "★" callouts) */
-    --gold:          #C9A24A;
-    --gold-soft:     #FFF7E0;
+    /* Emphasis register for "ours / best" (table .ours row, "★" callouts).
+       Default is the warm gold; a redesign may choose any register that
+       keeps 4.5:1 with --emph-ink (see templates/THEMES.md Mechanism 1). */
+    --emph:          #C9A24A;
+    --emph-soft:     #FFF7E0;
+    --emph-ink:    var(--accent-deep);  /* ink ON the emphasis fill */
 
     /* Text */
     --text-primary:   #1A1A1A;
@@ -151,6 +155,9 @@
     --shadow-screen: 0 0 60px rgba(0, 0, 0, 0.5);
     --shadow-card: 0 calc(2 * var(--u)) calc(6 * var(--u)) rgba(45, 95, 139, 0.05);
     --ornament-ink: rgba(45, 95, 139, 0.06);
+    /* Corner-radius scale. Every border-radius calc() multiplies by this;
+       1 = the shipped soft look, 0 = square/flat (see templates/THEMES.md). */
+    --rs: 1;
     /* ===== END DESIGN TOKENS ===== */
   }
 
@@ -258,7 +265,7 @@
     color: var(--accent-deep);
     letter-spacing: -0.5px;
   }
-  .title .accent { color: var(--gold); }
+  .title .accent { color: var(--emph); }
   /* subtitle snapped 14u -> --fs-6 (15u). */
   .subtitle {
     font-family: var(--font-sans);
@@ -295,7 +302,7 @@
     width: calc(75 * var(--u));
     height: calc(75 * var(--u));
     border: calc(2 * var(--u)) solid var(--accent);
-    border-radius: calc(4 * var(--u));
+    border-radius: calc(4 * var(--u) * var(--rs));
     background: white;
     padding: calc(2 * var(--u));
   }
@@ -326,7 +333,7 @@
      fold a stray white box into a deliberate rounded tile (SKILL.md Gate E, Background). */
   .logo-chip {
     display: inline-flex; align-items: center; justify-content: center;
-    background: var(--bg-card); border-radius: calc(3 * var(--u));
+    background: var(--bg-card); border-radius: calc(3 * var(--u) * var(--rs));
     padding: calc(3 * var(--u)) calc(4 * var(--u));
   }
   .logo-chip.logo-chip-dark { background: var(--text-primary); }
@@ -340,7 +347,7 @@
     gap: calc(2 * var(--u));
     background: var(--bg-card);
     border: 1px solid var(--border-soft);
-    border-radius: calc(3 * var(--u));
+    border-radius: calc(3 * var(--u) * var(--rs));
     padding: calc(3 * var(--u)) calc(5 * var(--u));
   }
   .logo-row .lr-item img { height: calc(48 * var(--u)); }
@@ -394,7 +401,7 @@
      ========================================================= */
   .card {
     background: var(--bg-card);
-    border-radius: calc(5 * var(--u));
+    border-radius: calc(5 * var(--u) * var(--rs));
     padding: calc(5 * var(--u)) calc(10 * var(--u));
     border: calc(1 * var(--u)) solid var(--border-soft);
     box-shadow: var(--shadow-card);
@@ -429,14 +436,14 @@
   .section-title .num {
     display: inline-flex; align-items: center; justify-content: center;
     width: calc(24 * var(--u)); height: calc(24 * var(--u));
-    background: var(--accent); color: white;
+    background: var(--accent); color: var(--accent-ink);
     border-radius: 50%;
     font-size: var(--fs-6); font-weight: 700;
     flex-shrink: 0;
   }
   /* Inline "★ key/headline" tag inside a section title (replaces inline styles). */
   .section-title .tag-key {
-    color: var(--gold);
+    color: var(--emph);
     font-size: var(--fs-4);
   }
 
@@ -452,11 +459,11 @@
   .card li { margin-bottom: calc(2 * var(--u)); }
 
   .keyword       { color: var(--accent); font-weight: 700; }
-  .keyword-gold  { color: var(--gold);   font-weight: 700; }
+  .keyword-emph  { color: var(--emph);   font-weight: 700; }
   .highlight-text {
     background: var(--bg-emphasis);
     padding: 0 calc(3 * var(--u));
-    border-radius: calc(2 * var(--u));
+    border-radius: calc(2 * var(--u) * var(--rs));
   }
 
   /* Equation block — snapped 14u -> --fs-5 (13u). */
@@ -483,22 +490,22 @@
     letter-spacing: 1px;
   }
 
-  /* Callout: solid accent for primary; solid gold for theorems / "★ key" strips
-     (gold .callout de-gradiented to a flat fill). Snapped 13u -> --fs-5. */
+  /* Callout: solid accent for primary; solid emphasis fill for theorems / "★ key" strips
+     (emph .callout de-gradiented to a flat fill). Snapped 13u -> --fs-5. */
   .callout {
     background: var(--accent);
-    color: white;
+    color: var(--accent-ink);
     padding: calc(5 * var(--u)) calc(10 * var(--u));
-    border-radius: calc(4 * var(--u));
+    border-radius: calc(4 * var(--u) * var(--rs));
     font-size: var(--fs-5);
     margin: calc(4 * var(--u)) 0;
   }
-  .callout strong { color: var(--gold); }
-  .callout.gold {
-    background: var(--gold);
+  .callout strong { color: var(--emph); }
+  .callout.emph {
+    background: var(--emph);
     color: var(--accent-deep);
   }
-  .callout.gold strong { color: var(--accent-deep); }
+  .callout.emph strong { color: var(--emph-ink); }
 
   /* Figure container */
   .figure { margin: calc(4 * var(--u)) 0; text-align: center; }
@@ -512,7 +519,7 @@
        image from style_check's palette gate. Use .w-NN utilities (not an
        inline width) to size it; the only inline-style exception the gate
        allows is `style="width: NN%"` on a data-source="paper" <img>. */
-    border-radius: calc(4 * var(--u));
+    border-radius: calc(4 * var(--u) * var(--rs));
     border: calc(1 * var(--u)) solid var(--border-soft);
     background: white;
   }
@@ -547,7 +554,7 @@
   .ff-fig img {
     display: block;
     width: 100%;
-    border-radius: calc(4 * var(--u));
+    border-radius: calc(4 * var(--u) * var(--rs));
     border: calc(1 * var(--u)) solid var(--border-soft);
     background: white;
   }
@@ -560,7 +567,7 @@
     text-align: center;
   }
 
-  /* Result table with .ours row highlighted gold — snapped 12u -> --fs-4. */
+  /* Result table with .ours row highlighted with the emphasis tint — snapped 12u -> --fs-4. */
   .result-table {
     width: 100%;
     border-collapse: collapse;
@@ -574,7 +581,7 @@
     border-bottom: calc(1 * var(--u)) solid var(--border-soft);
   }
   .result-table thead th {
-    background: var(--accent); color: white;
+    background: var(--accent); color: var(--accent-ink);
     font-weight: 600; font-size: var(--fs-3);
   }
   .result-table tbody tr.group-row td {
@@ -584,7 +591,7 @@
     padding-left: calc(8 * var(--u));
     border-bottom: calc(2 * var(--u)) solid var(--accent);
   }
-  .result-table tbody tr.ours td { background: var(--gold-soft); font-weight: 700; }
+  .result-table tbody tr.ours td { background: var(--emph-soft); font-weight: 700; }
   .result-table tbody tr.ours td:first-child { color: var(--accent-deep); }
   .result-table .method { text-align: left; padding-left: calc(8 * var(--u)); }
   .result-table .best { color: var(--accent); font-weight: 700; }
@@ -607,7 +614,7 @@
        vertically so a 1-line tile's number aligns with a 2-line neighbour's
        instead of top-ragged (SKILL Layout pitfall — stat-tile alignment). */
     display: flex; flex-direction: column; justify-content: center;
-    border-radius: 0 0 calc(3 * var(--u)) calc(3 * var(--u));
+    border-radius: 0 0 calc(3 * var(--u) * var(--rs)) calc(3 * var(--u) * var(--rs));
   }
   .kb-item .kb-num {
     font-family: var(--font-sans);
@@ -689,25 +696,25 @@
     background: var(--bg-card-tint);
     border: 1px solid var(--border-soft);
     border-left: calc(2 * var(--u)) solid var(--accent);
-    border-radius: calc(2 * var(--u));
+    border-radius: calc(2 * var(--u) * var(--rs));
     padding: calc(2 * var(--u)) calc(4 * var(--u));
     font-size: var(--fs-2); line-height: 1.3;
   }
   .eqn-anatomy .ea-tag {
     display: inline-block; font-family: var(--font-sans); font-weight: 700;
     font-size: var(--fs-1); color: var(--accent-deep);
-    background: var(--accent-light); border-radius: calc(1.5 * var(--u));
+    background: var(--accent-light); border-radius: calc(1.5 * var(--u) * var(--rs));
     padding: calc(0.5 * var(--u)) calc(2.5 * var(--u));
     margin-right: calc(1.5 * var(--u));
   }
 
   /* flow-strip: labeled pipeline, ALL steps the same accent; ONLY the
-     final step may carry the gold top bar. Not an "algorithm" unless the
+     final step may carry the emphasis top bar. Not an "algorithm" unless the
      paper has one — see COMPONENTS.md. */
   .flow-strip { display: flex; align-items: stretch; gap: calc(1.5 * var(--u)); margin: calc(3 * var(--u)) 0; }
   .flow-strip .step {
     flex: 1; background: var(--accent-light);
-    border: 1px solid var(--accent-soft); border-radius: calc(2 * var(--u));
+    border: 1px solid var(--accent-soft); border-radius: calc(2 * var(--u) * var(--rs));
     padding: calc(2 * var(--u)) calc(2.5 * var(--u));
     text-align: center; font-size: var(--fs-2); line-height: 1.25;
   }
@@ -717,7 +724,7 @@
     letter-spacing: 0.5px; text-transform: uppercase;
     margin-bottom: calc(1 * var(--u));
   }
-  .flow-strip .step--final { border-top: calc(1.5 * var(--u)) solid var(--gold); background: var(--gold-soft); }
+  .flow-strip .step--final { border-top: calc(1.5 * var(--u)) solid var(--emph); background: var(--emph-soft); }
   .flow-strip .arrow {
     align-self: center; color: var(--accent);
     font-family: var(--font-sans); font-weight: 700; font-size: var(--fs-4);
@@ -729,9 +736,9 @@
   .figure--duo { display: flex; gap: calc(3 * var(--u)); align-items: flex-start; justify-content: center; }
   .figure--duo img { max-width: 48%; min-width: 0; }  /* hard cap: duo contract is 42-48% each; an oversized w-NN cannot overflow the card */
 
-  /* result-table derived column (gold-soft = DERIVED arithmetic; label it) */
+  /* result-table derived column (emph-soft = DERIVED arithmetic; label it) */
   .result-table th.derived, .result-table td.derived {
-    background: var(--gold-soft); font-family: var(--font-sans); font-weight: 700;
+    background: var(--emph-soft); font-family: var(--font-sans); font-weight: 700;
   }
 
   /* keybox 4-up variant */
@@ -750,10 +757,10 @@
   }
   .claim-pills .cp-id {
     font-weight: 700; color: var(--accent-deep); background: var(--accent-light);
-    border-radius: calc(1.5 * var(--u)); padding: 0 calc(2.5 * var(--u)); white-space: nowrap;
+    border-radius: calc(1.5 * var(--u) * var(--rs)); padding: 0 calc(2.5 * var(--u) * var(--rs)); white-space: nowrap;
   }
   .claim-pills .cp-fact { color: var(--accent-deep); font-weight: 700; }
-  .claim-pills .cp-derived { color: var(--gold); font-weight: 700; }
+  .claim-pills .cp-derived { color: var(--emph); font-weight: 700; }
 
   /* Grid-blowout guards: (1) columns may shrink below min-content so a
      wide equation can never widen its track and squeeze siblings;
@@ -920,7 +927,7 @@
         <p class="body-text">TODO: one-sentence interpretation of the equation.</p>
       </div>
 
-      <!-- Card 4: method step 2 (theorem / key). .highlight + gold callout. -->
+      <!-- Card 4: method step 2 (theorem / key). .highlight + emph callout. -->
       <div class="card highlight" data-measure-role="card">
         <div class="section-title"><span class="num">4</span><span class="st-text">Method Step 2&nbsp;<span class="tag-key">&#9733; KEY</span></span></div>
         <p class="body-text">TODO: how step 2 works.</p>
@@ -928,7 +935,7 @@
           <span class="label">Step 2 equation</span>
           $$g(x) \;=\; \text{TODO}$$
         </div>
-        <div class="callout gold">
+        <div class="callout emph">
           <strong>Theorem.</strong> TODO: one-sentence statement, with $\varepsilon$ bounds if applicable.
         </div>
       </div>
@@ -1006,7 +1013,7 @@
           <li><strong>Result.</strong> TODO: 1-line.</li>
           <li><strong>Practical.</strong> TODO: 1-line.</li>
         </ul>
-        <div class="callout gold mt-3">
+        <div class="callout emph mt-3">
           <strong>In one sentence:</strong> TODO — the elevator pitch a passer-by remembers.
         </div>
       </div>

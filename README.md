@@ -175,7 +175,7 @@ Detailed thresholds and tuning flags are in `SKILL.md`. See `templates/README.md
 
 The three knobs you'll actually touch:
 
-- **Colors / fonts**: edit `:root` design tokens (`--accent`, `--gold`, `--font-serif`, …) in the template you copied.
+- **Colors / fonts**: edit `:root` design tokens (`--accent`, `--emph`, `--font-serif`, …) in the template you copied.
 - **Logos**: drop into the same directory as `poster.html`, reference as `images/your_logo.png`.
 - **QR code**: give `/posterly` your paper/code URL and Claude generates the QR for you — the showcase posters' codes were made this way. Templates ship an inline SVG placeholder so they render offline; to make one by hand, `qrencode -o qr.png -s 12 "<url>"` (Linux) or `python -c "import qrcode; qrcode.make('<url>').save('qr.png')"`, then point the QR `<img src=…>` at it.
 

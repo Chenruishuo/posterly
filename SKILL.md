@@ -59,7 +59,7 @@ Procedure:
 Don't pick a template, colors, logos, a QR target, the text density, or the block count silently. Ask the user in one round. AskUserQuestion takes at most 4 questions per call, so if more than four of the topics below need input for this poster, send the four most decision-relevant first and ask the rest (usually QR and block count) in a brief second call:
 
 - **Layout**: "Which gallery template fits best? (a) 4-column landscape, (b) hero + supporting column landscape, (c) 2-column portrait." Show them `templates/README.md`'s table.
-- **Palette**: "Lab/venue colors? E.g. `#XXX` accent + `#YYY` highlight — or say 'you pick'." When the user gives colors, use them. When they don't, do **not** silently fall back to the one house style: derive a poster-specific palette from the materials at hand (**§Palette derivation** below) and propose it in this same round — "suggest `#660874` from the Tsinghua brand — OK?" — so the user can veto cheaply. The neutral slate-blue + gold shipped in the templates is the *last-resort* fallback, not the default.
+- **Palette**: "Lab/venue colors? E.g. `#XXX` accent + `#YYY` highlight — or say 'you pick'." When the user gives colors, use them. When they don't, do **not** silently fall back to the one house style: derive a poster-specific palette from the materials at hand (**§Palette derivation** below) and propose it in this same round — "suggest `#660874` from the Tsinghua brand — OK?" — so the user can veto cheaply. The shipped neutral (steel-blue accent + warm-gold register) is the *last-resort* fallback, not the default.
 - **Logos & venue mark**: "Any logos to place? Affiliation / lab logo, and the conference / journal logo — give paths or URLs, or say 'none'." Don't assume a venue logo is wanted; cross-check the logo policy from Step 0 (some venues forbid them). When logo files are provided, inspect each one (aspect ratio, transparency, background — Step 2 item 5) and pick a size class + chip treatment per **Gate E — Header logos** below; don't just drop them in at the default size.
 - **QR code**: "Want a QR code? If so, pointing at which link — paper / arXiv / code repo / project page — or none?" Generate it **offline** as a local image (see Customizing in README / `qrencode`); never leave a remote QR-service URL in the poster — it hangs `measure`'s networkidle wait and link-rots in print/archive.
 - **Text density**: "How much text should the poster carry? (a) **Normal** (default) — posterly's usual concise balance of prose and paper figures; (b) **Light** — fewer words, with the saved space reassigned to paper-sourced figures/diagrams across the poster." For **Light**: trim secondary prose and merge or drop low-value text cards *only* when the freed area becomes visual real estate — larger AR-appropriate figures, figure-dominant cards, or additional useful paper visuals. Keep multiple figures while each stays legible; do **not** concentrate the budget into one enlarged centerpiece or switch layouts for that reason. "More room" means larger, clearer visual regions — never blank columns / cards / gaps: the Step 4 `measure` gate and the Step 6 anti-whitespace / figure gates all still apply.
@@ -77,7 +77,7 @@ A paper already carries brand signals — the default palette should be **derive
 - **The paper's own figures** — dominant hue of the headline figure; the poster then echoes its figures.
 - **Field/topic conventions** — weakest signal; use only when nothing above gives a usable color.
 
-Whatever the source, the seed feeds one fixed recipe — the rebrand surface is the same six tokens in every template (`--accent`, `--accent-deep`, `--accent-light`, `--accent-soft`, `--gold`, `--gold-soft`):
+Whatever the source, the seed feeds one fixed recipe — the rebrand surface is the same eight tokens in every template (`--accent`, `--accent-deep`, `--accent-light`, `--accent-soft`, `--accent-ink`, `--emph`, `--emph-soft`, `--emph-ink`):
 
 ```python
 from collections import Counter
@@ -118,14 +118,19 @@ print(f"--accent: {fmt(accent)};  --accent-deep: {fmt(mix(accent, (0, 0, 0), 0.3
 print(f"--accent-light: {fmt(mix(accent, (255, 255, 255), 0.90))};  "
       f"--accent-soft: {fmt(mix(accent, (255, 255, 255), 0.82))};")
 print(f"white-on-accent contrast: {contrast(accent, (255, 255, 255)):.1f}:1")
+# --accent-ink stays #FFFFFF -- the AA loop above just guaranteed it.
+# 3) Emphasis register: pick --emph per the rule below, then derive
+#    --emph-soft = mix(emph, white, 0.90) and check --emph-ink (the ink
+#    used ON the emph fill; template default var(--accent-deep)) still
+#    clears 4.5:1 against the register you chose -- swap it if not.
 ```
 
 Rules that hold regardless of seed source:
 
 - **Print-safe accent**: muted-to-medium saturation, medium-dark value. The AA loop above enforces the dark end; if a brand color is neon-bright, mute it toward the template's tone rather than shipping fluorescent ink.
-- **Secondary (`--gold`) stays unless it clashes**: the warm gold works as "ours/best" emphasis against any *cool* accent. If the seed itself is warm (red/orange/yellow hue), swap the secondary to a deep cool neutral (e.g. `#3D4A5C`) so emphasis still pops; derive `--gold-soft` as its ~90% white tint.
+- **Emphasis register (`--emph`) is a per-poster choice, not a fixture**: it is the single "ours / best" cue (the `.ours` row, `★` callouts, `.keyword-emph`), and defaulting it to the same color on every poster is a recognizable fingerprint. Pick ONE register per poster from a shortlist that suits the accent — warm gold `#C9A24A` (classic against cool accents), deep cool slate `#3D4A5C` (safe on any accent), rust `#A2521C`, forest `#2D5F3E`, burgundy `#8F2437` (see `templates/THEMES.md` for the calibrated pool) — and vary the choice across posters. Constraints: (a) hue-distinct from the accent (rule 4 allows exactly these two hue families); (b) if the accent is warm (red/orange/yellow), the register must be cool; (c) re-derive `--emph-soft` as the register's ~90% white tint and keep `--emph-ink` at 4.5:1 on the register fill.
 - **Backgrounds stay near-white** (`--bg-page`/`--bg-card` untouched, or at most a faint seed-hued tint). Print legibility and every downstream check assume a light poster.
-- **Echo the choice**: state the seed source and final tokens to the user (Step 0.5 round) and record them in your build notes — "accent #660874 from Tsinghua brand; gold kept" — so a later edit doesn't "correct" a deliberate derivation back to neutral.
+- **Echo the choice**: state the seed source and final tokens to the user (Step 0.5 round) and record them in your build notes — "accent #660874 from Tsinghua brand; register slate #3D4A5C" — so a later edit doesn't "correct" a deliberate derivation back to neutral.
 
 ### Step 1 — Confirm content & figures
 

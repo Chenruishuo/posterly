@@ -94,9 +94,9 @@ Gate name shorthand (DESIGN_FINAL §3–§7):
   fallback then floats the badge (graceful, but not the intended centred form). Do not insert a
   manual `<br>` to force a break; let `.st-text` wrap on its own.
 - **Allowed variants**: inherits all `card` variants. The `.section-title` may carry a small
-  inline gold "★ KEY" / "★ Headline" marker as the **last child of `.st-text`**, glued to the
+  inline emphasis-colored "★ KEY" / "★ Headline" marker as the **last child of `.st-text`**, glued to the
   preceding word with `&nbsp;` (e.g. `…Result&nbsp;<span class="key-mark">&#9733; KEY</span>`) so
-  it can never widow onto its own line. Use the template's gold marker class (`.key-mark` in
+  it can never widow onto its own line. Use the template's emphasis marker class (`.key-mark` in
   landscape_4col, `.tag-key` in portrait) — never an inline `style="color:…"`.
 - **Required data attributes**: same as `card` (`data-measure-role="card"`). The number itself
   carries no data attribute.
@@ -232,21 +232,21 @@ Gate name shorthand (DESIGN_FINAL §3–§7):
   check, inflates PDF, fails the "real text" expectation); a per-equation px font-size override
   (rule 8 HARD); an `.eqn` box left mostly empty (no gate catches this — check by eye).
 
-## callout (`.callout`, variant `.callout.gold`)
+## callout (`.callout`, variant `.callout.emph`)
 
 - **Purpose**: An accent-filled emphasis strip for a question, theorem, or one-line takeaway —
   the "read this even if you read nothing else" line inside a card.
-- **Allowed variants**: `.callout` (solid `--accent`, white text, `<strong>` in gold) and
-  `.callout.gold` (solid `--gold`, `--accent-deep` text — the ARIS fork flattens the original
+- **Allowed variants**: `.callout` (solid `--accent`, white text, `<strong>` in the emphasis register) and
+  `.callout.emph` (solid `--emph`, `--emph-ink` text — the ARIS fork flattens the original
   gold *gradient* to a flat fill per §E.2). No third variant.
 - **Required data attributes**: none.
-- **Token usage**: `.callout` → `--accent` bg, white text, `--gold` (`<strong>`); `.callout.gold`
-  → `--gold` bg, `--accent-deep` text. Font-size `--fs-4`.
-- **Inspected by**: `style` (rule 5 — `.callout.gold` must be a flat fill, no `linear-gradient`;
-  rule 4 — its accent/gold are the two allowed hue families; rule 1/3 — colors via var),
+- **Token usage**: `.callout` → `--accent` bg, white text, `--emph` (`<strong>`); `.callout.emph`
+  → `--emph` bg, `--accent-deep` text. Font-size `--fs-4`.
+- **Inspected by**: `style` (rule 5 — `.callout.emph` must be a flat fill, no `linear-gradient`;
+  rule 4 — its accent/emph are the two allowed hue families; rule 1/3 — colors via var),
   `measure` (counts toward card height).
 - **Allowed fix operations**: (a), (b) add/remove a callout instance, (c) reword from paper
-  source, (f) toggle `.callout` ↔ `.callout.gold`.
+  source, (f) toggle `.callout` ↔ `.callout.emph`.
 - **Anti-patterns**: `linear-gradient` fill (rule 5 — convention is a flat fill; the single most
   common de-gradient regression, hard only if rule 5 is re-enabled); a third color on a callout
   (rule 4 — >2 hue clusters); using a
@@ -254,24 +254,24 @@ Gate name shorthand (DESIGN_FINAL §3–§7):
 
 ## result-table (`table.result-table`)
 
-- **Purpose**: A benchmark / comparison table with the "ours" row highlighted in gold and group
+- **Purpose**: A benchmark / comparison table with the "ours" row highlighted with the emphasis tint and group
   rows / best cells marked. The quantitative payload of a results card.
-- **Allowed variants**: row classes `tr.group-row` (section divider row), `tr.ours` (gold
+- **Allowed variants**: row classes `tr.group-row` (section divider row), `tr.ours` (emphasis-tinted
   highlight for our method), cell classes `.method` (left-aligned method name), `.best`
   (accent-colored winning number). These are the defined row/cell modifiers — no others.
 - **Required data attributes**: none (it lives inside a `card` which carries the measure role).
 - **Token usage**: `thead th` → `--accent` bg / white; `tr.group-row td` → `--bg-emphasis`,
-  `--accent-deep`, `--accent` bottom border; `tr.ours td` → `--gold-soft`; `.best` → `--accent`;
+  `--accent-deep`, `--accent` bottom border; `tr.ours td` → `--emph-soft`; `.best` → `--accent`;
   borders → `--border-soft`. Font is the **sans** stack (tables/headers are sans per rule 6),
   size `--fs-3`/`--fs-2`.
-- **Inspected by**: `style` (rule 6 — table uses sans; rule 4 — gold-soft + accent are within
+- **Inspected by**: `style` (rule 6 — table uses sans; rule 4 — emph-soft + accent are within
   the two hue families; rule 8 — sizes via token), `measure` (height in card), `preflight`.
 - **Allowed fix operations**: (a), (c) add/remove rows or edit numbers from the paper/results
   (content rebalance), (e) global table stylesheet (tokens). Switching which row is `.ours` is (c).
 - **Anti-patterns**: per-cell inline `style="color:#888"` for the reference row (the posterly
   originals did this; the ARIS fork replaces with `.text-muted`) — rule 2 HARD; numbers that do
   not match the paper/results files (Step 1.5 claim→evidence audit + Step 6.5); a third highlight
-  color beyond gold-soft/accent (rule 4); **a two-column `Method | Metric` table stretched to
+  color beyond emph-soft/accent (rule 4); **a two-column `Method | Metric` table stretched to
   the card width** — it leaves a wide empty gutter and reads sparse (field-noted in
   ResearchStudio's poster wave). When the paper reports more than one metric (two datasets,
   main + ablation, Acc + F1), give the table a column per metric so it fills its width;
@@ -475,7 +475,7 @@ entry above maps its "Allowed fix operations" to these letters.
 | **(c)** | **Content rebalance** | Move a card across columns; add/remove paper-sourced text; adjust a figure width within the AR gate's band. |
 | **(d)** | **Canvas / template reselect** | The upgrade path — pick a different template or retarget the canvas (`templates/README.md` "Picking a template"; `SKILL.md` Step 3 and Step 4 "reselect a smaller canvas"). |
 | **(e)** | Global **component stylesheet** change | May reference tokens only; **no new hex**. |
-| **(f)** | Toggle a **predefined variant** | `.figure--wide`, `.card--compact`, `.eqn--large`, `.nowrap`, `.callout.gold`, etc. — must already be in this catalog. |
+| **(f)** | Toggle a **predefined variant** | `.figure--wide`, `.card--compact`, `.eqn--large`, `.nowrap`, `.callout.emph`, etc. — must already be in this catalog. |
 | **(g)** | **Asset fix** | Re-crop, swap for a sharper figure from the *same* paper, re-run `preprocess_figures.py`. |
 
 **Forbidden inside the loop** (DESIGN_FINAL §10, last paragraph): new inline `style=`,
@@ -518,7 +518,7 @@ this checkpoint — with an equal-cell fallback story.
 
 > **Shared guardrail (all components below): no component-local color semantics.**
 > Semantic distinction must be conveyed by labels, order, typography, and FACT/DERIVED
-> text — never by new hues. Every CSS declaration references `--accent`/`--gold`/neutral
+> text — never by new hues. Every CSS declaration references `--accent`/`--emph`/neutral
 > tokens only. This is what keeps a dense poster from regressing into the 30-color
 > "patched dashboard" failure class.
 
@@ -543,8 +543,8 @@ this checkpoint — with an equal-cell fallback story.
 ### `flow-strip`
 - **Purpose**: horizontal labeled pipeline (`.step` boxes + `.arrow` glyphs) grounded in
   paper variables, e.g. data pair → implicit reward → shift → penalty → optimum.
-- **Variants**: `.step--final` (gold top bar + gold-soft bg) — at most ONE, the endpoint.
-- **Tokens**: every step the same accent-light; final step gold-soft.
+- **Variants**: `.step--final` (emph top bar + emph-soft bg) — at most ONE, the endpoint.
+- **Tokens**: every step the same accent-light; final step emph-soft.
 - **Inspected by**: style rule 4, measure, polish FLEX-BR (no `<br>` in steps — use
   `.step-name` block + text).
 - **Allowed fix ops**: step count/text rebalance; token edits.
@@ -559,14 +559,14 @@ this checkpoint — with an equal-cell fallback story.
 - **Inspected by**: asset (provenance + per-figure + total bands), polish FIG gates.
 - **Allowed fix ops**: asset fixes (re-crop), width within band, swap member figures.
 - **Anti-patterns**: pairing unrelated figures; before/after labels in extra hues (use
-  text labels with accent/gold only).
+  text labels with accent/emph only).
 
 ### `result-table` derived column (`th.derived` / `td.derived`)
 - **Purpose**: a DERIVED arithmetic column (e.g. Δ = Ours − Baseline) next to verbatim
-  paper values; gold-soft background marks "derived, not copied".
+  paper values; emph-soft background marks "derived, not copied".
 - **Contract**: the table caption or setup line MUST state the derivation ("Δ = AuxDPO −
   DPO, derived"). Negative/degrading values use *italic*, never red.
-- **Inspected by**: style rule 4 (gold family), content audits (Step 1.5 / 6.5 verify arithmetic).
+- **Inspected by**: style rule 4 (emph family), content audits (Step 1.5 / 6.5 verify arithmetic).
 - **Anti-patterns**: mixing derived and verbatim values in one column; unlabeled derived data.
 
 ### `keybox--4`
@@ -592,7 +592,7 @@ or the class is inert and the 4-tile strip orphans 3+1 (`style` rule 13 hard-fai
 - **Purpose**: provenance mini-table (`.cp-id` pill + evidence + `.cp-fact`/`.cp-derived`
   badge) for numeric-heavy posters where every number should trace to a source.
 - **Contract**: use only when the poster carries ≥8 distinct numeric claims; badges are
-  text (FACT/DERIVED), accent/gold colored — no new hues.
+  text (FACT/DERIVED), accent/emph colored — no new hues.
 - **Anti-patterns**: pills for trivial claims; turning it into a second results table.
 
 ### `logo-row` + venue-badge logo (added 2026-06-05, user-checkpointed)
