@@ -1,5 +1,6 @@
 ---
 name: posterly
+disable-model-invocation: true
 description: "Build an academic conference poster (ICML/NeurIPS/ICLR/CVPR/etc.) as a single HTML/CSS file and render it to print-ready PDF via headless Chromium. Use when user says \"做海报\", \"poster\", \"ICML/NeurIPS/ICLR poster\", or asks to design/edit a research poster."
 allowed-tools: Bash(*), Read, Write, Edit, Grep, Glob, AskUserQuestion, WebFetch, WebSearch
 ---
@@ -142,7 +143,7 @@ The draft must be audited for paper-to-poster fidelity. Past sessions caught rea
 
 **How to run it (in order of preference):**
 
-1. **External LLM reviewer with file access (best).** If you have Codex MCP, GPT-5 with file access, another Claude session, or any reviewer that can `Read` paper source files, use that. Recommended defaults if you have Codex MCP: `model="gpt-5.5"`, `model_reasoning_effort="xhigh"`, `sandbox="danger-full-access"` (read-only audit — the sandbox often fails to start in containers / nested namespaces, and the audit only reads files anyway). Send the evidence pack + reviewer prompt below.
+1. **External LLM reviewer with file access (best).** If you have Codex MCP, GPT-5 with file access, another Claude session, or any reviewer that can `Read` paper source files, use that. Recommended defaults if you have Codex MCP: `model="gpt-5.6-sol"`, `model_reasoning_effort="xhigh"`, `sandbox="danger-full-access"` (read-only audit — the sandbox often fails to start in containers / nested namespaces, and the audit only reads files anyway). Send the evidence pack + reviewer prompt below.
 
 2. **Self-audit (fallback).** Walk every numeric claim on the poster and find its `file:line` in the paper source. Build the claim → evidence table by hand. Slower, easier to miss things, but better than skipping.
 
@@ -587,7 +588,7 @@ The failure mode of any "render → review → fix → re-render" loop is the **
 
 ### Cross-model final review (strengthens Step 6.5)
 
-Step 6.5 becomes a true **final gate** when run after `run_gates.py` is all-green and polish warnings are zero-or-waived: open a **fresh, cross-model** thread (a different model family than drafted the poster — e.g. Codex `gpt-5.5`, `xhigh`) on the *final artifacts only* — `poster.html`, the rendered PDF/PNG, the paper source, and `GATE_REPORT.json` — passed as **paths, no executor framing**. It re-checks fidelity/overclaims on the *polished* text (polish introduces new claims), residue (`\ref{`, `TODO`, raw `<` in math, missing images, remote URLs), visual rhetoric (headline numbers prominent, banner readable at 2 m), and gate-log coherence. The reviewer *recommends*; it does not edit. Any fix loops back through Step 4/6 — never straight to re-review.
+Step 6.5 becomes a true **final gate** when run after `run_gates.py` is all-green and polish warnings are zero-or-waived: open a **fresh, cross-model** thread (a different model family than drafted the poster — e.g. Codex `gpt-5.6-sol`, `xhigh`) on the *final artifacts only* — `poster.html`, the rendered PDF/PNG, the paper source, and `GATE_REPORT.json` — passed as **paths, no executor framing**. It re-checks fidelity/overclaims on the *polished* text (polish introduces new claims), residue (`\ref{`, `TODO`, raw `<` in math, missing images, remote URLs), visual rhetoric (headline numbers prominent, banner readable at 2 m), and gate-log coherence. The reviewer *recommends*; it does not edit. Any fix loops back through Step 4/6 — never straight to re-review.
 
 ## Templates
 
