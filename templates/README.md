@@ -4,6 +4,8 @@ Each template is a **self-contained, neutral** HTML file: no lab branding, no pa
 
 Every layout-critical element carries `data-measure-role` so the measurement script can locate columns / hero / footer regions across templates.
 
+Component contracts live in `COMPONENTS.md`; re-theming mechanisms and a field-tested accent pool live in `THEMES.md` (a theme is a `:root` token swap — the result register `--gold` stays fixed across themes).
+
 ## Scaffolds, not finished posters
 
 A template is a **scaffold**: figures are commented out and copy is `TODO` stubs, so each column only fills the top of the canvas. That means:

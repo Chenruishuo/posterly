@@ -143,7 +143,9 @@ Gate name shorthand (DESIGN_FINAL §3–§7):
   invisible to asset_check, so it doesn't count toward the ≥2 quota (add both if you mean to run
   the gate); `data-source="paper"` *without* `data-asset-id` (that pair-mismatch is the rule 10
   HARD failure); a wide figure shrunk into a gray
-  margin below 65% width (polish FIG/WIDE); a low-res crop where natural_px < 1.5× rendered
+  margin below 65% width (polish FIG/WIDE — and 65% is the defect *floor*: a figure that owns
+  its card reads best at 90–100% width, field-calibrated in ResearchStudio's wave where
+  70%-era floors still shipped visible small-stamp cards); a low-res crop where natural_px < 1.5× rendered
   (asset WARN→FAIL); fabricating/“illustrating” a figure not in the paper (rubric ≤3 cap,
   manifest `from_paper` must be false → fails the paper-figure quota).
 
@@ -269,7 +271,12 @@ Gate name shorthand (DESIGN_FINAL §3–§7):
 - **Anti-patterns**: per-cell inline `style="color:#888"` for the reference row (the posterly
   originals did this; the ARIS fork replaces with `.text-muted`) — rule 2 HARD; numbers that do
   not match the paper/results files (Step 1.5 claim→evidence audit + Step 6.5); a third highlight
-  color beyond gold-soft/accent (rule 4).
+  color beyond gold-soft/accent (rule 4); **a two-column `Method | Metric` table stretched to
+  the card width** — it leaves a wide empty gutter and reads sparse (field-noted in
+  ResearchStudio's poster wave). When the paper reports more than one metric (two datasets,
+  main + ablation, Acc + F1), give the table a column per metric so it fills its width;
+  fall back to two columns only when there genuinely is a single headline number, and keep
+  cells terse — a dense 3-column table beats a sparse 2-column one.
 
 ## keybox (`.keybox` > `.kb-item` × N)
 
@@ -495,6 +502,16 @@ The procedure (DESIGN_FINAL §10, final paragraph):
 This is what keeps the fix loop bounded: the component set is closed during the loop, and only
 a human-gated, catalogued, re-run-from-Phase-3 step can extend it.
 
+**Known-rejected shape — the "bento" feature grid (do not propose it).** One big feature tile
+spanning two rows on the left + two small cells stacked on the right. ResearchStudio's
+paper2poster shipped this as a content pattern and formally retired it after a live wave:
+whenever the two small cells fill with real content they grow tall, the big tile stays at its
+own content height, and the tall left column ends visibly half-empty — a structurally
+unbalanced look no amount of filling fixes. For paired/contrast content use side-by-side
+equal cells or a highlight table; for a feature-plus-supporting shape use `keybox` /
+`takeaways-strip`. If a future poster genuinely wants a bento, it still has to come through
+this checkpoint — with an equal-cell fallback story.
+
 ---
 
 ## Density components (added 2026-06-05, codex-converged; user-checkpointed)
@@ -609,11 +626,19 @@ or the class is inert and the 4-tile strip orphans 3+1 (`style` rule 13 hard-fai
 - **Allowed fix ops**: re-run `fit-logos` after logo changes, cap the shared height near
   the QR, demote a too-wide wordmark to a width-normalized `logo-stack` (its own row
   does not shrink it — the uniform height only grows when a row empties).
+- **Re-run idempotency (`data-lf-h0`)**: when applying the snippet into a **content-sized**
+  zone, also stamp the zone element with its pre-application height,
+  `data-lf-h0="<px>"` (the CLI prints the exact stamp line). An applied pack collapses
+  such a zone to the packed height; without the stamp a re-run measures only the
+  shrunken strip and can only propose smaller. The advisor reads the stamp back as
+  `max(stamp, live box)` — a template-grown zone still wins — and WARNs when it finds
+  an applied pack with no stamp.
 - **Anti-patterns**: pasting the snippet without the optical-weight check; keeping the
   zone's OLD logo children alongside the pack, or hand-wrapping the pack in yet another
   `logo-row` (the snippet *replaces* the zone's inner content — when the discovered zone
   is itself a `.logo-row`, `.logo-row > .logo-pack > .logo-row` is the expected shape);
-  re-introducing inline `style=` to tweak one mark.
+  re-introducing inline `style=` to tweak one mark; re-running the advisor against an
+  applied, unstamped pack and trusting the shrunken proposal.
 
 ### `vrail` — vertical-rail title (a content-agnostic band modifier) (added 2026-06-16, user-checkpointed)
 - **Purpose**: a layout *modifier* for a **wide, short, full-width band** that moves the band's

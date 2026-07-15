@@ -185,3 +185,41 @@ def test_budget_zero_disables(monkeypatch, tmp_path) -> None:
 def test_missing_html_is_rc2_untouched_budget(tmp_path) -> None:
     a = _args(tmp_path / "nope.html", measure_budget=1)
     assert _measure.cmd_measure(a) == 2
+
+
+# ---- measure --with-polish wiring ----------------------------------------
+
+def test_with_polish_flag_parses_and_defaults_off() -> None:
+    import poster_check
+    p = poster_check.build_parser()
+    a = p.parse_args(["measure", "x.html"])
+    assert a.with_polish is False
+    a = p.parse_args(["measure", "x.html", "--with-polish"])
+    assert a.with_polish is True
+
+
+def test_polish_parser_defaults_track_module_constants() -> None:
+    """poster_check's polish `default=` must point at the polish-module
+    constants, so `measure --with-polish` (default_polish_args) and the
+    standalone `polish` command can never drift apart."""
+    import poster_check
+    from _posterly import polish as _polish
+    a = poster_check.build_parser().parse_args(["polish", "x.html"])
+    d = _polish.default_polish_args()
+    assert a.wide_min_ratio == d.wide_min_ratio
+    assert a.tall_max_ratio == d.tall_max_ratio
+    assert a.square_min_ratio == d.square_min_ratio
+    assert a.max_space_between_fill == d.max_space_between_fill
+    assert a.max_card_trailing == d.max_card_trailing
+    assert d.strict is False
+
+
+def test_advisory_polish_skips_without_roles(tmp_path, capsys) -> None:
+    """The merged pass must degrade to a printed skip -- never raise into
+    the hard gate -- when the poster lacks polish's required roles."""
+    from _posterly import polish as _polish
+    f = tmp_path / "p.html"
+    f.write_text("<html><body><div>no roles</div></body></html>")
+    _polish.advisory_polish_on_page(page=None, html_path=f)
+    err = capsys.readouterr().err
+    assert "skipping polish pass" in err

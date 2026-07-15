@@ -19,6 +19,7 @@ visible to the user, whereas a silent measure PASS isn't).
 """
 from __future__ import annotations
 
+import re
 import sys
 from dataclasses import dataclass
 from pathlib import Path
@@ -101,6 +102,69 @@ window.addEventListener('error', (e) => {
 """
 
 
+def bundled_mathjax_path() -> Path | None:
+    """Absolute path to the skill's bundled MathJax ``tex-svg.js``.
+
+    The templates load MathJax from the jsdelivr CDN (works online, and
+    keeps a hand-opened poster.html self-explanatory). On an offline or
+    flaky-network host that fetch fails intermittently, so measurement
+    dies (or times out) on some runs and not others. We ship one
+    self-contained ``tex-svg.js`` (SVG output inlines the math fonts as
+    paths -- no separate font files) and ``open_print_emulated_page``
+    routes the CDN request to it, making typeset deterministic and
+    offline-safe for every gate. Returns None if the bundle is missing
+    (the route is then skipped and the network path applies as before).
+    """
+    p = (Path(__file__).resolve().parents[2]
+         / "assets" / "mathjax" / "tex-svg.js")
+    return p if p.is_file() else None
+
+
+# Exactly the npm-mirror URL shape the templates use: http(s) host +
+# /npm/mathjax@3[.x[.y]]/es5/tex-svg.js. Anchored and numeric so a
+# file:// URL (a poster's own vendored copy, even npm-layout-shaped), a
+# future mathjax@4, or a hypothetical @30 are all left untouched.
+_MATHJAX_CDN_RE = re.compile(
+    r"^https?://[^/]+/npm/mathjax@3(?:\.\d+){0,2}/es5/tex-svg\.js(?:[?#].*)?$"
+)
+
+
+def route_mathjax_local(page) -> bool:
+    """Intercept the MathJax v3 CDN request and fulfill it from the
+    bundled ``tex-svg.js``. Must be registered BEFORE navigation
+    (``open_print_emulated_page`` does this). The match
+    (``_MATHJAX_CDN_RE``) is deliberately NARROW: http(s) +
+    ``/npm/mathjax@3[.x[.y]]/es5/tex-svg.js`` -- the shape the templates
+    use, on any npm-mirror host -- and nothing else. A poster that
+    vendored its OWN local copy loads that copy (already offline-safe,
+    and possibly a different 3.x build; a ``file://`` URL never
+    matches), and a future ``mathjax@4`` URL is NOT silently downgraded
+    to the bundled 3.2.2 (offline it fails loudly via the settle gate
+    instead). Returns True when the bundle exists and the route
+    registered; on any failure the request falls through to the network
+    (old behavior preserved).
+    """
+    mj = bundled_mathjax_path()
+    if mj is None:
+        return False
+
+    def _handler(route):
+        try:
+            route.fulfill(path=str(mj),
+                          content_type="application/javascript")
+        except Exception:
+            try:
+                route.continue_()
+            except Exception:
+                pass
+
+    try:
+        page.route(_MATHJAX_CDN_RE, _handler)
+        return True
+    except Exception:
+        return False
+
+
 def undecodable_img_srcs(page) -> list[str]:
     """`src` of every <img> that failed to load (captured at load time)
     or whose ``decode()`` rejects within the probe's per-image 3s bound
@@ -132,6 +196,7 @@ def open_print_emulated_page(p, viewport_px: tuple[int, int]):
         page.add_init_script(_IMG_ERROR_CAPTURE_JS)
     except Exception:
         pass  # probes fall back to decode()-only detection
+    route_mathjax_local(page)
     return browser, ctx, page
 
 

@@ -25,6 +25,7 @@ from typing import Any
 
 from . import budget as _budget
 from . import canvas as _canvas
+from . import polish as _polish
 from . import render as _render
 from .textutil import ascii_safe
 
@@ -501,6 +502,13 @@ def _measure_once(
             return 1, False
 
         data = page.evaluate(_MEASURE_JS)
+        # Optional merged polish pass on the SAME rendered page -- one
+        # Chromium launch per loop round instead of two. Advisory only:
+        # it prints before the measure verdict below and never touches
+        # this gate's exit code; the loop's final soft gate remains a
+        # standalone `polish --strict` run.
+        if getattr(args, "with_polish", False):
+            _polish.advisory_polish_on_page(page, html_path)
         browser.close()
 
     if args.json_out:

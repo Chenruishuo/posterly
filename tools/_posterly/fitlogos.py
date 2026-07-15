@@ -269,24 +269,82 @@ _ZONES_JS = r"""
   if (qr) out.qr_h = qr.getBoundingClientRect().height;
   const zoneEls = [];
   const push = (el) => { if (!zoneEls.includes(el)) zoneEls.push(el); };
-  document.querySelectorAll('[data-logo-zone]').forEach(push);
-  if (!zoneEls.length && extraSel) {
+  // An APPLIED proposal nests fresh `.logo-row`s (and `.logo-slot`s)
+  // inside its `.logo-pack` wrapper. The generic fallbacks below must
+  // never pick those up: they'd shadow the real (stamped) outer zone
+  // on a re-run and propose against the collapsed inner rows.
+  const isPackCls = (n) => [...n.classList].some(
+    c => c === 'logo-pack' || c.startsWith('logo-pack-'));
+  const insidePack = (el) => {
+    for (let n = el.parentElement; n; n = n.parentElement) {
+      if (isPackCls(n)) return true;
+    }
+    return false;
+  };
+  if (extraSel) {
+    // Explicit --zone: use ONLY this selector. No automatic discovery
+    // runs beside or after it -- an invalid selector errors out, and
+    // ZERO matches is reported by the CLI, never silently replaced by
+    // an auto-discovered zone the user didn't name.
     try {
       document.querySelectorAll(extraSel).forEach(push);
     } catch (e) {
-      out.badSelector = true;   // surfaced as a usage error, not a
-      return out;               // silent fall-through to another zone
+      out.badSelector = true;
+      return out;
     }
-  }
-  if (!zoneEls.length) {
-    document.querySelectorAll(
-      '.header .logo-row, [data-measure-role="header"] .logo-row'
-    ).forEach(push);
-  }
-  if (!zoneEls.length) {
-    document.querySelectorAll(
-      '.header .logo-slot, [data-measure-role="header"] .logo-slot'
-    ).forEach(push);
+    out.explicitZone = true;
+  } else {
+    document.querySelectorAll('[data-logo-zone]').forEach(push);
+    if (!zoneEls.length) {
+      // Auto mode: UNION of all three sources -- stamped zones
+      // (data-lf-h0, an applied proposal's re-run marker), pack-external
+      // `.logo-row`s, and pack-external `.logo-slot`s. A union, not
+      // tiers: a poster with one applied+stamped zone and one untouched
+      // row OR standalone slot must return both.
+      const srcRank = new Map();   // el -> 0 stamp | 1 row | 2 slot
+      const pushR = (el, r) => {
+        push(el);
+        const cur = srcRank.get(el);
+        if (cur === undefined || r < cur) srcRank.set(el, r);
+      };
+      document.querySelectorAll('[data-lf-h0]')
+        .forEach(el => pushR(el, 0));
+      document.querySelectorAll(
+        '.header .logo-row, [data-measure-role="header"] .logo-row'
+      ).forEach(el => { if (!insidePack(el)) pushR(el, 1); });
+      document.querySelectorAll(
+        '.header .logo-slot, [data-measure-role="header"] .logo-slot'
+      ).forEach(el => { if (!insidePack(el)) pushR(el, 2); });
+      // Overlap resolution, PRIORITY-aware and GREEDY: order candidates
+      // stamp > row > slot (outer first on rank ties), then keep each
+      // one unless it overlaps an already-KEPT winner. Greedy, not
+      // pairwise-simultaneous: a row eliminated by the stamped div
+      // inside one of its branches must NOT drag down a disjoint
+      // sibling slot in another branch -- a stamped inner div beats
+      // the fallback row around it (or the row's stamp would be
+      // bypassed all over again), while equal-rank nesting keeps the
+      // outer (a slot inside its own row is the row's content, not a
+      // second zone).
+      // Total order (Array.sort contract): rank, then first-discovery
+      // index. Each source pushes in document order and sources push
+      // rank-ascending, so within a rank the index IS document order --
+      // and a same-rank ancestor always precedes its descendant in
+      // document order, giving outer-first on ties without a
+      // non-transitive contains() comparator.
+      const rank = (el) => srcRank.get(el);
+      const ord = new Map(zoneEls.map((el, i) => [el, i]));
+      const ordered = [...zoneEls].sort((a, b) =>
+        rank(a) - rank(b) || ord.get(a) - ord.get(b));
+      const kept = new Set();
+      for (const el of ordered) {
+        if (![...kept].some(k => k.contains(el) || el.contains(k))) {
+          kept.add(el);
+        }
+      }
+      const finalEls = zoneEls.filter(el => kept.has(el));
+      zoneEls.length = 0;
+      finalEls.forEach(el => zoneEls.push(el));
+    }
   }
   // Every src still in the DOM -- lets the CLI report a broken image
   // that an onerror handler already REMOVED (it belongs to no zone).
@@ -294,7 +352,17 @@ _ZONES_JS = r"""
     .map(im => im.getAttribute('src') || '').filter(s => s);
   zoneEls.forEach(z => {
     const r = z.getBoundingClientRect();
-    if (r.width < 8 || r.height < 8) return;
+    // Re-run idempotency: once a proposal is APPLIED, a content-sized
+    // zone collapses to the packed height, so a re-run would only ever
+    // pack into the shrunken strip. The agent stamps the zone's
+    // pre-application height as data-lf-h0 when applying (this tool is
+    // read-only and never writes it). Trust max(stamp, live): the live
+    // box wins when the TEMPLATE grew the zone; the stamp wins after a
+    // collapse -- and a stale stamp from an older layout self-heals.
+    const h0 = parseFloat(z.getAttribute('data-lf-h0') || '');
+    const hasStamp = isFinite(h0) && h0 > 0;
+    const H = hasStamp ? Math.max(r.height, h0) : r.height;
+    if (r.width < 8 || H < 8) return;
     const cs = window.getComputedStyle(z);
     const gap = parseFloat(cs.columnGap || cs.gap || '') || 0;
     const items = [];
@@ -345,7 +413,14 @@ _ZONES_JS = r"""
     out.zones.push({
       label: (z.getAttribute('data-logo-zone') || z.className
               || z.tagName).toString(),
-      w: r.width, h: r.height, gap, items, broken,
+      w: r.width, h: H, hLive: r.height, h0: hasStamp ? h0 : 0,
+      // Class-TOKEN match via classList (attribute-substring selectors
+      // miss tab/newline-separated class values): exact `logo-pack` or
+      // a per-zone `logo-pack-N`.
+      hasPack: [...z.querySelectorAll('*')].some(el =>
+        [...el.classList].some(c =>
+          c === 'logo-pack' || c.startsWith('logo-pack-'))),
+      gap, items, broken,
     });
   });
   return out;
@@ -373,6 +448,11 @@ def cmd_fit_logos(args: argparse.Namespace) -> int:
     if args.hgap is not None and not (
             math.isfinite(args.hgap) and args.hgap >= 0):
         _eprint("ERROR: --hgap must be a finite, non-negative number.")
+        return EXIT_USAGE
+    if args.zone is not None and not args.zone.strip():
+        # An empty selector would read falsy in the probe and silently
+        # re-enter automatic discovery -- refuse it instead.
+        _eprint("ERROR: --zone must be a non-empty CSS selector.")
         return EXIT_USAGE
 
     resolved = _canvas.resolve_canvas(
@@ -433,9 +513,19 @@ def cmd_fit_logos(args: argparse.Namespace) -> int:
             f"and re-run."
         )
     if not zones:
+        if data.get("explicitZone"):
+            print(
+                f"  --zone {args.zone!r} matched no measurable logo zone "
+                f"(no match, or none at least 8px) -- nothing to pack. An "
+                f"explicit selector never falls back to automatic "
+                f"discovery."
+            )
+            return 0
         print(
-            "  no logo zone found (looked for [data-logo-zone], "
-            ".header .logo-row, .header .logo-slot) -- nothing to pack."
+            "  no logo zone found (looked for [data-logo-zone], a "
+            "data-lf-h0-stamped zone, .header .logo-row, .header "
+            ".logo-slot -- rows/slots inside an applied logo-pack are "
+            "excluded; or pass --zone) -- nothing to pack."
         )
         return 0
 
@@ -474,6 +564,22 @@ def cmd_fit_logos(args: argparse.Namespace) -> int:
         print(f"\n  zone '{ascii_safe(str(z['label']))[:40]}' "
               f"({z['w']:.0f}x{z['h']:.0f}px, mark gap {hgap:.0f}px): "
               f"{len(marks)} mark(s)")
+        h_live = float(z.get("hLive", z["h"]) or z["h"])
+        h0 = float(z.get("h0", 0) or 0)
+        if h0 > 0 and float(z["h"]) > h_live + 0.5:
+            print(f"    (zone height {z['h']:.0f}px taken from the "
+                  f"data-lf-h0 stamp; the live box is {h_live:.0f}px -- "
+                  f"a previously applied pack collapsed it)")
+        elif z.get("hasPack") and h0 <= 0:
+            print(
+                "    WARN: this zone already contains an applied "
+                "logo-pack proposal but carries no data-lf-h0 stamp -- "
+                "the measured height is likely the COLLAPSED packed "
+                "height, so this proposal can only shrink the marks. "
+                "Stamp the zone's pre-application height "
+                "(data-lf-h0=\"<px>\") or re-run against the "
+                "pre-application version."
+            )
         spread = (max(cur_hs) / min(cur_hs)) if min(cur_hs) > 0 else 0.0
         print(f"    current heights : "
               + ", ".join(f"{h:.0f}px" for h in cur_hs)
@@ -525,6 +631,25 @@ def cmd_fit_logos(args: argparse.Namespace) -> int:
             "edge-white mark on a colored ground -- the proposal is "
             "bare slots; drop data-color-exempt on monochrome marks)"
         )
+        if h0 <= 0:
+            print(
+                f"    (when applying, also stamp "
+                f"data-lf-h0=\"{z['h']:.0f}\" on the zone element: a "
+                f"content-sized zone collapses to the packed height, "
+                f"and the stamp lets a re-run pack against the "
+                f"original space instead of the shrunken strip)"
+            )
+        elif float(z["h"]) > h0 + 0.5:
+            # The zone outgrew its stamp (template change) -- packing
+            # used the live height; a stale stamp would silently lose
+            # it on the NEXT re-run after this proposal collapses the
+            # zone again.
+            print(
+                f"    (when applying, UPDATE the stamp to "
+                f"data-lf-h0=\"{z['h']:.0f}\" -- the zone has grown "
+                f"past the recorded {h0:.0f}px, and a stale stamp "
+                f"would lose the new height on the next re-run)"
+            )
 
     print(
         "\n  ADVISOR ONLY -- nothing was modified. Before applying: judge "

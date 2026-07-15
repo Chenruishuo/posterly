@@ -46,9 +46,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>POSTER TITLE — Venue Year</title>
 
-<!-- MathJax v3 for inline equations. CDN by default; to go offline,
-     download a MathJax v3 release into ./mathjax/ and change the <script>
-     `src` below to "mathjax/es5/tex-svg.js". -->
+<!-- MathJax v3 for inline equations. CDN by default when the file is
+     opened by hand; the posterly check tools (measure/polish/pack/…)
+     intercept this request and serve the skill's bundled copy
+     (assets/mathjax/tex-svg.js, MathJax 3.2.2), so gates render math
+     deterministically even offline. To make a hand-opened poster
+     offline too, copy that bundle next to the poster and point the
+     <script> `src` at it. -->
 <script>
   window.MathJax = {
     tex: {

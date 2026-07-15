@@ -87,6 +87,17 @@ ago):
 - the **keybox two-line label reservation** (their `.stat-mini .lbl { min-height: 2.4em }`;
   posterly uses `2lh` so each template's own line-height is tracked).
 
+## Vendored third-party runtime: MathJax
+
+`assets/mathjax/tex-svg.js` is the **unmodified** MathJax 3.2.2 single-file SVG bundle
+(https://www.mathjax.org/, **Apache-2.0** — license text at `assets/mathjax/LICENSE`, version
+pin at `assets/mathjax/VERSION`). The check tools' renderer intercepts the templates' MathJax
+CDN request and serves this bundle (`_posterly/render.py route_mathjax_local`), so the
+measurement gates typeset math deterministically offline. Vendoring an Apache-2.0 file into
+this AGPL-3.0 project is license-compatible; the file remains individually available under
+Apache-2.0. (Mechanism ported from ResearchStudio paper2poster's offline-math routing,
+re-implemented here; the MathJax bundle itself is upstream MathJax's build, not theirs.)
+
 ## Upstream-sync rule
 
 When pulling new ARIS releases of these tools, preserve the vendor boundary: re-vendor the

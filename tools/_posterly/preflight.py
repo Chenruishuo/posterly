@@ -292,6 +292,79 @@ class _RoleNestingChecker(HTMLParser):
         self.stray_close_lines.append((tag, self.getpos()[0]))
 
 
+class _FigureCaptionChecker(HTMLParser):
+    """Track every ``.figure`` block (class TOKEN ``figure``) and whether
+    it contains a ``.caption`` descendant with non-empty text.
+
+    posterly's figure-card contract is ``.figure > img + .caption`` -- a
+    figure that ships without its one-line caption reads as an unlabeled
+    image on the wall. Keyed on the CLASS token, not the ``<figure>``
+    tag: the only ``<figure>`` element in the templates is the framework
+    banner's ``banner-figure``, which is captionless BY DESIGN (its
+    banner text is the explanation), and the hero stage's caption is
+    optional -- neither carries the ``figure`` class token, so neither
+    is scanned. Stack discipline mirrors :class:`_RoleNestingChecker`.
+    """
+
+    def __init__(self) -> None:
+        super().__init__(convert_charrefs=True)
+        # Stack entries: (tag, kind, fig_record_or_None); kind is
+        # "figure", "caption", or None.
+        self.stack: list[tuple[str, str | None, dict | None]] = []
+        self.figs: list[dict] = []
+
+    @staticmethod
+    def _classes(attrs: list[tuple[str, str | None]]) -> list[str]:
+        for k, v in attrs:
+            if k == "class" and v:
+                return v.split()
+        return []
+
+    def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]
+                        ) -> None:
+        if tag.lower() in _VOID_TAGS:
+            return
+        classes = self._classes(attrs)
+        kind: str | None = None
+        rec: dict | None = None
+        if "figure" in classes:
+            kind = "figure"
+            rec = {"line": self.getpos()[0], "has_caption": False}
+            self.figs.append(rec)
+        elif "caption" in classes:
+            kind = "caption"
+        self.stack.append((tag, kind, rec))
+
+    def handle_data(self, data: str) -> None:
+        if not data.strip():
+            return
+        if not any(k == "caption" for _t, k, _r in self.stack):
+            return
+        # Credit the nearest enclosing .figure (a caption outside any
+        # figure block is someone else's caption -- ignore it).
+        for _t, k, r in reversed(self.stack):
+            if k == "figure" and r is not None:
+                r["has_caption"] = True
+                return
+
+    def handle_endtag(self, tag: str) -> None:
+        for i in range(len(self.stack) - 1, -1, -1):
+            if self.stack[i][0] == tag:
+                del self.stack[i:]
+                return
+
+
+def figures_missing_caption(html: str) -> list[int]:
+    """Line numbers (1-based) of ``.figure`` blocks that contain no
+    ``.caption`` descendant with non-empty text. Pure function so the
+    rule is unit-testable without the filesystem.
+    """
+    parser = _FigureCaptionChecker()
+    parser.feed(html)
+    parser.close()
+    return [f["line"] for f in parser.figs if not f["has_caption"]]
+
+
 def check_role_nesting(html: str
                        ) -> tuple[list[tuple[str, str | None, int, str]],
                                   list[tuple[str, int]]]:
@@ -451,7 +524,21 @@ def cmd_preflight(args: argparse.Namespace) -> int:
                 "ends up outside its layout slot."
             )
 
-    # 7) Soft sanity: no <title> / no <h1>. Warns, doesn't fail.
+    # 7) Every `.figure` block should carry a non-empty `.caption`
+    #    (figure-card contract: `.figure > img + .caption`). A bare,
+    #    unlabeled figure is a recurring authoring defect. Warn, don't
+    #    fail: the captionless banner-figure / hero stage don't carry
+    #    the `figure` class token and are never scanned.
+    for ln in figures_missing_caption(raw):
+        warnings.append(
+            f"L{ln}: .figure block has no non-empty .caption -- every "
+            "paper figure carries a one-line caption (figure-card "
+            "contract in COMPONENTS.md); an unlabeled figure reads as "
+            "a defect. Write a short factual one-liner or drop the "
+            "figure."
+        )
+
+    # 8) Soft sanity: no <title> / no <h1>. Warns, doesn't fail.
     if not re.search(r"<title[^>]*>.+?</title>", raw, re.DOTALL):
         warnings.append("no <title> set")
     if not re.search(r"<h1\b", raw):

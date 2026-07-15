@@ -138,6 +138,17 @@ DEFAULT_TITLE_OFFSET_MAX = 0.03
 DEFAULT_BANNER_SLOT_MIN_PIC_W = 240.0
 DEFAULT_BANNER_SLOT_MIN_PIC_H = 80.0
 
+# Gate thresholds whose CLI defaults previously lived only in poster_check's
+# argparse `default=`. Kept here so callers WITHOUT a polish arg namespace --
+# `measure --with-polish` runs the polish gates on the SAME rendered page via
+# default_polish_args() -- use the exact same numbers; poster_check points its
+# `default=` at these constants so the two entry points cannot drift.
+DEFAULT_WIDE_MIN_RATIO = 0.65
+DEFAULT_TALL_MAX_RATIO = 0.70
+DEFAULT_SQUARE_MIN_RATIO = 0.55
+DEFAULT_MAX_SPACE_BETWEEN_FILL = 0.05
+DEFAULT_MAX_CARD_TRAILING = 0.10
+
 
 from .textutil import ascii_safe
 
@@ -948,6 +959,70 @@ _POLISH_JS = r"""
 """
 
 
+def collect_polish_data(page):
+    """Run the polish measurement JS on an already-open, already-settled
+    page and return the raw result dict.
+
+    Split out of :func:`cmd_polish` so the same measurement can ride a
+    SHARED rendered page (``measure --with-polish``) instead of paying a
+    second Chromium launch. Pure read-only DOM geometry -- it mutates
+    nothing, so running it after another gate's probes on the same page
+    yields identical numbers.
+    """
+    return page.evaluate(_POLISH_JS)
+
+
+def default_polish_args() -> argparse.Namespace:
+    """Polish gate thresholds at their CLI defaults, for callers that run
+    the gates without owning a polish arg namespace (``measure
+    --with-polish``). Only the attrs :func:`report_polish` reads
+    directly are set; everything else is read defensively via getattr
+    with the same DEFAULT_* constants. ``strict`` stays False -- the
+    merged path is advisory by design.
+    """
+    return argparse.Namespace(
+        wide_min_ratio=DEFAULT_WIDE_MIN_RATIO,
+        tall_max_ratio=DEFAULT_TALL_MAX_RATIO,
+        square_min_ratio=DEFAULT_SQUARE_MIN_RATIO,
+        max_space_between_fill=DEFAULT_MAX_SPACE_BETWEEN_FILL,
+        max_card_trailing=DEFAULT_MAX_CARD_TRAILING,
+        strict=False,
+    )
+
+
+def advisory_polish_on_page(page, html_path: Path) -> None:
+    """Best-effort polish pass on a page some other gate already rendered
+    and settled (``measure --with-polish``). Advisory only: prints the
+    polish report at default thresholds, never raises, never changes the
+    caller's exit code. Skipped (with a note) when the poster lacks the
+    measure-role markup polish requires, or if the measurement itself
+    fails -- a broken advisory pass must not break the hard gate.
+    """
+    try:
+        role_counts = _preflight.has_required_roles_in_html(html_path)
+        missing = [r for r in ("poster", "card", "column")
+                   if role_counts.get(r, 0) == 0]
+        if missing:
+            _eprint(
+                f"[measure] --with-polish: skipping polish pass, poster "
+                f"is missing measure-role markup {missing}"
+            )
+            return
+        data = collect_polish_data(page)
+    except Exception as e:
+        _eprint(
+            f"[measure] --with-polish: polish measurement failed, "
+            f"skipped ({e})"
+        )
+        return
+    print("[measure] --with-polish advisory report (same rendered page; "
+          "never gates measure's exit):")
+    try:
+        report_polish(data, default_polish_args(), html_path)
+    except Exception as e:
+        _eprint(f"[measure] --with-polish: polish report failed ({e})")
+
+
 def cmd_polish(args: argparse.Namespace) -> int:
     try:
         from playwright.sync_api import sync_playwright
@@ -1025,9 +1100,21 @@ def cmd_polish(args: argparse.Namespace) -> int:
             )
             return 1
 
-        data = page.evaluate(_POLISH_JS)
+        data = collect_polish_data(page)
         browser.close()
 
+    return report_polish(data, args, html_path)
+
+
+def report_polish(data: dict, args: argparse.Namespace,
+                  html_path: Path) -> int:
+    """Apply the visual-polish gates (A-F) to data gathered by
+    :func:`collect_polish_data` and print the report. Page-free, so the
+    same reporting runs for standalone ``polish`` and for the merged
+    ``measure --with-polish`` path (which shares one rendered page).
+    Returns the process exit code (1 only under ``args.strict`` with
+    warnings present).
+    """
     warns: list[str] = []
 
     # ---- Gate A: figure sizing by AR ----
@@ -1173,8 +1260,11 @@ def cmd_polish(args: argparse.Namespace) -> int:
         if ar > 1.3 and ratio < args.wide_min_ratio:
             warns.append(
                 f"FIG/WIDE: '{ascii_safe(f['src'])}' (AR={ar:.2f}) at "
-                f"{ratio * 100:.0f}% of card width -- wide figures "
-                f"should sit >= {args.wide_min_ratio * 100:.0f}%. "
+                f"{ratio * 100:.0f}% of card width -- "
+                f"{args.wide_min_ratio * 100:.0f}% is the defect FLOOR, "
+                f"not the target: a figure that owns its card reads "
+                f"best at 90-100% width (field-calibrated -- 70%-era "
+                f"floors still shipped visible small-stamp cards). "
                 f"Enlarge, or drop the image-left/text-right wrapper."
             )
         elif ar < 0.8 and ratio > args.tall_max_ratio:

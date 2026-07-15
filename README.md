@@ -74,7 +74,7 @@ Built one with Codex (or any other agent)? Open a PR or an issue — we'd love t
 - **Programmatically lintable.** Every "is this column overflowing?" check that you'd do by squinting at a PDF is a Playwright geometry query here.
 - **Exact print output.** `@page { size: 60in 36in }` + Chromium's `page.pdf()` produces a PDF whose dimensions are exactly the canvas — not "approximately A0 after scaling".
 
-Trade-off: no native math typesetting; templates load MathJax 3 from a CDN by default. To go offline, download a MathJax v3 release and change the template's `<script src=…>` to `mathjax/es5/tex-svg.js` — there's an inline comment next to the CDN link in each template showing exactly which line to edit.
+Trade-off: no native math typesetting; templates load MathJax 3 from a CDN by default. The check tools don't depend on that CDN: every gate render intercepts the request and serves the skill's **bundled** MathJax (`assets/mathjax/tex-svg.js`, 3.2.2), so measurement typesets math deterministically even offline. Only a *hand-opened* poster.html needs the network — to make that offline too, copy the bundle next to the poster and change the template's `<script src=…>` to `mathjax/tex-svg.js` (there's an inline comment next to the CDN link in each template showing exactly which line to edit).
 
 ---
 

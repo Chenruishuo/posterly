@@ -162,6 +162,15 @@ def build_parser() -> argparse.ArgumentParser:
              "shadowless themes.",
     )
     pm.add_argument(
+        "--with-polish", action="store_true",
+        help="also run the visual-polish pass (figure sizing, orphans, "
+             "space-between, header logos, ...) on the SAME rendered "
+             "page -- one browser launch per loop round instead of two. "
+             "ADVISORY: the polish report prints at default thresholds "
+             "and never changes measure's exit code; the final soft "
+             "gate remains a standalone `polish` run (--strict).",
+    )
+    pm.add_argument(
         "--json-out", default=None,
         help="dump raw measurement to JSON",
     )
@@ -254,9 +263,14 @@ def build_parser() -> argparse.ArgumentParser:
     )
     fl.add_argument(
         "--zone", default=None,
-        help="CSS selector for the logo zone(s); default: any "
-             "[data-logo-zone], else .header .logo-row, else "
-             ".header .logo-slot",
+        help="CSS selector for the logo zone(s). When given, ONLY this "
+             "selector is used -- no automatic discovery, and zero "
+             "matches is reported, never silently replaced. Default "
+             "discovery: any [data-logo-zone]; else the UNION of "
+             "data-lf-h0-stamped zones, .header .logo-row, and "
+             "standalone .header .logo-slot (nested candidates resolve "
+             "stamp > row > slot, outer wins ties) -- rows/slots INSIDE "
+             "an applied logo-pack are never auto-discovered",
     )
     fl.add_argument(
         "--max-rows", type=int, default=_fitlogos.DEFAULT_MAX_ROWS,
@@ -306,14 +320,17 @@ def build_parser() -> argparse.ArgumentParser:
         help="hard timeout for MathJax typeset (default 15000)",
     )
     ppl.add_argument(
-        "--wide-min-ratio", type=float, default=0.65,
+        "--wide-min-ratio", type=float,
+        default=_polish.DEFAULT_WIDE_MIN_RATIO,
         help="wide figures (AR>1.3) must occupy >= this fraction of "
-             "card width (default 0.65)",
+             "card width (default %(default)s -- the defect FLOOR; a "
+             "figure-dominant card reads best at 90-100%%)",
     )
     ppl.add_argument(
-        "--tall-max-ratio", type=float, default=0.70,
+        "--tall-max-ratio", type=float,
+        default=_polish.DEFAULT_TALL_MAX_RATIO,
         help="tall figures (AR<0.8) above this fraction trigger a "
-             "text-right recommendation (default 0.70)",
+             "text-right recommendation (default %(default)s)",
     )
     ppl.add_argument(
         "--tall-min-ratio", type=float,
@@ -324,9 +341,10 @@ def build_parser() -> argparse.ArgumentParser:
              "(default %(default)s)",
     )
     ppl.add_argument(
-        "--square-min-ratio", type=float, default=0.55,
+        "--square-min-ratio", type=float,
+        default=_polish.DEFAULT_SQUARE_MIN_RATIO,
         help="square figures (0.8<=AR<=1.3) must occupy >= this "
-             "fraction (default 0.55)",
+             "fraction (default %(default)s)",
     )
     ppl.add_argument(
         "--hero-letterbox-fill", type=float,
@@ -354,16 +372,19 @@ def build_parser() -> argparse.ArgumentParser:
              "%(default)s)",
     )
     ppl.add_argument(
-        "--max-space-between-fill", type=float, default=0.05,
+        "--max-space-between-fill", type=float,
+        default=_polish.DEFAULT_MAX_SPACE_BETWEEN_FILL,
         help="warn if a space-between column has an inter-card gap "
-             "exceeding this fraction of column height (default 0.05)",
+             "exceeding this fraction of column height "
+             "(default %(default)s)",
     )
     ppl.add_argument(
-        "--max-card-trailing", type=float, default=0.10,
+        "--max-card-trailing", type=float,
+        default=_polish.DEFAULT_MAX_CARD_TRAILING,
         help="warn (CARD/TRAILING) if a card leaves more than this "
              "fraction of its height blank below the last line "
-             "(default 0.10); catches a flex-stretched card padded "
-             "with whitespace to fake a full page",
+             "(default %(default)s); catches a flex-stretched card "
+             "padded with whitespace to fake a full page",
     )
     ppl.add_argument(
         "--max-card-inner-void", type=float,

@@ -408,3 +408,47 @@ def test_closed_script_and_comment_do_not_false_trigger(tmp_path) -> None:
     )
     rc = preflight.cmd_preflight(_ap.Namespace(html=str(p)))
     assert rc == 0
+
+
+# ---- .figure caption presence (warn-only) --------------------------------
+
+def test_figure_without_caption_flagged() -> None:
+    html = ('<div class="poster"><div class="figure">'
+            '<img src="a.png"></div></div>')
+    assert preflight.figures_missing_caption(html) == [1]
+
+
+def test_figure_with_caption_clean() -> None:
+    html = ('<div class="figure"><img src="a.png">'
+            '<div class="caption"><strong>Fig 1.</strong> Setup.</div>'
+            '</div>')
+    assert preflight.figures_missing_caption(html) == []
+
+
+def test_figure_with_empty_caption_flagged() -> None:
+    """Whitespace / &nbsp;-only captions count as missing."""
+    html = ('<div class="figure"><img src="a.png">'
+            '<div class="caption"> &nbsp; </div></div>')
+    assert preflight.figures_missing_caption(html) == [1]
+
+
+def test_banner_figure_tag_exempt() -> None:
+    """The framework banner's <figure class="banner-figure"> is
+    captionless BY DESIGN (its banner text is the explanation) and must
+    never be flagged -- the check keys on the `figure` CLASS token."""
+    html = ('<figure class="banner-figure"><img src="m.png"></figure>')
+    assert preflight.figures_missing_caption(html) == []
+
+
+def test_caption_outside_figure_not_credited() -> None:
+    html = ('<div class="figure"><img src="a.png"></div>\n'
+            '<div class="caption">stray</div>')
+    assert preflight.figures_missing_caption(html) == [1]
+
+
+def test_two_figures_one_captionless_reports_right_line() -> None:
+    html = ('<div class="figure"><img src="a.png">\n'
+            '<div class="caption">ok</div></div>\n'
+            '<div class="figure figure--wide">\n'
+            '<img src="b.png"></div>')
+    assert preflight.figures_missing_caption(html) == [3]
