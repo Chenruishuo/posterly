@@ -1,0 +1,799 @@
+<!DOCTYPE html>
+<!--
+  ============================================================
+  posterly · design-axes 选项目录
+  Axis 3 — Palette 配色 (`role topology + hue relationship + paint modifier`)
+
+  独立演示页:每个选项 = 一组迷你海报片段,展示颜色扮演什么角色、
+  落在哪些元素上。排版 / 字体 / 卡样式全页统一中性 —— 颜色是唯一变量。
+  所有演示用 CSS 构造以真实令牌名 (--accent / --emph / --accent-ink / …)
+  作用域化,可直接搬运进组件库。class 一律 ax3- 前缀。
+  自包含:无 CDN、无外链、无外部字体。占位文案取自 PowerFlow
+  (α-power 重加权的 RLVR 目标),非 lorem。
+  锚点 ID 来自 80 张 ICML 2026 精选池:
+  https://icml.cc/media/PosterPDFs/ICML%202026/<id>.png
+  ============================================================
+-->
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Axis 3 — Palette 配色 · 选项目录</title>
+<style>
+  /* =========================================================
+     页面基架(UI chrome,中性灰阶;演示色只出现在 stage 内)
+     ========================================================= */
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; overflow-x: clip; }
+  body {
+    background: #F7F6F4;
+    color: #1A1A1A;
+    font-family: "Inter", "Helvetica Neue", "Segoe UI", Arial,
+                 "PingFang SC", "Noto Sans CJK SC", "Microsoft YaHei", sans-serif;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  .ax3-wrap { max-width: 1140px; margin: 0 auto; padding: 40px 28px 72px; }
+
+  /* ---------- 页头 ---------- */
+  .ax3-hero { border-bottom: 2px solid #1A1A1A; padding-bottom: 26px; margin-bottom: 30px; }
+  .ax3-eyebrow {
+    font-size: 12px; font-weight: 700; letter-spacing: .18em;
+    color: #777; text-transform: uppercase; margin: 0 0 10px;
+  }
+  .ax3-hero h1 { font-size: 34px; font-weight: 900; margin: 0 0 6px; letter-spacing: -.01em; }
+  .ax3-hero h1 .ax3-zh { font-weight: 700; color: #555; font-size: 24px; margin-left: 8px; }
+  .ax3-formula {
+    display: flex; flex-wrap: wrap; gap: 10px; align-items: stretch;
+    margin: 18px 0 14px; padding: 0; list-style: none;
+  }
+  .ax3-dim {
+    flex: 1 1 260px; background: #FFFFFF; border: 1px solid #DDDBD6;
+    border-radius: 10px; padding: 12px 14px; font-size: 13px; color: #444;
+  }
+  .ax3-dim b { display: block; font-size: 13.5px; color: #1A1A1A; margin-bottom: 3px; }
+  .ax3-dim b .ax3-zh { color: #777; font-weight: 700; }
+  .ax3-intro { font-size: 14px; color: #333; max-width: 72em; margin: 0 0 6px; }
+  .ax3-ctrl {
+    font-size: 12.5px; color: #666; background: #EFEDE9; border-radius: 8px;
+    padding: 10px 14px; margin: 12px 0 0; max-width: 72em;
+  }
+  .ax3-ctrl b { color: #333; }
+
+  /* ---------- 小目录 ---------- */
+  .ax3-toc { margin-top: 18px; font-size: 13px; }
+  .ax3-toc-group { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 10px; margin: 6px 0; }
+  .ax3-toc-group > b { color: #333; font-size: 12.5px; min-width: 13em; }
+  .ax3-toc a {
+    color: #1A1A1A; text-decoration: none; background: #FFFFFF;
+    border: 1px solid #D8D5D0; border-radius: 99px; padding: 3px 12px;
+    font-size: 12px; font-weight: 600; white-space: nowrap;
+  }
+  .ax3-toc a:hover { border-color: #1A1A1A; }
+
+  /* ---------- 分节标题 ---------- */
+  .ax3-sect { margin: 42px 0 18px; }
+  .ax3-sect h2 { font-size: 21px; font-weight: 900; margin: 0 0 4px; }
+  .ax3-sect h2 .ax3-count {
+    font-size: 12px; font-weight: 700; color: #FFF; background: #1A1A1A;
+    border-radius: 99px; padding: 2px 10px; vertical-align: 3px; margin-left: 10px;
+  }
+  .ax3-sect p { font-size: 13px; color: #666; margin: 0; max-width: 72em; }
+
+  /* ---------- 选项块 ---------- */
+  .ax3-opt {
+    background: #FFFFFF; border: 1px solid #DDDBD6; border-radius: 14px;
+    padding: 22px 24px 18px; margin: 0 0 24px;
+  }
+  .ax3-opt-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 14px; margin-bottom: 4px; }
+  .ax3-opt-head h3 { font-size: 18px; font-weight: 800; margin: 0; }
+  .ax3-opt-head h3 .ax3-zh { color: #555; font-weight: 700; }
+  .ax3-opt-num {
+    display: inline-block; background: #1A1A1A; color: #FFF; border-radius: 6px;
+    font-size: 12px; font-weight: 800; padding: 2px 8px; margin-right: 8px; vertical-align: 2px;
+  }
+  .ax3-anchor {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 11.5px; color: #555; background: #EFEDE9; border-radius: 5px; padding: 2px 7px;
+  }
+  .ax3-meta { font-size: 13px; color: #555; margin: 2px 0 14px; max-width: 76em; }
+  .ax3-meta b { color: #333; }
+
+  /* ---------- 演示台(迷你海报片段的画布) ---------- */
+  .ax3-stage {
+    background: var(--canvas, #F3F0EC);
+    border: 1px solid #E4E1DB; border-radius: 12px;
+    padding: 20px; display: flex; flex-wrap: wrap; gap: 16px; align-items: stretch;
+  }
+  .ax3-stage--center { justify-content: center; }
+  .ax3-caption { font-size: 12.5px; color: #666; margin: 10px 2px 0; max-width: 76em; }
+  .ax3-caption b { color: #333; }
+  .ax3-rulenote {
+    margin: 12px 0 0; padding: 10px 14px; border-radius: 8px;
+    background: #F4EFEA; border-left: 4px solid #8A8A8A;
+    font-size: 12.5px; color: #444; max-width: 76em;
+  }
+  .ax3-rulenote b { color: #9C3B32; }
+
+  /* ---------- 令牌条(每块底部,swatch 引用作用域令牌,可对照搬运) ---------- */
+  .ax3-tokens {
+    display: flex; flex-wrap: wrap; gap: 6px 18px; margin-top: 12px;
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 11.5px; color: #555;
+  }
+  .ax3-tok { display: inline-flex; align-items: center; gap: 6px; }
+  .ax3-sw { width: 13px; height: 13px; border-radius: 3px; border: 1px solid rgba(0,0,0,.18); flex: none; }
+  .ax3-sw--accent      { background: var(--accent); }
+  .ax3-sw--accent-deep { background: var(--accent-deep); }
+  .ax3-sw--accent-soft { background: var(--accent-soft); }
+  .ax3-sw--emph        { background: var(--emph); }
+  .ax3-sw--emph-soft   { background: var(--emph-soft); }
+  .ax3-sw--emph-ink    { background: var(--emph-ink); }
+  .ax3-sw--sem-a       { background: var(--sem-a); }
+  .ax3-sw--sem-b       { background: var(--sem-b); }
+  .ax3-sw--neon        { background: var(--neon); }
+  .ax3-sw--neon2       { background: var(--neon2); }
+  .ax3-sw--ground      { background: var(--canvas); }
+  .ax3-sw--cat1 { background: var(--cat-1); } .ax3-sw--cat2 { background: var(--cat-2); }
+  .ax3-sw--cat3 { background: var(--cat-3); } .ax3-sw--cat4 { background: var(--cat-4); }
+  .ax3-sw--cat5 { background: var(--cat-5); }
+  .ax3-sw--grad-from { background: var(--grad-from); }
+  .ax3-sw--grad-to   { background: var(--grad-to); }
+
+  /* =========================================================
+     迷你海报片段 —— 组件库候选构造。
+     排版 / 卡样式全页一致;颜色一律来自作用域令牌。
+     ========================================================= */
+  .ax3-mini {
+    background: #FFFFFF; border: 1px solid #DAD7D2; border-radius: 10px;
+    padding: 16px 18px; flex: 1 1 300px; max-width: 460px; min-width: 0;
+    box-shadow: 0 1px 3px rgba(0,0,0,.06);
+  }
+  .ax3-mini--wide { max-width: none; flex: 1 1 100%; }
+  .ax3-roletag {
+    font-size: 10.5px; font-weight: 800; letter-spacing: .12em; color: #999;
+    text-transform: uppercase; margin: 0 0 10px;
+  }
+  .ax3-roletag code { font-family: ui-monospace, Menlo, Consolas, monospace; color: #777; text-transform: none; letter-spacing: 0; }
+
+  /* 节标题:号码片 + 左侧色杆(结构寄存器) */
+  .ax3-sec {
+    display: flex; align-items: center; gap: 8px;
+    border-left: 4px solid var(--accent); padding-left: 10px;
+    font-size: 15.5px; font-weight: 800; color: var(--accent-deep, #1A1A1A);
+    margin: 0 0 10px;
+  }
+  .ax3-secnum {
+    background: var(--accent); color: var(--accent-ink, #FFF);
+    border-radius: 4px; font-size: 11px; font-weight: 800; padding: 2px 6px; flex: none;
+  }
+
+  /* 正文 + 行内标记 */
+  .ax3-body { font-size: 13.5px; line-height: 1.62; color: #333; margin: 0 0 10px; }
+  .ax3-kw {
+    background: var(--accent-soft); color: var(--accent-deep);
+    padding: 0 4px; border-radius: 3px; font-weight: 650;
+  }
+  .ax3-kw--emph {
+    background: var(--emph-soft); color: #1A1A1A;
+    border-bottom: 2px solid var(--emph);
+    padding: 0 4px; border-radius: 3px 3px 0 0; font-weight: 650;
+  }
+
+  /* callout:soft = 结构性提示;fill = 结果强调(--emph 底 + --emph-ink 墨) */
+  .ax3-callout { border-radius: 8px; padding: 10px 12px; font-size: 13px; line-height: 1.5; margin: 10px 0; }
+  .ax3-callout--soft {
+    background: var(--accent-soft); color: var(--accent-deep);
+    border-left: 4px solid var(--accent);
+  }
+  .ax3-callout--fill { background: var(--emph); color: var(--emph-ink); font-weight: 700; }
+
+  /* 关键数字 */
+  .ax3-stat { display: flex; flex-direction: column; margin-top: 8px; }
+  .ax3-stat-num { font-size: 30px; font-weight: 800; line-height: 1.1; color: var(--emph); letter-spacing: -.01em; }
+  .ax3-stat-label { font-size: 11.5px; color: #666; letter-spacing: .04em; margin-top: 2px; }
+  .ax3-statrow { display: flex; gap: 24px; flex-wrap: wrap; }
+
+  /* venue 徽章片 / 图注标签 */
+  .ax3-chiprow { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 0 0 10px; }
+  .ax3-chip {
+    background: var(--accent); color: var(--accent-ink, #FFF);
+    font-size: 11px; font-weight: 800; letter-spacing: .05em;
+    padding: 3px 10px; border-radius: 99px;
+  }
+  .ax3-figtag { font-size: 11px; color: #888; font-weight: 600; }
+
+  /* 迷你结果表:thead = 结构(accent),.ax3-ours 行 = 结果(emph-soft) */
+  .ax3-table { width: 100%; border-collapse: collapse; font-size: 12.5px; margin: 8px 0 10px; }
+  .ax3-table th {
+    background: var(--accent); color: var(--accent-ink, #FFF);
+    text-align: left; font-size: 11.5px; font-weight: 800; padding: 5px 9px;
+  }
+  .ax3-table td { padding: 5px 9px; border-bottom: 1px solid #E7E4DF; color: #333; }
+  .ax3-table tr.ax3-ours td { background: var(--emph-soft); font-weight: 700; color: #1A1A1A; }
+
+  /* 墨色演示条(--accent-ink / --emph-ink 落在各自色底上) */
+  .ax3-inkstrip { display: flex; gap: 12px; flex-wrap: wrap; flex-basis: 100%; }
+  .ax3-inkbox {
+    flex: 1 1 240px; border-radius: 8px; padding: 10px 14px;
+    font-size: 12.5px; font-weight: 700; line-height: 1.5;
+  }
+  .ax3-inkbox code { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 11.5px; }
+  .ax3-inkbox--accent { background: var(--accent); color: var(--accent-ink); }
+  .ax3-inkbox--emph   { background: var(--emph);   color: var(--emph-ink); }
+  .ax3-inkratio { display: block; font-weight: 800; font-size: 13px; margin-top: 2px; }
+
+  /* =========================================================
+     作用域调色板 —— 每个选项一个 .ax3-p-* 作用域,
+     令牌名与模板 :root 一致,构造可整体搬运。
+     ========================================================= */
+
+  /* A1 accent-only:单强调色。没有第二寄存器 ——
+     结果寄存器令牌直接回落到同一色相(--emph ≔ --accent)。 */
+  .ax3-p-mono {
+    --accent:      #1D3A87;
+    --accent-deep: #142A63;
+    --accent-soft: #E8EDF7;
+    --accent-ink:  #FFFFFF;
+    --emph:        var(--accent);
+    --emph-soft:   var(--accent-soft);
+    --emph-ink:    var(--accent-ink);
+  }
+
+  /* A2 accent + emph 双寄存器(现行默认,landscape_4col_neutral 同款)。
+     注意:--emph-ink 换寄存器后必须在新色底上复检 4.5:1
+     (模板默认 var(--accent-deep)=#1F4566 在金底上仅 4.16:1,
+     本页取更深的 #14314A → 5.58:1)。 */
+  .ax3-p-duo {
+    --accent:      #2D5F8B;
+    --accent-deep: #1F4566;
+    --accent-soft: #D7E5F0;
+    --accent-ink:  #FFFFFF;
+    --emph:        #C9A24A;
+    --emph-soft:   #FFF7E0;
+    --emph-ink:    #14314A;
+  }
+
+  /* A3 dual-semantic:两个色相各绑一个全页语义。 */
+  .ax3-p-sem {
+    --sem-a:      #2D5F3E;   /* 绿 = coverage / diversity */
+    --sem-a-deep: #1F4029;
+    --sem-a-soft: #E6F0EA;
+    --sem-b:      #A2521C;   /* 橙 = accuracy / reward */
+    --sem-b-deep: #7A3D13;
+    --sem-b-soft: #F6ECE1;
+    /* 中性结构色:语义色不做结构 chrome,避免语义被稀释 */
+    --accent:      #3A3F46;
+    --accent-deep: #24282E;
+    --accent-soft: #ECECEA;
+    --accent-ink:  #FFFFFF;
+  }
+  .ax3-tag {
+    display: inline-block; font-size: 10.5px; font-weight: 800; letter-spacing: .06em;
+    padding: 2px 9px; border-radius: 99px; vertical-align: 1px;
+  }
+  .ax3-tag--a { background: var(--sem-a); color: #FFFFFF; }
+  .ax3-tag--b { background: var(--sem-b); color: #FFFFFF; }
+  .ax3-mark--a { background: var(--sem-a-soft); color: var(--sem-a-deep); padding: 0 4px; border-radius: 3px; font-weight: 650; }
+  .ax3-mark--b { background: var(--sem-b-soft); color: var(--sem-b-deep); padding: 0 4px; border-radius: 3px; font-weight: 650; }
+  .ax3-callout--a { background: var(--sem-a-soft); color: var(--sem-a-deep); border-left: 4px solid var(--sem-a); }
+  .ax3-callout--b { background: var(--sem-b-soft); color: var(--sem-b-deep); border-left: 4px solid var(--sem-b); }
+  .ax3-stat-num--a { color: var(--sem-a); }
+  .ax3-stat-num--b { color: var(--sem-b); }
+  .ax3-legendline { font-size: 12px; color: #555; flex-basis: 100%; margin: -2px 2px 0; }
+
+  /* A4 categorical:4–5 色各绑定一个固定类别。 */
+  .ax3-p-cat {
+    --accent:      #3A3F46;   /* 结构 chrome 保持中性 */
+    --accent-deep: #24282E;
+    --accent-soft: #ECECEA;
+    --accent-ink:  #FFFFFF;
+    --cat-1: #1D3A87;  /* MATH500 */
+    --cat-2: #0F6070;  /* OlympiadBench */
+    --cat-3: #7D2860;  /* AIME24 */
+    --cat-4: #A2521C;  /* AMC23 */
+    --cat-5: #2D5F3E;  /* GPQA */
+  }
+  .ax3-legend { display: flex; flex-wrap: wrap; gap: 8px 18px; font-size: 12px; color: #333; margin: 0 0 12px; }
+  .ax3-legend span { display: inline-flex; align-items: center; gap: 6px; font-weight: 600; }
+  .ax3-dot { width: 11px; height: 11px; border-radius: 3px; display: inline-block; flex: none; }
+  .ax3-cat1 .ax3-dot, .ax3-bar--1 { background: var(--cat-1); }
+  .ax3-cat2 .ax3-dot, .ax3-bar--2 { background: var(--cat-2); }
+  .ax3-cat3 .ax3-dot, .ax3-bar--3 { background: var(--cat-3); }
+  .ax3-cat4 .ax3-dot, .ax3-bar--4 { background: var(--cat-4); }
+  .ax3-cat5 .ax3-dot, .ax3-bar--5 { background: var(--cat-5); }
+  .ax3-barrow { display: flex; align-items: center; gap: 10px; font-size: 11.5px; color: #444; margin: 5px 0; }
+  .ax3-barrow .ax3-barlabel { width: 8.5em; flex: none; font-weight: 600; text-align: right; }
+  .ax3-bartrack { flex: 1 1 auto; min-width: 0; background: #EFECE6; border-radius: 4px; height: 14px; overflow: hidden; }
+  .ax3-bar { height: 100%; border-radius: 4px 0 0 4px; }
+  .ax3-bw-45 { width: 45%; } .ax3-bw-77 { width: 77%; } .ax3-bw-51 { width: 51%; }
+  .ax3-bw-95 { width: 95%; } .ax3-bw-71 { width: 71%; }
+  .ax3-barval { width: 3.4em; flex: none; font-weight: 700; font-family: ui-monospace, Menlo, Consolas, monospace; }
+  .ax3-mark--cat5 { background: var(--cat-5); color: #FFFFFF; padding: 0 4px; border-radius: 3px; font-weight: 650; }
+  .ax3-tokline {
+    font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 11px;
+    color: #555; background: #F4F2EE; border-radius: 6px; padding: 7px 10px;
+    margin: 10px 0 0; overflow-wrap: anywhere;
+  }
+
+  /* B1 distinct centers:寄存器与结构分属不同色相中心(teal ↔ burgundy)。 */
+  .ax3-p-distinct {
+    --accent:      #0F6070;
+    --accent-deep: #0A4550;
+    --accent-soft: #E2EFF1;
+    --accent-ink:  #FFFFFF;
+    --emph:        #8F2437;
+    --emph-soft:   #F6E7EA;
+    --emph-ink:    #FFFFFF;
+  }
+  .ax3-huepair { display: flex; gap: 12px; flex-basis: 100%; flex-wrap: wrap; }
+  .ax3-hue {
+    flex: 1 1 220px; border-radius: 8px; padding: 10px 14px;
+    color: #FFFFFF; font-size: 12px; font-weight: 700; line-height: 1.5;
+  }
+  .ax3-hue small { display: block; font-weight: 600; opacity: .85; }
+  .ax3-hue--accent { background: var(--accent); }
+  .ax3-hue--emph   { background: var(--emph); }
+
+  /* B2 same-center tonal:单一色相家族,强调只靠明度/饱和度(63819)。 */
+  .ax3-p-tonal {
+    --accent:      #1D3A87;   /* 深蓝 = 结构 */
+    --accent-deep: #12244F;
+    --accent-soft: #E8EDF7;
+    --accent-ink:  #FFFFFF;
+    --emph:        #3F68D6;   /* 中蓝 = 强调数字(仅大字/粗体) */
+    --emph-soft:   #DCE5F8;   /* 浅蓝 = 强调底 */
+    --emph-ink:    #FFFFFF;
+  }
+  .ax3-ramp { display: flex; border-radius: 6px; overflow: hidden; flex-basis: 100%; border: 1px solid rgba(0,0,0,.12); }
+  .ax3-ramp span { flex: 1 1 auto; height: 26px; }
+  .ax3-ramp-labels { display: flex; flex-basis: 100%; font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 10px; color: #777; margin-top: -8px; }
+  .ax3-ramp-labels span { flex: 1 1 auto; text-align: center; overflow: hidden; }
+  .ax3-r1 { background: #12244F; } .ax3-r2 { background: #1D3A87; } .ax3-r3 { background: #3F68D6; }
+  .ax3-r4 { background: #7D97E3; } .ax3-r5 { background: #DCE5F8; } .ax3-r6 { background: #E8EDF7; }
+  /* tonal 作用域:最响的 fill 用阶梯最深一级 —— 色相不变,只加深 */
+  .ax3-p-tonal .ax3-callout--fill { background: var(--accent-deep); }
+
+  /* C1 solid:默认上色方式,直接沿用 A2 双寄存器令牌。 */
+  .ax3-p-solid {
+    --accent:      #2D5F8B;
+    --accent-deep: #1F4566;
+    --accent-soft: #D7E5F0;
+    --accent-ink:  #FFFFFF;
+    --emph:        #C9A24A;
+    --emph-soft:   #FFF7E0;
+    --emph-ink:    #14314A;
+  }
+
+  /* C2 gradient-as-identity:渐变只落在 display 大字与箭头(67122 蓝→洋红)。
+     结构 chrome 与正文保持中性纯色。 */
+  .ax3-p-grad {
+    --accent:      #33415E;
+    --accent-deep: #232D42;
+    --accent-soft: #E9ECF3;
+    --accent-ink:  #FFFFFF;
+    --grad-from:   #2C3FD6;
+    --grad-to:     #C0187D;
+  }
+  .ax3-display {
+    font-size: clamp(30px, 5vw, 46px); font-weight: 900; letter-spacing: -.015em; line-height: 1.05;
+    background: linear-gradient(92deg, var(--grad-from) 8%, var(--grad-to) 92%);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    margin: 0 0 4px; width: fit-content; max-width: 100%;
+  }
+  .ax3-displaysub { font-size: 12.5px; color: #666; margin: 0 0 14px; }
+  .ax3-flowrow { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: 6px 0 12px; }
+  .ax3-step {
+    border: 1.5px solid var(--accent); color: var(--accent-deep); background: #FFFFFF;
+    border-radius: 8px; padding: 6px 12px; font-size: 12px; font-weight: 700; white-space: nowrap;
+  }
+  .ax3-arrow {
+    width: 54px; height: 22px; flex: none;
+    background: linear-gradient(90deg, var(--grad-from), var(--grad-to));
+    clip-path: polygon(0 38%, 66% 38%, 66% 12%, 100% 50%, 66% 88%, 66% 62%, 0 62%);
+  }
+
+  /* C3 neon:暗底 + 荧光描边/glow(66072)。硬规则:必须暗底,白底禁用。 */
+  .ax3-p-neon {
+    --canvas: #0E141B;        /* 演示台画布换成暗底 —— neon 的前置条件 */
+    --neon:   #3DE8FF;
+    --neon2:  #B6FF3C;
+  }
+  .ax3-p-neon.ax3-stage { border-color: #23303C; }
+  .ax3-mini--dark {
+    background: #10161D;
+    border: 1.5px solid var(--neon);
+    box-shadow: 0 0 14px rgba(61, 232, 255, .30), inset 0 0 22px rgba(61, 232, 255, .06);
+    color: #D7E1EA;
+  }
+  .ax3-mini--dark .ax3-roletag { color: #8496A6; }
+  .ax3-mini--dark .ax3-body { color: #C4CFD9; }
+  .ax3-neon-h {
+    color: var(--neon); font-size: 15.5px; font-weight: 800; letter-spacing: .03em;
+    text-shadow: 0 0 9px rgba(61, 232, 255, .55); margin: 0 0 10px;
+  }
+  .ax3-neon-num {
+    color: var(--neon2); font-size: 30px; font-weight: 800; line-height: 1.1;
+    text-shadow: 0 0 11px rgba(182, 255, 60, .45); letter-spacing: -.01em;
+  }
+  .ax3-mini--dark .ax3-stat-label { color: #8C99A5; }
+  .ax3-ba { display: flex; gap: 10px; flex-wrap: wrap; margin: 10px 0 12px; }
+  .ax3-ba-box { flex: 1 1 130px; border-radius: 8px; padding: 8px 11px; font-size: 12px; line-height: 1.5; }
+  .ax3-ba-box--off { border: 1px dashed #4A5763; color: #8C99A5; }
+  .ax3-ba-box--on {
+    border: 1.5px solid var(--neon); color: var(--neon); font-weight: 700;
+    box-shadow: 0 0 10px rgba(61, 232, 255, .35), inset 0 0 8px rgba(61, 232, 255, .08);
+  }
+
+  /* ---------- 页脚 ---------- */
+  .ax3-foot { margin-top: 40px; padding-top: 16px; border-top: 1px solid #DDDBD6; font-size: 12px; color: #888; }
+</style>
+</head>
+<body>
+<div class="ax3-wrap">
+
+  <!-- ================= 页头 ================= -->
+  <header class="ax3-hero">
+    <p class="ax3-eyebrow">posterly · design axes · 选项目录 · 3 / 8</p>
+    <h1>Axis 3 — Palette<span class="ax3-zh">配色</span></h1>
+    <p class="ax3-intro">
+      一次配色选择不是单选枚举,而是三个正交子维度的组合(主选项 + 修饰符)。
+      三者自由搭配:如 63819 = 双寄存器 × 同色相 tonal × solid;67122 = 渐变签名落在 display、正文保持中性纯色。
+      锚点 ID 来自 80 张 ICML 2026 精选池。
+    </p>
+    <ul class="ax3-formula">
+      <li class="ax3-dim"><b>① role topology <span class="ax3-zh">角色拓扑</span></b>
+        颜色扮演几个角色、各绑什么职责:单强调 / 结构+结果双寄存器 / 双色语义 / 多类别色。</li>
+      <li class="ax3-dim"><b>② hue relationship <span class="ax3-zh">色相关系</span></b>
+        各角色的色相中心之间什么关系:异色相中心 / 同色相纯明暗分层。</li>
+      <li class="ax3-dim"><b>③ paint modifier <span class="ax3-zh">上色方式</span></b>
+        颜料以什么形态落地:纯色 / 渐变作身份签名 / 暗底荧光。</li>
+    </ul>
+    <p class="ax3-ctrl">
+      <b>控制变量</b>:全页排版、字体、卡样式统一中性,<b>颜色是唯一变量</b>。
+      A 节演示固定 ②=distinct、③=solid;B 节固定 ①=双寄存器、③=solid;C 节固定 ①=双寄存器、②=distinct。
+      占位文案取自 PowerFlow(α-power 重加权的 RLVR 目标)。
+      演示构造以真实令牌名(<code>--accent / --emph / --accent-ink / --emph-ink …</code>)作用域化,可直接搬运。
+    </p>
+    <nav class="ax3-toc">
+      <div class="ax3-toc-group"><b>一 · role topology 角色拓扑</b>
+        <a href="#a1">A1 单强调色</a><a href="#a2">A2 双寄存器(默认)</a><a href="#a3">A3 双色语义</a><a href="#a4">A4 多类别色</a>
+      </div>
+      <div class="ax3-toc-group"><b>二 · hue relationship 色相关系</b>
+        <a href="#b1">B1 异色相中心</a><a href="#b2">B2 同色相 tonal</a>
+      </div>
+      <div class="ax3-toc-group"><b>三 · paint modifier 上色方式</b>
+        <a href="#c1">C1 纯色</a><a href="#c2">C2 渐变签名</a><a href="#c3">C3 荧光</a>
+      </div>
+    </nav>
+  </header>
+
+  <main>
+
+  <!-- ================= 一 · role topology ================= -->
+  <div class="ax3-sect" id="topology">
+    <h2>一 · role topology 角色拓扑<span class="ax3-count">4 选项</span></h2>
+    <p>颜色扮演几个角色。看点:同一批元素(节标题 / 行内标记 / callout / 关键数字 / 表格)在不同拓扑下由谁上色。</p>
+  </div>
+
+  <!-- A1 accent-only -->
+  <article class="ax3-opt" id="a1">
+    <div class="ax3-opt-head">
+      <h3><span class="ax3-opt-num">A1</span>accent-only<span class="ax3-zh"> · 单强调色</span></h3>
+      <span class="ax3-anchor">锚点 —(基础形态)</span>
+    </div>
+    <p class="ax3-meta"><b>适用</b>:克制的机构风 / 单色品牌规范;结果强调靠层级与字重,不引入第二寄存器 —— 全页只有一个色相家族在工作。</p>
+    <div class="ax3-stage ax3-p-mono">
+      <div class="ax3-mini">
+        <p class="ax3-roletag">全部角色 → 同一色相 <code>--accent</code></p>
+        <div class="ax3-sec"><span class="ax3-secnum">03</span>Results — coverage preserved</div>
+        <p class="ax3-body">PowerFlow reweights each rollout by an <mark class="ax3-kw">α-power transform</mark> of the clipped importance ratio, so <mark class="ax3-kw">entropy modulates</mark> instead of collapsing.</p>
+        <div class="ax3-callout ax3-callout--fill">★ +1.72 pass@1 over GRPO on MATH500 — diversity preserved.</div>
+        <div class="ax3-stat"><span class="ax3-stat-num">19.85</span><span class="ax3-stat-label">pass@1 · MATH500</span></div>
+      </div>
+      <div class="ax3-mini">
+        <p class="ax3-roletag">层级只靠深浅,不靠换色相</p>
+        <div class="ax3-sec"><span class="ax3-secnum">04</span>Setup — four backbones</div>
+        <p class="ax3-body">16 samples per problem, DeepSeek-V3.2 judge; evaluated on MATH500 · OlympiadBench · AIME24.</p>
+        <div class="ax3-callout ax3-callout--soft">Setup note — the same blue family carries chips, rules and callouts; depth comes from <b>deep / soft</b> tints only.</div>
+      </div>
+    </div>
+    <p class="ax3-caption"><b>看点</b>:结果 callout、关键数字、行内标记与节标题共用一个色相;没有第二寄存器(令牌上 <code>--emph ≔ --accent</code>)。“这是重点”与“这是结构”不再靠颜色区分,靠字重与位置。</p>
+    <footer class="ax3-tokens ax3-p-mono">
+      <span class="ax3-tok"><i class="ax3-sw ax3-sw--accent"></i>--accent #1D3A87</span>
+      <span class="ax3-tok"><i class="ax3-sw ax3-sw--accent-deep"></i>--accent-deep #142A63</span>
+      <span class="ax3-tok"><i class="ax3-sw ax3-sw--accent-soft"></i>--accent-soft #E8EDF7</span>
+      <span class="ax3-tok"><i class="ax3-sw ax3-sw--emph"></i>--emph ≔ var(--accent)</span>
+    </footer>
+  </article>
+
+  <!-- A2 accent + emph -->
+  <article class="ax3-opt" id="a2">
+    <div class="ax3-opt-head">
+      <h3><span class="ax3-opt-num">A2</span>accent + emph 双寄存器<span class="ax3-zh"> · 结构色 + 结果强调色</span></h3>
+      <span class="ax3-anchor">锚点 shipped default(landscape_4col_neutral;池与推导见 THEMES.md)</span>
+    </div>
+    <p class="ax3-meta"><b>适用</b>:现行默认,绝大多数结果导向海报 —— <code>--accent</code> 管结构(章节号、表头、徽章、边框),<code>--emph</code> 只标“ours / best / ★”,读者对“结果高亮”的联想全场不churn。</p>
+    <div class="ax3-stage ax3-p-duo">
+      <div class="ax3-mini">
+        <p class="ax3-roletag">结构寄存器 <code>--accent</code>:章节号 · 徽章 · 表头 · 提示框</p>
+        <div class="ax3-chiprow"><span class="ax3-chip">ICML 2026</span><span class="ax3-figtag">Poster W-1204</span></div>
+        <div class="ax3-sec"><span class="ax3-secnum">02</span>Method — the α-power objective</div>
+        <p class="ax3-body">Trained with <mark class="ax3-kw">clipped IS weights</mark> and a <mark class="ax3-kw">format penalty ψ</mark>; the transform interpolates GRPO (α=1) and uniform replay (α=0).</p>
+        <div class="ax3-callout ax3-callout--soft">Setup note — 16 samples per problem, DeepSeek-V3.2 judge.</div>
+      </div>
+      <div class="ax3-mini">
+        <p class="ax3-roletag">结果寄存器 <code>--emph</code>:.ours 行 · ★ callout · 关键数字</p>
+        <table class="ax3-table">
+          <thead><tr><th>Method</th><th>pass@1</th><th>Δ</th></tr></thead>
+          <tbody>
+            <tr><td>GRPO</td><td>18.13</td><td>—</td></tr>
+            <tr class="ax3-ours"><td>PowerFlow (ours)</td><td>19.85</td><td>+1.72</td></tr>
+          </tbody>
+        </table>
+        <div class="ax3-callout ax3-callout--fill">★ Coverage preserved to n = 256 — <mark class="ax3-kw--emph">entropy stays flat</mark> across 1k steps.</div>
+        <div class="ax3-stat"><span class="ax3-stat-num">+1.72</span><span class="ax3-stat-label">pass@1 over GRPO · MATH500</span></div>
+      </div>
+      <div class="ax3-inkstrip">
+        <div class="ax3-inkbox ax3-inkbox--accent">
+          <code>--accent-ink #FFFFFF</code> 落在 <code>--accent #2D5F8B</code> 上
+          <span class="ax3-inkratio">对比 6.73 : 1 ✓(徽章 / 表头 / 章节号的墨色令牌)</span>
+        </div>
+        <div class="ax3-inkbox ax3-inkbox--emph">
+          <code>--emph-ink #14314A</code> 落在 <code>--emph #C9A24A</code> 上
+          <span class="ax3-inkratio">对比 5.58 : 1 ✓(★ callout 的墨色令牌)</span>
+        </div>
+      </div>
+    </div>
+    <p class="ax3-caption"><b>看点</b>:两个寄存器各带一枚墨色令牌 —— 文字永不直接“写死白/黑”,而是 <code>--accent-ink</code> / <code>--emph-ink</code>,换色只需重算这两枚令牌(THEMES.md Mechanism 3 的 <code>ink()</code>)。注意模板默认 <code>--emph-ink: var(--accent-deep)</code>(#1F4566)在金底上实测仅 4.16:1,换寄存器后必须复检 4.5:1 —— 本页示范取更深的 #14314A。</p>
+    <footer class="ax3-tokens ax3-p-duo">
+      <span class="ax3-tok"><i class="ax3-sw ax3-sw--accent"></i>--accent #2D5F8B</span>
+      <span class="ax3-tok"><i class="ax3-sw ax3-sw--accent-soft"></i>--accent-soft #D7E5F0</span>
+      <span class="ax3-tok"><i class="ax3-sw ax3-sw--emph"></i>--emph #C9A24A</span>
+      <span class="ax3-tok"><i class="ax3-sw ax3-sw--emph-soft"></i>--emph-soft #FFF7E0</span>
+      <span class="ax3-tok"><i class="ax3-sw ax3-sw--emph-ink"></i>--emph-ink #14314A</span>
+    </footer>
+  </article>
+
+  <!-- A3 dual-semantic -->
+  <article class="ax3-opt" id="a3">
+    <div class="ax3-opt-head">
+      <h3><span class="ax3-opt-num">A3</span>dual-semantic<span class="ax3-zh"> · 双色语义贯穿</span></h3>
+      <span class="ax3-anchor">锚点 64834</span>
+    </div>
+    <p class="ax3-meta"><b>适用</b>:论文有两个贯穿全文的并行/对立概念(64834:绿=语言建模 vs 橙=翻译;本例:绿=coverage/diversity vs 橙=accuracy/reward)。语义色一旦认领,全页只表意、不装饰(clash rule 7)。</p>
+    <div class="ax3-stage ax3-p-sem">
+      <p class="ax3-legendline">全页语义绑定:<span class="ax3-tag ax3-tag--a">COVERAGE 绿</span> = 多样性 / pass@n 侧 · <span class="ax3-tag ax3-tag--b">ACCURACY 橙</span> = 精度 / reward 侧 —— 标题、图注、行内标记三处保持同色。</p>
+      <div class="ax3-mini">
+        <p class="ax3-roletag">Method 版块 —— 两色在标题与行内标记</p>
+        <div class="ax3-sec"><span class="ax3-secnum">02</span>Two objectives, one update</div>
+        <p class="ax3-body">The α-power transform trades <mark class="ax3-mark--a">rollout diversity</mark> against <mark class="ax3-mark--b">per-sample reward</mark> inside a single clipped objective — no auxiliary loss.</p>
+        <div class="ax3-callout ax3-callout--a"><b>Coverage</b> — pass@256 preserved on OlympiadBench.</div>
+        <div class="ax3-callout ax3-callout--b"><b>Accuracy</b> — +1.72 pass@1 over GRPO on MATH500.</div>
+      </div>
+      <div class="ax3-mini">
+        <p class="ax3-roletag">Results 版块 —— 同一绑定延续到图注与数字</p>
+        <div class="ax3-sec"><span class="ax3-secnum">03</span>Results — both sides of the trade</div>
+        <p class="ax3-body"><span class="ax3-tag ax3-tag--a">FIG 3</span> <mark class="ax3-mark--a">Pass@n coverage</mark> tracks GRPO across n = 1 → 256.<br>
+        <span class="ax3-tag ax3-tag--b">FIG 4</span> <mark class="ax3-mark--b">pass@1 accuracy</mark> beats GRPO on 3 of 4 backbones.</p>
+        <div class="ax3-statrow">
+          <div class="ax3-stat"><span class="ax3-stat-num ax3-stat-num--a">×1.0</span><span class="ax3-stat-label">coverage kept · pass@256</span></div>
+          <div class="ax3-stat"><span class="ax3-stat-num ax3-stat-num--b">+1.72</span><span class="ax3-stat-label">accuracy gain · pass@1</span></div>
+        </div>
+      </div>
+    </div>
+    <p class="ax3-caption"><b>看点</b>:结构 chrome(章节号、左杆)退成中性深灰,把色相让给语义;绿/橙在两个版块的标题标签、图注标签、行内标记、callout、数字里始终各管各的概念 —— 语义色挪作装饰即违例。</p>
+    <footer class="ax3-tokens ax3-p-sem">
+      <span class="ax3-tok"><i class="ax3-sw ax3-sw--sem-a"></i>--sem-a #2D5F3E(coverage)</span>
+      <span class="ax3-tok"><i class="ax3-sw ax3-sw--sem-b"></i>--sem-b #A2521C(accuracy)</span>
+      <span class="ax3-tok"><i class="ax3-sw ax3-sw--accent"></i>--accent #3A3F46(中性结构)</span>
+    </footer>
+  </article>
+
+  <!-- A4 categorical -->
+  <article class="ax3-opt" id="a4">
+    <div class="ax3-opt-head">
+      <h3><span class="ax3-opt-num">A4</span>categorical<span class="ax3-zh"> · 多角色类别色</span></h3>
+      <span class="ax3-anchor">锚点 63640 · 65372 · 66057</span>
+    </div>
+    <p class="ax3-meta"><b>适用</b>:4–5 个类别(基准、模型家族、模块)贯穿全页比较的仪表盘式海报;每色绑定一个固定类别,全页不换岗。</p>
+    <div class="ax3-stage ax3-p-cat">
+      <div class="ax3-mini ax3-mini--wide">
+        <p class="ax3-roletag">类别图例 + 结果条 —— 每色 = 一个基准,legend / 条形 / 正文提点同色</p>
+        <div class="ax3-sec"><span class="ax3-secnum">03</span>Results — five benchmarks, one policy</div>
+        <div class="ax3-legend">
+          <span class="ax3-cat1"><i class="ax3-dot"></i>MATH500</span>
+          <span class="ax3-cat2"><i class="ax3-dot"></i>OlympiadBench</span>
+          <span class="ax3-cat3"><i class="ax3-dot"></i>AIME24</span>
+          <span class="ax3-cat4"><i class="ax3-dot"></i>AMC23</span>
+          <span class="ax3-cat5"><i class="ax3-dot"></i>GPQA</span>
+        </div>
+        <div class="ax3-barrow"><span class="ax3-barlabel">MATH500</span><div class="ax3-bartrack"><div class="ax3-bar ax3-bar--1 ax3-bw-45"></div></div><span class="ax3-barval">19.9</span></div>
+        <div class="ax3-barrow"><span class="ax3-barlabel">OlympiadBench</span><div class="ax3-bartrack"><div class="ax3-bar ax3-bar--2 ax3-bw-77"></div></div><span class="ax3-barval">34.3</span></div>
+        <div class="ax3-barrow"><span class="ax3-barlabel">AIME24</span><div class="ax3-bartrack"><div class="ax3-bar ax3-bar--3 ax3-bw-51"></div></div><span class="ax3-barval">22.9</span></div>
+        <div class="ax3-barrow"><span class="ax3-barlabel">AMC23</span><div class="ax3-bartrack"><div class="ax3-bar ax3-bar--4 ax3-bw-95"></div></div><span class="ax3-barval">42.2</span></div>
+        <div class="ax3-barrow"><span class="ax3-barlabel">GPQA</span><div class="ax3-bartrack"><div class="ax3-bar ax3-bar--5 ax3-bw-71"></div></div><span class="ax3-barval">31.4</span></div>
+        <p class="ax3-body">Gains concentrate on <mark class="ax3-mark--cat5">GPQA</mark>-style long-horizon sets; the transform is benchmark-agnostic.</p>
+        <p class="ax3-tokline">真实海报须在 style gate 申报色相中心:--tokens '{"hues": ["#1D3A87", "#0F6070", "#7D2860", "#A2521C", "#2D5F3E"]}' —— 否则 style rule 4 会按未申报色量拦下。</p>
+      </div>
+    </div>
+    <p class="ax3-caption"><b>看点</b>:结构 chrome 仍是中性深灰,5 个类别色只做数据与类别标识。类别色需通过区分度 + 色盲检查(clash rule 7):本组 5 色两两异色相且明度错开。</p>
+    <footer class="ax3-tokens ax3-p-cat">
+      <span class="ax3-tok"><i class="ax3-sw ax3-sw--cat1"></i>--cat-1 #1D3A87</span>
+      <span class="ax3-tok"><i class="ax3-sw ax3-sw--cat2"></i>--cat-2 #0F6070</span>
+      <span class="ax3-tok"><i class="ax3-sw ax3-sw--cat3"></i>--cat-3 #7D2860</span>
+      <span class="ax3-tok"><i class="ax3-sw ax3-sw--cat4"></i>--cat-4 #A2521C</span>
+      <span class="ax3-tok"><i class="ax3-sw ax3-sw--cat5"></i>--cat-5 #2D5F3E</span>
+    </footer>
+  </article>
+
+  <!-- ================= 二 · hue relationship ================= -->
+  <div class="ax3-sect" id="hue">
+    <h2>二 · hue relationship 色相关系<span class="ax3-count">2 选项</span></h2>
+    <p>固定双寄存器拓扑 + solid 上色,只换“寄存器之间的色相关系”。</p>
+  </div>
+
+  <!-- B1 distinct centers -->
+  <article class="ax3-opt" id="b1">
+    <div class="ax3-opt-head">
+      <h3><span class="ax3-opt-num">B1</span>distinct centers<span class="ax3-zh"> · 异色相中心</span></h3>
+      <span class="ax3-anchor">锚点 —(现行默认关系)</span>
+    </div>
+    <p class="ax3-meta"><b>适用</b>:任何多寄存器拓扑的默认关系;强调需要“立刻跳出”时首选 —— 结果寄存器换一个色相家族,扫视即见。</p>
+    <div class="ax3-stage ax3-stage--center ax3-p-distinct">
+      <div class="ax3-huepair">
+        <div class="ax3-hue ax3-hue--accent">--accent #0F6070 · teal<small>色相中心 ≈ 190°(结构)</small></div>
+        <div class="ax3-hue ax3-hue--emph">--emph #8F2437 · burgundy<small>色相中心 ≈ 349°(结果)—— 两中心相距约 160°</small></div>
+      </div>
+      <div class="ax3-mini">
+        <p class="ax3-roletag">同一构造,寄存器分属两个色相家族</p>
+        <div class="ax3-sec"><span class="ax3-secnum">03</span>Results — coverage preserved</div>
+        <p class="ax3-body">PowerFlow matches GRPO at pass@1 while <mark class="ax3-kw">preserving pass@256</mark> on OlympiadBench.</p>
+        <table class="ax3-table">
+          <thead><tr><th>Method</th><th>pass@1</th><th>Δ</th></tr></thead>
+          <tbody>
+            <tr><td>GRPO</td><td>18.13</td><td>—</td></tr>
+            <tr class="ax3-ours"><td>PowerFlow (ours)</td><td>19.85</td><td>+1.72</td></tr>
+          </tbody>
+        </table>
+        <div class="ax3-callout ax3-callout--fill">★ Entropy stays flat across 1k steps; GRPO collapses by step 300.</div>
+        <div class="ax3-stat"><span class="ax3-stat-num">+1.72</span><span class="ax3-stat-label">pass@1 over GRPO · MATH500</span></div>
+      </div>
+    </div>
+    <p class="ax3-caption"><b>看点</b>:与 A2 完全同构,只是把(蓝, 金)换成(teal, burgundy)—— 色相关系是独立于拓扑的一档选择。暖色寄存器落 teal 结构上时记得按 SKILL.md 的暖色规则复查(墨色 / 次级色搭配)。</p>
+    <footer class="ax3-tokens ax3-p-distinct">
+      <span class="ax3-tok"><i class="ax3-sw ax3-sw--accent"></i>--accent #0F6070</span>
+      <span class="ax3-tok"><i class="ax3-sw ax3-sw--accent-soft"></i>--accent-soft #E2EFF1</span>
+      <span class="ax3-tok"><i class="ax3-sw ax3-sw--emph"></i>--emph #8F2437</span>
+      <span class="ax3-tok"><i class="ax3-sw ax3-sw--emph-soft"></i>--emph-soft #F6E7EA</span>
+    </footer>
+  </article>
+
+  <!-- B2 same-center tonal -->
+  <article class="ax3-opt" id="b2">
+    <div class="ax3-opt-head">
+      <h3><span class="ax3-opt-num">B2</span>same-center tonal<span class="ax3-zh"> · 同色相纯明暗强调</span></h3>
+      <span class="ax3-anchor">锚点 63819</span>
+    </div>
+    <p class="ax3-meta"><b>适用</b>:机构单色规范、追求沉稳统一的海报 —— 不引入第二色相,强调只靠同一色相家族的明度 / 饱和度分层(63819:深蓝结构 + 浅蓝强调)。</p>
+    <div class="ax3-stage ax3-p-tonal">
+      <div class="ax3-ramp">
+        <span class="ax3-r1"></span><span class="ax3-r2"></span><span class="ax3-r3"></span>
+        <span class="ax3-r4"></span><span class="ax3-r5"></span><span class="ax3-r6"></span>
+      </div>
+      <div class="ax3-ramp-labels">
+        <span>#12244F</span><span>#1D3A87</span><span>#3F68D6</span><span>#7D97E3</span><span>#DCE5F8</span><span>#E8EDF7</span>
+      </div>
+      <div class="ax3-mini">
+        <p class="ax3-roletag">深蓝 = 结构 · 中蓝 = 强调数字 · 浅蓝 = 强调底</p>
+        <div class="ax3-sec"><span class="ax3-secnum">03</span>Results — one hue family</div>
+        <p class="ax3-body">The α-power transform interpolates GRPO and uniform replay; <mark class="ax3-kw">coverage is preserved</mark> without a second hue anywhere on the page.</p>
+        <table class="ax3-table">
+          <thead><tr><th>Method</th><th>pass@1</th><th>Δ</th></tr></thead>
+          <tbody>
+            <tr><td>GRPO</td><td>18.13</td><td>—</td></tr>
+            <tr class="ax3-ours"><td>PowerFlow (ours)</td><td>19.85</td><td>+1.72</td></tr>
+          </tbody>
+        </table>
+        <div class="ax3-callout ax3-callout--fill">★ Deepest step of the ramp carries the loudest claim — hue never changes.</div>
+        <div class="ax3-stat"><span class="ax3-stat-num">+1.72</span><span class="ax3-stat-label">中蓝 #3F68D6,仅用于大号粗体数字(5.05:1,过大字号线)</span></div>
+      </div>
+    </div>
+    <p class="ax3-caption"><b>看点</b>:.ours 行的浅蓝底、关键数字的中蓝、callout 的最深蓝,全部来自一条明度阶梯。<b>注意:这推翻了“emph 必须异色相”的旧约束</b> —— 强调寄存器可以与结构同色相,只要明度分层撑得起“跳出感”,这是 DESIGN-AXES 认可的合法选择,不是降级。</p>
+    <footer class="ax3-tokens ax3-p-tonal">
+      <span class="ax3-tok"><i class="ax3-sw ax3-sw--accent-deep"></i>--accent-deep #12244F</span>
+      <span class="ax3-tok"><i class="ax3-sw ax3-sw--accent"></i>--accent #1D3A87</span>
+      <span class="ax3-tok"><i class="ax3-sw ax3-sw--emph"></i>--emph #3F68D6</span>
+      <span class="ax3-tok"><i class="ax3-sw ax3-sw--emph-soft"></i>--emph-soft #DCE5F8</span>
+    </footer>
+  </article>
+
+  <!-- ================= 三 · paint modifier ================= -->
+  <div class="ax3-sect" id="paint">
+    <h2>三 · paint modifier 上色方式<span class="ax3-count">3 选项</span></h2>
+    <p>固定双寄存器 + 异色相,只换“颜料落地的形态”。</p>
+  </div>
+
+  <!-- C1 solid -->
+  <article class="ax3-opt" id="c1">
+    <div class="ax3-opt-head">
+      <h3><span class="ax3-opt-num">C1</span>solid<span class="ax3-zh"> · 纯色</span></h3>
+      <span class="ax3-anchor">锚点 —(默认)</span>
+    </div>
+    <p class="ax3-meta"><b>适用</b>:一切场景的默认;打印最稳、对比可精确计算。A / B 两节所有演示均为 solid。</p>
+    <div class="ax3-stage ax3-stage--center ax3-p-solid">
+      <div class="ax3-mini">
+        <p class="ax3-roletag">所有寄存器以平涂落地 —— 无渐变 / 无发光 / 无纹理</p>
+        <div class="ax3-sec"><span class="ax3-secnum">01</span>TL;DR</div>
+        <p class="ax3-body">Reweight rollouts by an <mark class="ax3-kw">α-power transform</mark>; match GRPO accuracy, keep <mark class="ax3-kw--emph">pass@256 coverage</mark>.</p>
+        <div class="ax3-callout ax3-callout--fill">★ 4 model families · 5 benchmarks · one hyperparameter.</div>
+      </div>
+    </div>
+    <p class="ax3-caption"><b>看点</b>:纯色是另外两种上色方式的对照组 —— C2 / C3 的一切限制,都是相对这个基线的附加条款。</p>
+  </article>
+
+  <!-- C2 gradient-as-identity -->
+  <article class="ax3-opt" id="c2">
+    <div class="ax3-opt-head">
+      <h3><span class="ax3-opt-num">C2</span>gradient-as-identity<span class="ax3-zh"> · 渐变作身份签名</span></h3>
+      <span class="ax3-anchor">锚点 67122 · 63300</span>
+    </div>
+    <p class="ax3-meta"><b>适用</b>:showcase 海报要强身份感 —— 渐变只当“签名”,落在 display 大字和流程箭头上;正文、表格、卡框一概不碰。</p>
+    <div class="ax3-stage ax3-p-grad">
+      <div class="ax3-mini ax3-mini--wide">
+        <p class="ax3-roletag">渐变只落两处:display 大字 + 箭头(67122 蓝→洋红)</p>
+        <h4 class="ax3-display">PowerFlow</h4>
+        <p class="ax3-displaysub">Reweighting rollouts, preserving coverage — ICML 2026</p>
+        <div class="ax3-flowrow">
+          <span class="ax3-step">rollout ×256</span><i class="ax3-arrow"></i>
+          <span class="ax3-step">α-power reweight</span><i class="ax3-arrow"></i>
+          <span class="ax3-step">clipped update</span>
+        </div>
+        <div class="ax3-sec"><span class="ax3-secnum">02</span>Method — body stays solid</div>
+        <p class="ax3-body">Body text, section chrome and tables keep <mark class="ax3-kw">neutral solid ink</mark> — the gradient never touches running text, so readability is untouched by the signature.</p>
+      </div>
+    </div>
+    <p class="ax3-caption"><b>看点</b>:渐变是身份,不是信息通道 —— 同一条 蓝→洋红 全页复用即成签名。文字压渐变时按最差对比点计算(clash rule 9):本例两端 #2C3FD6 7.53:1 / #C0187D 5.73:1,display 大字达标。</p>
+    <footer class="ax3-tokens ax3-p-grad">
+      <span class="ax3-tok"><i class="ax3-sw ax3-sw--grad-from"></i>--grad-from #2C3FD6</span>
+      <span class="ax3-tok"><i class="ax3-sw ax3-sw--grad-to"></i>--grad-to #C0187D</span>
+      <span class="ax3-tok"><i class="ax3-sw ax3-sw--accent"></i>--accent #33415E(正文结构,纯色)</span>
+    </footer>
+  </article>
+
+  <!-- C3 neon -->
+  <article class="ax3-opt" id="c3">
+    <div class="ax3-opt-head">
+      <h3><span class="ax3-opt-num">C3</span>neon<span class="ax3-zh"> · 暗底荧光</span></h3>
+      <span class="ax3-anchor">锚点 66072</span>
+    </div>
+    <p class="ax3-meta"><b>适用</b>:暗夜编辑风、before/after 对照等需要“发光”张力的板块;荧光色当描边与文字,不做大面积填充。</p>
+    <div class="ax3-stage ax3-stage--center ax3-p-neon">
+      <div class="ax3-mini ax3-mini--dark">
+        <p class="ax3-roletag">荧光描边框 + glow 标题 + 荧光数字,全部踩在暗底上</p>
+        <p class="ax3-neon-h">Before / After — entropy collapse</p>
+        <p class="ax3-body">GRPO: entropy collapses by step 300. PowerFlow: entropy modulates — coverage survives to n = 256.</p>
+        <div class="ax3-ba">
+          <div class="ax3-ba-box ax3-ba-box--off">GRPO<br>✗ collapse @ step 300</div>
+          <div class="ax3-ba-box ax3-ba-box--on">PowerFlow<br>✓ modulates across 1k steps</div>
+        </div>
+        <div class="ax3-stat"><span class="ax3-neon-num">×256</span><span class="ax3-stat-label">samples per problem · coverage kept</span></div>
+      </div>
+    </div>
+    <div class="ax3-rulenote"><b>硬性规则(clash rule 4)</b>:neon 必须落在低明度底色上并配荧光描边 / glow,<b>白底禁用</b>;glow 只允许出现在局部为暗底的位置(rule 5)—— 白海报里只有暗色块内部可以发光。本例荧光青 12.3:1、荧光绿 15.0:1(对 #10161D)。</div>
+    <footer class="ax3-tokens ax3-p-neon">
+      <span class="ax3-tok"><i class="ax3-sw ax3-sw--ground"></i>ground #0E141B</span>
+      <span class="ax3-tok"><i class="ax3-sw ax3-sw--neon"></i>--neon #3DE8FF</span>
+      <span class="ax3-tok"><i class="ax3-sw ax3-sw--neon2"></i>--neon2 #B6FF3C</span>
+    </footer>
+  </article>
+
+  </main>
+
+  <footer class="ax3-foot">
+    posterly · templates/DESIGN-AXES.md · Axis 3 — Palette 选项目录 ·
+    与其余 7 轴正交:本页所有演示固定排版 / 字体 / 卡样式为中性基线,只动颜色。
+  </footer>
+</div>
+</body>
+</html>

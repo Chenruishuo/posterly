@@ -1,0 +1,1021 @@
+<!DOCTYPE html>
+<!-- ============================================================
+  posterly · specimens/axes/devices.html
+  Devices 装置池 — 选项目录(templates/DESIGN-AXES.md "Devices pool" 一节的
+  可视化对照页)。自包含:无 CDN、无外链图片、无脚本;假 QR 为内联 SVG,
+  吉祥物为 emoji 贴纸。全页保持中性基线(白底白卡、teal 强调 + 暖色 emph),
+  每个演示块内"装置"是唯一变量。所有 class 以 axd- 为前缀;每个装置的 CSS
+  以 "D0x" 注释分组,构造可直接搬运进组件库(色彩经 --axd-* 令牌间接引用,
+  搬运时映射到目标主题的 --accent/--emph 即可)。
+  本页是目录样张,不是成品海报 —— 不跑海报 gates。
+  ============================================================ -->
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Devices 装置池 — 选项目录 · posterly design axes</title>
+<style>
+  /* =========================================================
+     TOKENS — 中性基线:白底白卡,一个 teal 强调 + 一个暖色 emph。
+     搬运映射:--axd-accent* → --accent*,--axd-emph* → --emph*。
+     ========================================================= */
+  :root {
+    --axd-accent:      #0E7C74;   /* teal 强调 */
+    --axd-accent-deep: #0A5A54;
+    --axd-accent-soft: #E2F1EF;
+    --axd-accent-ink:  #FFFFFF;   /* teal 填充上的墨色 */
+    --axd-emph:        #C8862B;   /* 暖色 emphasis register */
+    --axd-emph-deep:   #8A5A14;
+    --axd-emph-soft:   #FAF0DC;
+    --axd-ink:         #20242A;
+    --axd-ink-2:       #565D66;
+    --axd-ink-3:       #8D949E;
+    --axd-line:        #DFE2E6;
+    --axd-card:        #FFFFFF;
+    --axd-page:        #FFFFFF;
+    --axd-r: 10px;
+    --axd-shadow: 0 1px 2px rgba(32,36,42,.06), 0 6px 16px rgba(32,36,42,.05);
+    --axd-serif: "Charter", "Source Serif Pro", Georgia, "Times New Roman",
+                 "Noto Serif CJK SC", serif;
+    --axd-sans:  "Inter", "Helvetica Neue", Arial,
+                 "PingFang SC", "Noto Sans CJK SC", "Microsoft YaHei", sans-serif;
+    --axd-mono:  "JetBrains Mono", "SF Mono", Consolas, "Noto Sans Mono CJK SC",
+                 monospace;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { background: var(--axd-page); color: var(--axd-ink); }
+  body {
+    font-family: var(--axd-sans);
+    font-size: 15px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .axd-wrap { max-width: 1060px; margin: 0 auto; padding: 40px 28px 72px; }
+
+  /* =========================================================
+     页头:装置与轴的关系 + 小目录
+     ========================================================= */
+  .axd-hero__eyebrow {
+    font-size: 12px; font-weight: 700; letter-spacing: .16em;
+    color: var(--axd-accent); text-transform: uppercase;
+  }
+  .axd-hero__title {
+    font-size: 30px; font-weight: 800; letter-spacing: -.01em;
+    margin: 6px 0 14px;
+  }
+  .axd-hero__title .axd-en { font-weight: 600; color: var(--axd-ink-3); font-size: 20px; }
+  .axd-hero__lede { max-width: 62em; color: var(--axd-ink-2); }
+  .axd-hero__lede + .axd-hero__lede { margin-top: 8px; }
+  .axd-hero__lede b { color: var(--axd-ink); }
+  .axd-hero__lede .axd-hl { color: var(--axd-accent-deep); font-weight: 700; }
+
+  .axd-rulecard {
+    margin: 18px 0 26px; padding: 14px 18px;
+    background: var(--axd-accent-soft);
+    border-left: 4px solid var(--axd-accent);
+    border-radius: 6px;
+    color: var(--axd-accent-deep); font-size: 14px;
+  }
+  .axd-rulecard b { letter-spacing: .04em; }
+
+  .axd-toc {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 8px 14px; margin-bottom: 14px;
+  }
+  .axd-toc a {
+    display: flex; align-items: baseline; gap: 8px;
+    padding: 7px 10px; border: 1px solid var(--axd-line);
+    border-radius: 8px; text-decoration: none; color: var(--axd-ink);
+    font-size: 13px; background: var(--axd-card); min-width: 0;
+  }
+  .axd-toc a:hover { border-color: var(--axd-accent); }
+  .axd-toc__num {
+    font-family: var(--axd-mono); font-size: 11px; font-weight: 700;
+    color: var(--axd-accent); flex: none;
+  }
+  .axd-toc__en {
+    color: var(--axd-ink-3); font-size: 11px; white-space: nowrap;
+    overflow: hidden; text-overflow: ellipsis;
+  }
+  .axd-baseline-note { font-size: 13px; color: var(--axd-ink-3); }
+
+  /* =========================================================
+     装置演示块外壳(目录 UI,非装置本体)
+     ========================================================= */
+  .axd-device { margin-top: 44px; scroll-margin-top: 16px; }
+  .axd-device__head {
+    display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap;
+    border-bottom: 2px solid var(--axd-ink); padding-bottom: 8px;
+  }
+  .axd-device__num {
+    font-family: var(--axd-mono); font-weight: 700; font-size: 14px;
+    color: var(--axd-accent-ink); background: var(--axd-accent);
+    padding: 2px 8px; border-radius: 6px;
+  }
+  .axd-device__cn { font-size: 19px; font-weight: 800; }
+  .axd-device__en { font-weight: 600; font-size: 14px; color: var(--axd-ink-3); margin-left: 6px; }
+  .axd-device__anchors { margin-left: auto; display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+  .axd-anchor-label { font-size: 11px; color: var(--axd-ink-3); }
+  .axd-anchor {
+    font-family: var(--axd-mono); font-size: 11px; color: var(--axd-ink-2);
+    background: var(--axd-page); border: 1px solid var(--axd-line);
+    border-radius: 999px; padding: 1px 8px;
+  }
+  .axd-device__scene { margin: 10px 0 14px; font-size: 14px; color: var(--axd-ink-2); }
+  .axd-device__scene b { color: var(--axd-emph-deep); font-size: 12px; letter-spacing: .08em; margin-right: 4px; }
+  .axd-device__note { margin-top: 10px; font-size: 13px; color: var(--axd-ink-3); }
+  .axd-device__note b { color: var(--axd-ink-2); }
+
+  /* 演示台:白底,虚线仅示意演示区边界(不属于装置) */
+  .axd-stage {
+    border: 1px dashed var(--axd-line); border-radius: 10px;
+    padding: 22px; background: var(--axd-page);
+  }
+  .axd-stage--airy { padding-top: 34px; }   /* 骑边/越界构造需要上方余量 */
+  .axd-row { display: flex; gap: 18px; flex-wrap: wrap; align-items: stretch; }
+  .axd-row > * { flex: 1 1 220px; min-width: 0; }
+  .axd-row--below { margin-top: 18px; }      /* 通栏之下的正文卡行 */
+
+  /* =========================================================
+     中性迷你卡(所有演示的公共语境;装置是唯一变量)
+     ========================================================= */
+  .axd-mini {
+    position: relative;
+    background: var(--axd-card);
+    border: 1px solid var(--axd-line);
+    border-radius: var(--axd-r);
+    box-shadow: var(--axd-shadow);
+    padding: 16px 18px;
+    font-family: var(--axd-serif);
+    min-width: 0;
+  }
+  .axd-mini__head {
+    font-family: var(--axd-sans); font-weight: 700; font-size: 13px;
+    letter-spacing: .02em; color: var(--axd-accent-deep);
+    margin-bottom: 7px;
+  }
+  .axd-mini__body { font-size: 13.5px; line-height: 1.55; color: var(--axd-ink-2); }
+  .axd-mini__body b { color: var(--axd-ink); }
+  .axd-mini sub, .axd-mini sup { line-height: 0; }
+
+  /* =========================================================
+     D01 编号读径 numbered reading path
+     构造:卡角序号圆片,絶対定位骑左上角(top/left 负偏移),
+     父级演示台需 overflow 可见 + 内边距 ≥ 圆片外露量。
+     ========================================================= */
+  .axd-pathnum {
+    position: absolute; top: -13px; left: -13px;
+    width: 30px; height: 30px; border-radius: 50%;
+    background: var(--axd-accent); color: var(--axd-accent-ink);
+    font-family: var(--axd-sans); font-weight: 800; font-size: 15px;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 0 0 3px var(--axd-page);   /* 白圈把圆片从卡边"抬"起来 */
+  }
+
+  /* =========================================================
+     D02 TL;DR 通栏 TL;DR full-width band
+     构造:整宽色带 = 深色填充 + 标签片 + 一句话;置于页顶 masthead 之下。
+     ========================================================= */
+  .axd-tldr {
+    display: flex; align-items: center; gap: 14px;
+    background: var(--axd-accent-deep); color: var(--axd-accent-ink);
+    border-radius: var(--axd-r); padding: 13px 18px;
+    font-family: var(--axd-serif); font-size: 15px; line-height: 1.5;
+  }
+  .axd-tldr__tag {
+    flex: none; font-family: var(--axd-sans); font-weight: 800; font-size: 13px;
+    letter-spacing: .1em; color: var(--axd-emph-deep);
+    background: var(--axd-emph-soft); border-radius: 6px; padding: 3px 10px;
+  }
+  .axd-tldr b { color: #FFFFFF; }
+  .axd-tldr i { font-style: italic; }
+
+  /* =========================================================
+     D03 局部陈述卡 local statement card
+     构造:一张卡只放一句大字主张(衬线大号 + 眉题);与普通卡同壳。
+     ========================================================= */
+  .axd-statement { display: flex; flex-direction: column; justify-content: center; text-align: center; }
+  .axd-statement__eyebrow {
+    font-family: var(--axd-sans); font-weight: 700; font-size: 11px;
+    letter-spacing: .18em; color: var(--axd-emph-deep); margin-bottom: 10px;
+  }
+  .axd-statement__claim {
+    font-family: var(--axd-serif); font-size: 24px; line-height: 1.3;
+    font-weight: 700; color: var(--axd-ink);
+  }
+  .axd-statement__claim .axd-hl { color: var(--axd-accent-deep); }
+
+  /* =========================================================
+     D04 巨数字墙 metric scoreboard
+     构造:一卡内 3–4 个大数字 + 小标签的网格;数字用无衬线粗体,
+     色彩仅在 accent/emph 两个既有角色之间交替。
+     ========================================================= */
+  .axd-score {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 14px; text-align: center;
+  }
+  .axd-score__cell { padding: 8px 6px; min-width: 0; }
+  .axd-score__cell + .axd-score__cell { border-left: 1px solid var(--axd-line); }
+  .axd-score__num {
+    font-family: var(--axd-sans); font-weight: 800; font-size: 34px;
+    line-height: 1.1; color: var(--axd-accent-deep); letter-spacing: -.01em;
+  }
+  .axd-score__cell--emph .axd-score__num { color: var(--axd-emph); }
+  .axd-score__label {
+    margin-top: 4px; font-family: var(--axd-sans); font-size: 11.5px;
+    color: var(--axd-ink-3); line-height: 1.4;
+  }
+
+  /* =========================================================
+     D05 每节收尾条 per-section takeaway strip
+     构造:负外边距抵消卡内边距,让色条通到卡边;圆角只保留下侧,
+     半径 = 卡半径 − 边框宽,与卡沿严丝合缝。
+     ========================================================= */
+  .axd-take {
+    margin: 13px -18px -16px;
+    padding: 9px 18px 10px;
+    background: var(--axd-emph-soft);
+    border-top: 2px solid var(--axd-emph);
+    border-radius: 0 0 calc(var(--axd-r) - 1px) calc(var(--axd-r) - 1px);
+    font-size: 13px; color: var(--axd-emph-deep); line-height: 1.5;
+  }
+  .axd-take__tag {
+    font-family: var(--axd-sans); font-weight: 800; font-size: 10.5px;
+    letter-spacing: .12em; margin-right: 8px;
+  }
+
+  /* =========================================================
+     D06 开场问题卡 question-hook opener
+     构造:大 Q 记号 + 衬线大字问题;问题本身就是标题。
+     ========================================================= */
+  .axd-qhook { display: flex; gap: 16px; align-items: flex-start; }
+  .axd-qhook__mark {
+    flex: none; font-family: var(--axd-serif); font-weight: 800; font-style: italic;
+    font-size: 44px; line-height: .9; color: var(--axd-accent);
+  }
+  .axd-qhook__q {
+    font-family: var(--axd-serif); font-size: 21px; line-height: 1.35;
+    font-weight: 700; color: var(--axd-ink);
+  }
+  .axd-qhook__sub {
+    margin-top: 8px; font-family: var(--axd-sans); font-size: 11.5px;
+    letter-spacing: .1em; color: var(--axd-ink-3); text-transform: uppercase;
+  }
+
+  /* =========================================================
+     D07 before/after 对照 before/after pair
+     构造:grid [1fr auto 1fr],中列是纯 CSS 箭头(线 + ::after 三角),
+     align-items:center 保证箭头对两格垂直居中。
+     ========================================================= */
+  .axd-ba { display: grid; grid-template-columns: 1fr auto 1fr; gap: 14px; align-items: center; }
+  .axd-ba__eyebrow {
+    font-family: var(--axd-sans); font-weight: 800; font-size: 10.5px;
+    letter-spacing: .14em; margin-bottom: 8px; color: var(--axd-ink-3);
+  }
+  .axd-ba__eyebrow--after { color: var(--axd-accent-deep); }
+  .axd-ba__caption { font-size: 12.5px; color: var(--axd-ink-2); margin-top: 8px; }
+  .axd-arrow { position: relative; width: 44px; height: 3px; background: var(--axd-emph); border-radius: 2px; }
+  .axd-arrow::after {
+    content: ""; position: absolute; right: -9px; top: 50%;
+    transform: translateY(-50%);
+    border-left: 10px solid var(--axd-emph);
+    border-top: 7px solid transparent; border-bottom: 7px solid transparent;
+  }
+  /* 迷你柱状示意(占位小图,非装置本体) */
+  .axd-spark { display: flex; align-items: flex-end; gap: 3px; height: 44px; }
+  .axd-spark i { flex: 1 1 0; background: var(--axd-accent-soft); border-radius: 2px 2px 0 0; }
+  .axd-spark i.axd-on { background: var(--axd-accent); }
+  .axd-spark i.axd-bad { background: var(--axd-line); }
+  .axd-h1 { height: 18%; } .axd-h2 { height: 36%; } .axd-h3 { height: 55%; }
+  .axd-h4 { height: 74%; } .axd-h5 { height: 92%; }
+
+  /* =========================================================
+     D08 证据墙 evidence wall
+     构造:一格内密排 4×2 小图阵;每块 = 迷你图 + 微缩说明,细线分格。
+     ========================================================= */
+  .axd-wall {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+    gap: 8px;
+  }
+  .axd-wall__tile {
+    border: 1px solid var(--axd-line); border-radius: 6px;
+    padding: 8px 8px 6px; min-width: 0;
+  }
+  .axd-wall__cap {
+    margin-top: 5px; font-family: var(--axd-sans); font-size: 10px;
+    color: var(--axd-ink-3); letter-spacing: .04em; text-align: center;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .axd-wall .axd-spark { height: 30px; }
+
+  /* =========================================================
+     D09 格言 pull quote
+     构造:装饰大引号(绝对定位、淡色、不占版面)+ 衬线斜体引文 + 署名行。
+     ========================================================= */
+  .axd-quote { position: relative; padding: 10px 12px 4px 46px; }
+  .axd-quote::before {
+    content: "\201C"; position: absolute; left: -2px; top: -14px;
+    font-family: var(--axd-serif); font-size: 84px; line-height: 1;
+    color: var(--axd-accent-soft); font-weight: 800;
+  }
+  .axd-quote__text {
+    font-family: var(--axd-serif); font-style: italic; font-size: 18.5px;
+    line-height: 1.45; color: var(--axd-ink);
+  }
+  .axd-quote__attr {
+    margin-top: 8px; font-family: var(--axd-sans); font-size: 11.5px;
+    letter-spacing: .1em; color: var(--axd-ink-3); text-transform: uppercase;
+  }
+  .axd-quote__attr b { color: var(--axd-emph-deep); }
+
+  /* =========================================================
+     D10 QR CTA
+     构造:假码为内联 SVG(finder + timing + 伪随机模块),细线白底承台
+     留出静区;必配行动号召标签片 + 等宽 URL,裸码无效。
+     ========================================================= */
+  .axd-qrcta { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
+  .axd-qr {
+    flex: none; width: 104px; height: 104px; padding: 8px;   /* 静区 */
+    background: #FFFFFF; border: 1px solid var(--axd-line); border-radius: 8px;
+  }
+  .axd-qr svg { display: block; width: 100%; height: 100%; }
+  .axd-qrcta__tag {
+    display: inline-block; font-family: var(--axd-sans); font-weight: 800;
+    font-size: 12px; letter-spacing: .1em;
+    color: var(--axd-accent-ink); background: var(--axd-accent);
+    border-radius: 999px; padding: 4px 14px;
+  }
+  .axd-qrcta__url {
+    display: block; margin-top: 8px; font-family: var(--axd-mono);
+    font-size: 12.5px; color: var(--axd-ink-2); overflow-wrap: anywhere;
+  }
+  .axd-qrcta__line { margin-top: 6px; font-size: 12.5px; color: var(--axd-ink-3); }
+
+  /* =========================================================
+     D11 吉祥物贴纸 mascot / sticker
+     构造:emoji(或纯 CSS 图形)+ 圆底 + 白描边(box-shadow 白圈)+
+     微旋转,骑卡角;父级需 overflow 可见 + 上方余量。
+     ========================================================= */
+  .axd-sticker {
+    position: absolute; top: -18px; right: -12px;
+    width: 56px; height: 56px; border-radius: 50%;
+    background: var(--axd-accent-soft);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 30px; line-height: 1;
+    transform: rotate(9deg);
+    box-shadow: 0 0 0 4px #FFFFFF, 0 3px 8px rgba(32,36,42,.22);  /* 白边 + 投影 = 贴纸感 */
+  }
+
+  /* =========================================================
+     D12 表格赢家格高亮 table winner-cell highlight
+     构造:结果表内赢家格 = 暖色浅底 + 深暖墨 + 加粗;色彩复用 emph 角色。
+     ========================================================= */
+  .axd-tbl {
+    width: 100%; border-collapse: collapse;
+    font-family: var(--axd-sans); font-size: 12.5px;
+  }
+  .axd-tbl th, .axd-tbl td {
+    padding: 6px 10px; text-align: right; border-bottom: 1px solid var(--axd-line);
+  }
+  .axd-tbl th { font-weight: 700; color: var(--axd-ink-2); border-bottom: 2px solid var(--axd-ink); }
+  .axd-tbl th:first-child, .axd-tbl td:first-child { text-align: left; }
+  .axd-tbl td:first-child { color: var(--axd-ink); font-weight: 600; }
+  .axd-tbl .axd-win {
+    background: var(--axd-emph-soft); color: var(--axd-emph-deep);
+    font-weight: 800; box-shadow: inset 0 0 0 1px var(--axd-emph);
+  }
+
+  /* =========================================================
+     D13 中心徽章 central hub badge
+     构造:相对定位容器,圆形徽章居中,四条短辐线(细矩形)向
+     上/下/左/右伸出,端点各挂一个小标签;全部以 50% 为基准偏移,
+     徽章直径与辐线长度改动时只需调 calc 里的两个常量。
+     ========================================================= */
+  .axd-hubwrap { position: relative; height: 236px; }
+  .axd-hub {
+    position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+    width: 122px; height: 122px; border-radius: 50%;
+    background: var(--axd-accent-deep); color: var(--axd-accent-ink);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    text-align: center; gap: 2px;
+    box-shadow: 0 0 0 5px var(--axd-accent-soft);
+  }
+  .axd-hub__name { font-family: var(--axd-sans); font-weight: 800; font-size: 15px; }
+  .axd-hub__sub  { font-family: var(--axd-serif); font-style: italic; font-size: 11px; opacity: .85; }
+  /* 辐线:徽章半径 61px + 白圈 5px ≈ 66px,辐线长 26px */
+  .axd-hub-spoke { position: absolute; background: var(--axd-accent); }
+  .axd-hub-spoke--n { left: 50%; transform: translateX(-50%); width: 2px; height: 26px; top: calc(50% - 66px - 26px); }
+  .axd-hub-spoke--s { left: 50%; transform: translateX(-50%); width: 2px; height: 26px; bottom: calc(50% - 66px - 26px); top: auto; }
+  .axd-hub-spoke--w { top: 50%; transform: translateY(-50%); height: 2px; width: 26px; left: calc(50% - 66px - 26px); }
+  .axd-hub-spoke--e { top: 50%; transform: translateY(-50%); height: 2px; width: 26px; right: calc(50% - 66px - 26px); left: auto; }
+  .axd-hub-label {
+    position: absolute; font-family: var(--axd-sans); font-size: 11.5px;
+    font-weight: 700; color: var(--axd-ink-2); white-space: nowrap;
+    background: var(--axd-card); border: 1px solid var(--axd-line);
+    border-radius: 999px; padding: 2px 10px;
+  }
+  .axd-hub-label--n { left: 50%; transform: translateX(-50%); top: calc(50% - 66px - 26px - 26px); }
+  .axd-hub-label--s { left: 50%; transform: translateX(-50%); bottom: calc(50% - 66px - 26px - 26px); }
+  .axd-hub-label--w { top: 50%; transform: translateY(-50%); right: calc(50% + 66px + 26px + 6px); }
+  .axd-hub-label--e { top: 50%; transform: translateY(-50%); left: calc(50% + 66px + 26px + 6px); }
+
+  /* =========================================================
+     D14 对立观点板 steelman panel
+     构造:两段式 —— 对方观点(灰调、斜体、引号)在上,我们的回应
+     (teal 调)在下;左侧色条区分立场。
+     ========================================================= */
+  .axd-steel__block { border-radius: 7px; padding: 10px 14px; }
+  .axd-steel__block--they {
+    background: #F4F5F7; border-left: 4px solid var(--axd-ink-3);
+  }
+  .axd-steel__block--we {
+    margin-top: 10px;
+    background: var(--axd-accent-soft); border-left: 4px solid var(--axd-accent);
+  }
+  .axd-steel__tag {
+    font-family: var(--axd-sans); font-weight: 800; font-size: 10.5px;
+    letter-spacing: .12em; margin-bottom: 3px;
+  }
+  .axd-steel__block--they .axd-steel__tag { color: var(--axd-ink-3); }
+  .axd-steel__block--we   .axd-steel__tag { color: var(--axd-accent-deep); }
+  .axd-steel__text { font-family: var(--axd-serif); font-size: 13.5px; line-height: 1.5; color: var(--axd-ink-2); }
+  .axd-steel__block--they .axd-steel__text { font-style: italic; }
+  .axd-steel__block--we .axd-steel__text { color: var(--axd-ink); }
+
+  /* =========================================================
+     D15 行内标记 inline marker
+     构造:正文关键词/公式片段的浅底高亮;两个记号角色分别复用
+     palette 的 accent-soft 与 emph-soft,不新增色相。
+     ========================================================= */
+  .axd-mark {
+    background: var(--axd-accent-soft); color: var(--axd-accent-deep);
+    border-radius: 3px; padding: 0 4px;
+    font-weight: 600; font-style: normal;
+    box-decoration-break: clone; -webkit-box-decoration-break: clone;
+  }
+  .axd-mark--emph { background: var(--axd-emph-soft); color: var(--axd-emph-deep); }
+
+  /* =========================================================
+     D16 边缘连体标签 edge-attached subclaim chips
+     构造(防截断,呼应 clash rule 8):chip 绝对定位于卡顶边,
+     translateY(-50%) 骑边;卡与其所有祖先不得 overflow:hidden,
+     且卡上方需预留 ≥ chip 半高的余量(本页由 .axd-stage--airy 提供)。
+     ========================================================= */
+  .axd-chipx {
+    position: absolute; top: 0; transform: translateY(-50%);
+    font-family: var(--axd-sans); font-weight: 700; font-size: 11px;
+    letter-spacing: .04em; white-space: nowrap;
+    color: var(--axd-accent-ink); background: var(--axd-accent);
+    border-radius: 999px; padding: 3px 12px;
+    box-shadow: 0 0 0 3px var(--axd-page);   /* 白圈让 chip 与卡边框脱开 */
+  }
+  .axd-chipx--2 { background: var(--axd-accent-deep); }
+  .axd-chipx--emph { background: var(--axd-emph); color: #FFFFFF; }
+  /* chip 横向落点:按内容宽度排布,保证互不相叠 */
+  .axd-chipx--p1 { left: 18px; }
+  .axd-chipx--p2 { left: 112px; }
+  .axd-chipx--p3 { left: 296px; }
+  .axd-mini--chipped { padding-top: 22px; }  /* 给骑边 chip 让出首行 */
+
+  /* =========================================================
+     D17 跨卡流程线 cross-panel connector(低优先装置)
+     构造:grid [1fr auto 1fr] + align-items:center,中列 = 起点圆点
+     (::before)+ 线身 + 箭头(::after)+ 上方微标签;
+     居中对齐由网格保证,不依赖手调坐标。
+     ========================================================= */
+  .axd-flowgrid { display: grid; grid-template-columns: 1fr auto 1fr; gap: 12px; align-items: center; }
+  .axd-flow { position: relative; width: 84px; height: 3px; background: var(--axd-accent); border-radius: 2px; }
+  .axd-flow::before {
+    content: ""; position: absolute; left: -7px; top: 50%; transform: translateY(-50%);
+    width: 9px; height: 9px; border-radius: 50%; background: var(--axd-accent);
+  }
+  .axd-flow::after {
+    content: ""; position: absolute; right: -9px; top: 50%; transform: translateY(-50%);
+    border-left: 10px solid var(--axd-accent);
+    border-top: 7px solid transparent; border-bottom: 7px solid transparent;
+  }
+  .axd-flow__label {
+    position: absolute; left: 50%; bottom: 9px; transform: translateX(-50%);
+    font-family: var(--axd-mono); font-size: 10px; color: var(--axd-accent-deep);
+    white-space: nowrap;
+    background: var(--axd-page); padding: 1px 6px;   /* 白底,越过卡边也不脏 */
+    border-radius: 999px;
+  }
+
+  /* =========================================================
+     页脚
+     ========================================================= */
+  .axd-foot {
+    margin-top: 52px; padding-top: 14px; border-top: 1px solid var(--axd-line);
+    font-size: 12.5px; color: var(--axd-ink-3);
+  }
+  .axd-foot code { font-family: var(--axd-mono); font-size: 11.5px; }
+</style>
+</head>
+<body>
+<div class="axd-wrap">
+
+  <!-- ================= 页头:关系说明 + 目录 ================= -->
+  <header class="axd-hero">
+    <p class="axd-hero__eyebrow">posterly · design axes 选项目录</p>
+    <h1 class="axd-hero__title">Devices 装置池 <span class="axd-en">local devices, pick 0–2</span></h1>
+    <p class="axd-hero__lede">
+      装置是<b>局部插件</b>:作用于单张卡、卡的一条边、或相邻两卡之间的一个点位,
+      加上或撤下都<b>不改变八个全局轴的任何选择</b>——布局骨架、画布、色板、字型、
+      密度、卡面、节标题、刊头页脚照旧。每张海报从本池选
+      <span class="axd-hl">0–2 个</span>:零个完全合法,超过两个会互相争夺视线。
+    </p>
+    <p class="axd-hero__lede">
+      与轴的边界举两例:一张只放一句主张的卡是装置(D03),但<b>整列陈述脊</b>属于
+      轴 1 的 focal content,不在此池;行内标记(D15)只<b>复用</b>轴 3 色板的既有角色色,
+      不为自己引入新色相。骑边/越界类装置(D16、D01、D11)受 clash rule 8 约束:
+      不得被 overflow 截断、不得与上方元素相撞。
+    </p>
+    <div class="axd-rulecard">
+      <b>本页控制变量</b> — 全页保持同一中性基线:白底、白卡、hairline 边线,
+      一个 teal 强调(<code>--axd-accent</code>)+ 一个暖色 emphasis
+      (<code>--axd-emph</code>)。各演示块之间,<b>装置本体是唯一变量</b>。
+    </div>
+
+    <nav class="axd-toc">
+      <a href="#d01"><span class="axd-toc__num">D01</span>编号读径<span class="axd-toc__en">numbered reading path</span></a>
+      <a href="#d02"><span class="axd-toc__num">D02</span>TL;DR 通栏<span class="axd-toc__en">full-width band</span></a>
+      <a href="#d03"><span class="axd-toc__num">D03</span>局部陈述卡<span class="axd-toc__en">local statement card</span></a>
+      <a href="#d04"><span class="axd-toc__num">D04</span>巨数字墙<span class="axd-toc__en">metric scoreboard</span></a>
+      <a href="#d05"><span class="axd-toc__num">D05</span>每节收尾条<span class="axd-toc__en">takeaway strip</span></a>
+      <a href="#d06"><span class="axd-toc__num">D06</span>开场问题卡<span class="axd-toc__en">question-hook opener</span></a>
+      <a href="#d07"><span class="axd-toc__num">D07</span>before/after 对照<span class="axd-toc__en">before/after pair</span></a>
+      <a href="#d08"><span class="axd-toc__num">D08</span>证据墙<span class="axd-toc__en">evidence wall</span></a>
+      <a href="#d09"><span class="axd-toc__num">D09</span>格言<span class="axd-toc__en">pull quote</span></a>
+      <a href="#d10"><span class="axd-toc__num">D10</span>QR CTA<span class="axd-toc__en">QR call-to-action</span></a>
+      <a href="#d11"><span class="axd-toc__num">D11</span>吉祥物贴纸<span class="axd-toc__en">mascot / sticker</span></a>
+      <a href="#d12"><span class="axd-toc__num">D12</span>赢家格高亮<span class="axd-toc__en">winner-cell highlight</span></a>
+      <a href="#d13"><span class="axd-toc__num">D13</span>中心徽章<span class="axd-toc__en">central hub badge</span></a>
+      <a href="#d14"><span class="axd-toc__num">D14</span>对立观点板<span class="axd-toc__en">steelman panel</span></a>
+      <a href="#d15"><span class="axd-toc__num">D15</span>行内标记<span class="axd-toc__en">inline marker</span></a>
+      <a href="#d16"><span class="axd-toc__num">D16</span>边缘连体标签<span class="axd-toc__en">edge-attached chips</span></a>
+      <a href="#d17"><span class="axd-toc__num">D17</span>跨卡流程线<span class="axd-toc__en">cross-panel connector</span></a>
+    </nav>
+    <p class="axd-baseline-note">
+      演示占位文案取自 PowerFlow 论文(α 次幂分布匹配);锚点编号可在
+      icml.cc/media/PosterPDFs/ICML%202026/&lt;id&gt;.png 重拉原图。
+    </p>
+  </header>
+
+  <main>
+
+  <!-- ================= D01 ================= -->
+  <section class="axd-device" id="d01">
+    <header class="axd-device__head">
+      <span class="axd-device__num">D01</span>
+      <h3 class="axd-device__cn">编号读径<span class="axd-device__en">numbered reading path</span></h3>
+      <span class="axd-device__anchors"><span class="axd-anchor-label">锚点</span><span class="axd-anchor">—</span></span>
+    </header>
+    <p class="axd-device__scene"><b>适用</b>阅读顺序不自明的拓扑(band-rows、mosaic、hub)——卡角序号圆片 1→2→3 给观众一条明确视线。</p>
+    <div class="axd-stage axd-stage--airy">
+      <div class="axd-row">
+        <div class="axd-mini">
+          <span class="axd-pathnum">1</span>
+          <p class="axd-mini__head">Motivation</p>
+          <p class="axd-mini__body">Heuristic RLIF rewards cause <b>length collapse</b>, overconfidence &amp; mode collapse.</p>
+        </div>
+        <div class="axd-mini">
+          <span class="axd-pathnum">2</span>
+          <p class="axd-mini__head">Core Idea</p>
+          <p class="axd-mini__body">Match the α-power target <i>p</i><sub>α</sub> ∝ <i>p</i><sub>base</sub><sup>α</sup> — rankings strictly preserved.</p>
+        </div>
+        <div class="axd-mini">
+          <span class="axd-pathnum">3</span>
+          <p class="axd-mini__head">Results</p>
+          <p class="axd-mini__body"><b>+1.7</b> avg@16 over GRPO on Qwen2.5-1.5B; no length collapse.</p>
+        </div>
+      </div>
+    </div>
+    <p class="axd-device__note"><b>构造</b>:圆片绝对定位骑卡左上角(负偏移),白圈脱开卡框;骑边构造 → 父级不可 overflow:hidden,上方留 ≥ 半片余量(clash rule 8)。</p>
+  </section>
+
+  <!-- ================= D02 ================= -->
+  <section class="axd-device" id="d02">
+    <header class="axd-device__head">
+      <span class="axd-device__num">D02</span>
+      <h3 class="axd-device__cn">TL;DR 通栏<span class="axd-device__en">TL;DR full-width band</span></h3>
+      <span class="axd-device__anchors"><span class="axd-anchor-label">锚点</span><span class="axd-anchor">63627</span><span class="axd-anchor">63844</span><span class="axd-anchor">66466</span><span class="axd-anchor">65626</span></span>
+    </header>
+    <p class="axd-device__scene"><b>适用</b>结论能压成一句话、且希望 30 秒观众也能带走它的海报;置于页顶,紧贴 masthead 之下、正文各列之上。</p>
+    <div class="axd-stage">
+      <div class="axd-tldr">
+        <span class="axd-tldr__tag">TL;DR</span>
+        <p><b>PowerFlow</b> matches a length-aware α-power target of the base model —
+          one knob α elicits <i>reasoning</i> (α&gt;1, sharpen) or <i>creativity</i> (α&lt;1, flatten),
+          with <b>no labels and no handcrafted rewards</b>.</p>
+      </div>
+      <!-- 下方正文卡仅作语境 -->
+      <div class="axd-row axd-row--below">
+        <div class="axd-mini">
+          <p class="axd-mini__head">Motivation</p>
+          <p class="axd-mini__body">Unsupervised RLIF elicits latent capabilities, but heuristic rewards invite hacking.</p>
+        </div>
+        <div class="axd-mini">
+          <p class="axd-mini__head">Core Idea</p>
+          <p class="axd-mini__body">Recast fine-tuning as distribution matching against <i>p</i><sub>base</sub><sup>α</sup>.</p>
+        </div>
+      </div>
+    </div>
+    <p class="axd-device__note"><b>构造</b>:整宽深色带 + 标签片 + 一句话;带内 ink 与填充需 ≥ 4.5:1。</p>
+  </section>
+
+  <!-- ================= D03 ================= -->
+  <section class="axd-device" id="d03">
+    <header class="axd-device__head">
+      <span class="axd-device__num">D03</span>
+      <h3 class="axd-device__cn">局部陈述卡<span class="axd-device__en">local statement card</span></h3>
+      <span class="axd-device__anchors"><span class="axd-anchor-label">锚点</span><span class="axd-anchor">—</span></span>
+    </header>
+    <p class="axd-device__scene"><b>适用</b>版面里需要一个"停顿点"——一格只放一句大字主张,给密排的正文让出呼吸。</p>
+    <div class="axd-stage">
+      <div class="axd-row">
+        <div class="axd-mini">
+          <p class="axd-mini__head">Method · Length-aware TB</p>
+          <p class="axd-mini__body">Reparameterize <i>Z</i><sub>φ</sub>(q,y) = (<i>Z′</i><sub>φ</sub>(q))<sup>|y|</sup> and normalize by |y| —
+            projecting TB onto a length-normalized energy surface. ~10% step overhead; standard decoding at inference.</p>
+        </div>
+        <div class="axd-mini axd-statement">
+          <p class="axd-statement__eyebrow">CORE CLAIM</p>
+          <p class="axd-statement__claim">Sharpen to <span class="axd-hl">reason</span>.<br>Flatten to <span class="axd-hl">create</span>.</p>
+        </div>
+      </div>
+    </div>
+    <p class="axd-device__note"><b>边界</b>:一格陈述卡是装置;<b>整列陈述脊</b>(一整条竖列全是主张)属于轴 1 的 focal content,不在装置池。</p>
+  </section>
+
+  <!-- ================= D04 ================= -->
+  <section class="axd-device" id="d04">
+    <header class="axd-device__head">
+      <span class="axd-device__num">D04</span>
+      <h3 class="axd-device__cn">巨数字墙<span class="axd-device__en">metric scoreboard</span></h3>
+      <span class="axd-device__anchors"><span class="axd-anchor-label">锚点</span><span class="axd-anchor">62378</span><span class="axd-anchor">64736</span><span class="axd-anchor">65205</span><span class="axd-anchor">66427</span></span>
+    </header>
+    <p class="axd-device__scene"><b>适用</b>手里有 3–4 个过硬数字时,一眼交代证据强度;常与 TL;DR 通栏同排或紧随其后。</p>
+    <div class="axd-stage">
+      <div class="axd-mini">
+        <div class="axd-score">
+          <div class="axd-score__cell">
+            <p class="axd-score__num">+1.7</p>
+            <p class="axd-score__label">avg@16 over GRPO<br>Qwen2.5-1.5B</p>
+          </div>
+          <div class="axd-score__cell axd-score__cell--emph">
+            <p class="axd-score__num">91%</p>
+            <p class="axd-score__label">rankings preserved<br>IR ≈ 0.09 vs α-power target</p>
+          </div>
+          <div class="axd-score__cell">
+            <p class="axd-score__num">4×</p>
+            <p class="axd-score__label">model families on the<br>quality × diversity Pareto front</p>
+          </div>
+          <div class="axd-score__cell axd-score__cell--emph">
+            <p class="axd-score__num">~10%</p>
+            <p class="axd-score__label">step overhead;<br>standard decoding at inference</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <p class="axd-device__note"><b>构造</b>:大数字仅在 accent / emph 两个既有角色间交替(62378 的四连彩数在多色 palette 下才可用,见 clash rule 7)。软 clash:同心调 tonal 色板 × 巨数字墙需权衡。</p>
+  </section>
+
+  <!-- ================= D05 ================= -->
+  <section class="axd-device" id="d05">
+    <header class="axd-device__head">
+      <span class="axd-device__num">D05</span>
+      <h3 class="axd-device__cn">每节收尾条<span class="axd-device__en">per-section takeaway strip</span></h3>
+      <span class="axd-device__anchors"><span class="axd-anchor-label">锚点</span><span class="axd-anchor">66243</span><span class="axd-anchor">67045</span></span>
+    </header>
+    <p class="axd-device__scene"><b>适用</b>dense report 密度下,每节末尾一条色带让匆匆走过的观众也能每节带走一句话。</p>
+    <div class="axd-stage">
+      <div class="axd-row">
+        <div class="axd-mini">
+          <p class="axd-mini__head">05 · Length-aware TB</p>
+          <p class="axd-mini__body">Standard TB on LLMs is dominated by sequence length, not semantic density —
+            length collapse at α&gt;1, repetition explosion at α&lt;1.</p>
+          <div class="axd-take"><span class="axd-take__tag">要点 TAKEAWAY</span>Normalizing by |y| is the minimum-KL length correction (I-projection).</div>
+        </div>
+        <div class="axd-mini">
+          <p class="axd-mini__head">07 · Diversity</p>
+          <p class="axd-mini__body">Strategy-diversity 4.05 vs 3.80 (EMPO) on AIME24/25 — the α-power transform
+            preserves the base model's multi-modal structure.</p>
+          <div class="axd-take"><span class="axd-take__tag">要点 TAKEAWAY</span>Sharpening lifts pass@1 without mode collapse.</div>
+        </div>
+      </div>
+    </div>
+    <p class="axd-device__note"><b>构造</b>:负外边距抵消卡内边距使色条通到卡边,下圆角 = 卡半径 − 边框宽;逐节复用时语气、位置保持一致。</p>
+  </section>
+
+  <!-- ================= D06 ================= -->
+  <section class="axd-device" id="d06">
+    <header class="axd-device__head">
+      <span class="axd-device__num">D06</span>
+      <h3 class="axd-device__cn">开场问题卡<span class="axd-device__en">question-hook opener</span></h3>
+      <span class="axd-device__anchors"><span class="axd-anchor-label">锚点</span><span class="axd-anchor">66429</span><span class="axd-anchor">66466</span></span>
+    </header>
+    <p class="axd-device__scene"><b>适用</b>动机能压缩成一个问题时,用它替代常规 Motivation 段首,让观众带着问题读完全页。</p>
+    <div class="axd-stage">
+      <div class="axd-mini">
+        <div class="axd-qhook">
+          <span class="axd-qhook__mark">Q</span>
+          <div>
+            <p class="axd-qhook__q">Can a principled, controllable target distribution replace handcrafted rewards?</p>
+            <p class="axd-qhook__sub">Opener · Motivation · PowerFlow</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <p class="axd-device__note"><b>注</b>:问题本身即标题——与轴 7 的 question-form 节标题同源;整版问题式标题归轴 7,单卡开场钩子归本装置。</p>
+  </section>
+
+  <!-- ================= D07 ================= -->
+  <section class="axd-device" id="d07">
+    <header class="axd-device__head">
+      <span class="axd-device__num">D07</span>
+      <h3 class="axd-device__cn">before/after 对照<span class="axd-device__en">before/after pair</span></h3>
+      <span class="axd-device__anchors"><span class="axd-anchor-label">锚点</span><span class="axd-anchor">65524</span><span class="axd-anchor">66072</span></span>
+    </header>
+    <p class="axd-device__scene"><b>适用</b>方法效果可以用"失败 ↔ 修复"的一对对照直观呈现时;两格并排 + 中间箭头,不需要读者读文字就懂方向。</p>
+    <div class="axd-stage">
+      <div class="axd-ba">
+        <div class="axd-mini">
+          <p class="axd-ba__eyebrow">BEFORE · NAÏVE TB</p>
+          <div class="axd-spark">
+            <i class="axd-bad axd-h4"></i><i class="axd-bad axd-h4"></i><i class="axd-bad axd-h3"></i><i class="axd-bad axd-h2"></i><i class="axd-bad axd-h1"></i><i class="axd-bad axd-h1"></i>
+          </div>
+          <p class="axd-ba__caption">Length collapse at α&gt;1 — responses shrink as training proceeds.</p>
+        </div>
+        <div class="axd-arrow"></div>
+        <div class="axd-mini">
+          <p class="axd-ba__eyebrow axd-ba__eyebrow--after">AFTER · LENGTH-AWARE TB</p>
+          <div class="axd-spark">
+            <i class="axd-on axd-h3"></i><i class="axd-on axd-h3"></i><i class="axd-on axd-h4"></i><i class="axd-on axd-h4"></i><i class="axd-on axd-h4"></i><i class="axd-on axd-h5"></i>
+          </div>
+          <p class="axd-ba__caption">Length-stable with monotonic accuracy gains on MATH.</p>
+        </div>
+      </div>
+    </div>
+    <p class="axd-device__note"><b>构造</b>:grid [1fr auto 1fr] + align-items:center,箭头对两格自动垂直居中;柱状小图为占位,实际海报放真图。</p>
+  </section>
+
+  <!-- ================= D08 ================= -->
+  <section class="axd-device" id="d08">
+    <header class="axd-device__head">
+      <span class="axd-device__num">D08</span>
+      <h3 class="axd-device__cn">证据墙<span class="axd-device__en">evidence wall</span></h3>
+      <span class="axd-device__anchors"><span class="axd-anchor-label">锚点</span><span class="axd-anchor">62378</span><span class="axd-anchor">65714</span></span>
+    </header>
+    <p class="axd-device__scene"><b>适用</b>实验面广而单图信息小(多基准、多模型)——一格密排小图阵,以数量传达覆盖面。</p>
+    <div class="axd-stage">
+      <div class="axd-mini">
+        <p class="axd-mini__head">Evaluation · 8 benchmarks × 4 backbones</p>
+        <div class="axd-wall">
+          <div class="axd-wall__tile"><div class="axd-spark"><i class="axd-h2"></i><i class="axd-h3"></i><i class="axd-on axd-h4"></i><i class="axd-h3"></i></div><p class="axd-wall__cap">MATH500</p></div>
+          <div class="axd-wall__tile"><div class="axd-spark"><i class="axd-h1"></i><i class="axd-h2"></i><i class="axd-on axd-h3"></i><i class="axd-h2"></i></div><p class="axd-wall__cap">OlympiadBench</p></div>
+          <div class="axd-wall__tile"><div class="axd-spark"><i class="axd-h2"></i><i class="axd-h2"></i><i class="axd-on axd-h5"></i><i class="axd-h3"></i></div><p class="axd-wall__cap">AIME24/25</p></div>
+          <div class="axd-wall__tile"><div class="axd-spark"><i class="axd-h3"></i><i class="axd-h2"></i><i class="axd-on axd-h4"></i><i class="axd-h3"></i></div><p class="axd-wall__cap">AMC23</p></div>
+          <div class="axd-wall__tile"><div class="axd-spark"><i class="axd-h2"></i><i class="axd-h3"></i><i class="axd-on axd-h3"></i><i class="axd-h2"></i></div><p class="axd-wall__cap">GPQA</p></div>
+          <div class="axd-wall__tile"><div class="axd-spark"><i class="axd-h1"></i><i class="axd-h3"></i><i class="axd-on axd-h4"></i><i class="axd-h4"></i></div><p class="axd-wall__cap">pass@n coverage</p></div>
+          <div class="axd-wall__tile"><div class="axd-spark"><i class="axd-h3"></i><i class="axd-h4"></i><i class="axd-on axd-h5"></i><i class="axd-h4"></i></div><p class="axd-wall__cap">strategy diversity</p></div>
+          <div class="axd-wall__tile"><div class="axd-spark"><i class="axd-h2"></i><i class="axd-h4"></i><i class="axd-on axd-h5"></i><i class="axd-h3"></i></div><p class="axd-wall__cap">creative writing</p></div>
+        </div>
+      </div>
+    </div>
+    <p class="axd-device__note"><b>构造</b>:细线分格 + 微缩说明;墙内小图共享同一坐标语义,避免逐图读轴。</p>
+  </section>
+
+  <!-- ================= D09 ================= -->
+  <section class="axd-device" id="d09">
+    <header class="axd-device__head">
+      <span class="axd-device__num">D09</span>
+      <h3 class="axd-device__cn">格言<span class="axd-device__en">pull quote / aphorism</span></h3>
+      <span class="axd-device__anchors"><span class="axd-anchor-label">锚点</span><span class="axd-anchor">65205</span><span class="axd-anchor">67218</span><span class="axd-anchor">67229</span></span>
+    </header>
+    <p class="axd-device__scene"><b>适用</b>有贴切的领域名言可以借力时——衬线斜体引文自带停顿感,替海报把"为什么在乎"说出口。</p>
+    <div class="axd-stage">
+      <div class="axd-mini">
+        <div class="axd-quote">
+          <p class="axd-quote__text">With four parameters I can fit an elephant, and with five I can make him wiggle his trunk.</p>
+          <p class="axd-quote__attr">— John von Neumann · <b>PowerFlow needs one: α</b></p>
+        </div>
+      </div>
+    </div>
+    <p class="axd-device__note"><b>构造</b>:装饰大引号绝对定位、用 accent-soft 淡色,不占排版流;署名行用小号字距 sans 与正文区分。</p>
+  </section>
+
+  <!-- ================= D10 ================= -->
+  <section class="axd-device" id="d10">
+    <header class="axd-device__head">
+      <span class="axd-device__num">D10</span>
+      <h3 class="axd-device__cn">QR CTA<span class="axd-device__en">QR call-to-action</span></h3>
+      <span class="axd-device__anchors"><span class="axd-anchor-label">锚点</span><span class="axd-anchor">—</span></span>
+    </header>
+    <p class="axd-device__scene"><b>适用</b>代码 / demo / 论文需要现场引流;必配行动号召标签——裸码没有点击率。</p>
+    <div class="axd-stage">
+      <div class="axd-mini">
+        <div class="axd-qrcta">
+          <div class="axd-qr">
+            <!-- 假码:内联 SVG(finder + timing + 伪随机模块),仅供版式演示,不可扫 -->
+            <svg viewBox="0 0 21 21" role="img" aria-label="占位二维码">
+              <path fill="#20242A" d="M0 0h7v1h-7zM8 0h5v1h-5zM14 0h7v1h-7zM0 1h1v1h-1zM6 1h1v1h-1zM9 1h1v1h-1zM11 1h1v1h-1zM14 1h1v1h-1zM20 1h1v1h-1zM0 2h1v1h-1zM2 2h3v1h-3zM6 2h1v1h-1zM8 2h1v1h-1zM10 2h2v1h-2zM14 2h1v1h-1zM16 2h3v1h-3zM20 2h1v1h-1zM0 3h1v1h-1zM2 3h3v1h-3zM6 3h1v1h-1zM9 3h2v1h-2zM12 3h1v1h-1zM14 3h1v1h-1zM16 3h3v1h-3zM20 3h1v1h-1zM0 4h1v1h-1zM2 4h3v1h-3zM6 4h1v1h-1zM8 4h2v1h-2zM11 4h1v1h-1zM14 4h1v1h-1zM16 4h3v1h-3zM20 4h1v1h-1zM0 5h1v1h-1zM6 5h1v1h-1zM10 5h1v1h-1zM12 5h1v1h-1zM14 5h1v1h-1zM20 5h1v1h-1zM0 6h7v1h-7zM8 6h1v1h-1zM10 6h1v1h-1zM12 6h1v1h-1zM14 6h7v1h-7zM8 7h2v1h-2zM12 7h1v1h-1zM0 8h2v1h-2zM3 8h2v1h-2zM6 8h2v1h-2zM9 8h2v1h-2zM13 8h4v1h-4zM18 8h1v1h-1zM20 8h1v1h-1zM1 9h1v1h-1zM4 9h2v1h-2zM7 9h2v1h-2zM11 9h2v1h-2zM14 9h1v1h-1zM16 9h1v1h-1zM19 9h1v1h-1zM0 10h1v1h-1zM2 10h1v1h-1zM4 10h1v1h-1zM6 10h3v1h-3zM10 10h2v1h-2zM14 10h2v1h-2zM17 10h2v1h-2zM20 10h1v1h-1zM0 11h1v1h-1zM2 11h2v1h-2zM5 11h1v1h-1zM7 11h1v1h-1zM9 11h1v1h-1zM11 11h3v1h-3zM15 11h1v1h-1zM18 11h2v1h-2zM1 12h2v1h-2zM4 12h1v1h-1zM6 12h1v1h-1zM8 12h3v1h-3zM12 12h2v1h-2zM15 12h2v1h-2zM18 12h1v1h-1zM20 12h1v1h-1zM8 13h1v1h-1zM10 13h1v1h-1zM13 13h2v1h-2zM16 13h1v1h-1zM19 13h1v1h-1zM0 14h7v1h-7zM9 14h2v1h-2zM12 14h1v1h-1zM14 14h2v1h-2zM17 14h1v1h-1zM19 14h2v1h-2zM0 15h1v1h-1zM6 15h1v1h-1zM8 15h1v1h-1zM10 15h1v1h-1zM13 15h1v1h-1zM15 15h2v1h-2zM18 15h1v1h-1zM0 16h1v1h-1zM2 16h3v1h-3zM6 16h1v1h-1zM8 16h2v1h-2zM11 16h2v1h-2zM14 16h1v1h-1zM16 16h2v1h-2zM19 16h1v1h-1zM0 17h1v1h-1zM2 17h3v1h-3zM6 17h1v1h-1zM9 17h1v1h-1zM11 17h1v1h-1zM13 17h3v1h-3zM17 17h2v1h-2zM20 17h1v1h-1zM0 18h1v1h-1zM2 18h3v1h-3zM6 18h1v1h-1zM8 18h1v1h-1zM10 18h2v1h-2zM13 18h1v1h-1zM15 18h1v1h-1zM17 18h1v1h-1zM19 18h1v1h-1zM0 19h1v1h-1zM6 19h1v1h-1zM9 19h2v1h-2zM12 19h2v1h-2zM16 19h2v1h-2zM19 19h1v1h-1zM0 20h7v1h-7zM8 20h2v1h-2zM11 20h1v1h-1zM13 20h2v1h-2zM16 20h1v1h-1zM18 20h2v1h-2z"/>
+            </svg>
+          </div>
+          <div>
+            <span class="axd-qrcta__tag">扫码取码 · SCAN FOR CODE</span>
+            <span class="axd-qrcta__url">github.com/Chenruishuo/PowerFlow</span>
+            <p class="axd-qrcta__line">Code · models · training logs — standard decoding, drop-in.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <p class="axd-device__note"><b>注</b>:本页为假码(不可扫);承台白底 + 静区是扫码可靠性的硬要求。整组 logo+QR 侧栏归轴 8 的 identity accessory,单件 QR CTA 归本装置。</p>
+  </section>
+
+  <!-- ================= D11 ================= -->
+  <section class="axd-device" id="d11">
+    <header class="axd-device__head">
+      <span class="axd-device__num">D11</span>
+      <h3 class="axd-device__cn">吉祥物贴纸<span class="axd-device__en">mascot / sticker</span></h3>
+      <span class="axd-device__anchors"><span class="axd-anchor-label">锚点</span><span class="axd-anchor">64049</span><span class="axd-anchor">64618</span><span class="axd-anchor">65221</span><span class="axd-anchor">66372</span></span>
+    </header>
+    <p class="axd-device__scene"><b>适用</b>playful 语气的海报(与轴 4 rounded-playful 尤配);给一张卡"盖章"式的记忆点,正式场合慎用。</p>
+    <div class="axd-stage axd-stage--airy">
+      <div class="axd-row">
+        <div class="axd-mini">
+          <p class="axd-mini__head">Results · Reasoning (α&gt;1)</p>
+          <p class="axd-mini__body">Above every RLIF baseline shown; matches or exceeds supervised GRPO on 3 of 4 backbones.</p>
+        </div>
+        <div class="axd-mini">
+          <span class="axd-sticker">🦉</span>
+          <p class="axd-mini__head">Results · Creativity (α&lt;1)</p>
+          <p class="axd-mini__body">Creative writing: quality × semantic diversity across 4 model families —
+            <b>beyond the Instruct frontier</b> at α = 0.5.</p>
+        </div>
+      </div>
+    </div>
+    <p class="axd-device__note"><b>构造</b>:emoji(或纯 CSS 图形)+ 圆底 + box-shadow 白圈(贴纸白边)+ 微旋转,骑卡角;同页至多一只,骑边防截断同 clash rule 8。</p>
+  </section>
+
+  <!-- ================= D12 ================= -->
+  <section class="axd-device" id="d12">
+    <header class="axd-device__head">
+      <span class="axd-device__num">D12</span>
+      <h3 class="axd-device__cn">表格赢家格高亮<span class="axd-device__en">table winner-cell highlight</span></h3>
+      <span class="axd-device__anchors"><span class="axd-anchor-label">锚点</span><span class="axd-anchor">64160</span></span>
+    </header>
+    <p class="axd-device__scene"><b>适用</b>结果表中"我们最好"的格子需要即时可见时——填色一格,免去观众逐行比数。</p>
+    <div class="axd-stage">
+      <div class="axd-mini">
+        <p class="axd-mini__head">Avg@16 · MATH500 / Olympiad / AIME / AMC / GPQA</p>
+        <table class="axd-tbl">
+          <thead>
+            <tr><th>Backbone</th><th>EMPO</th><th>GRPO (sup.)</th><th>PowerFlow</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Qwen2.5-1.5B</td><td>18.95</td><td>18.13</td><td class="axd-win">19.85 ★</td></tr>
+            <tr><td>Qwen2.5-Math-1.5B</td><td>32.45</td><td>32.75</td><td class="axd-win">34.30</td></tr>
+            <tr><td>Llama-3.2-3B-Inst.</td><td>22.33</td><td class="axd-win">22.88</td><td>22.79</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <p class="axd-device__note"><b>构造</b>:赢家格 = emph-soft 浅底 + emph-deep 粗体 + inset 描边;色彩复用 emphasis 角色。诚实原则:不是我们赢的行,高亮给真赢家(第三行)。</p>
+  </section>
+
+  <!-- ================= D13 ================= -->
+  <section class="axd-device" id="d13">
+    <header class="axd-device__head">
+      <span class="axd-device__num">D13</span>
+      <h3 class="axd-device__cn">中心徽章<span class="axd-device__en">central hub badge</span></h3>
+      <span class="axd-device__anchors"><span class="axd-anchor-label">锚点</span><span class="axd-anchor">63640</span></span>
+    </header>
+    <p class="axd-device__scene"><b>适用</b>方法有"单一核心 + 多个辐射性质"的结构时——圆形徽章坐中,四向短连线各挂一条性质。</p>
+    <div class="axd-stage">
+      <div class="axd-mini">
+        <div class="axd-hubwrap">
+          <span class="axd-hub-spoke axd-hub-spoke--n"></span>
+          <span class="axd-hub-spoke axd-hub-spoke--s"></span>
+          <span class="axd-hub-spoke axd-hub-spoke--w"></span>
+          <span class="axd-hub-spoke axd-hub-spoke--e"></span>
+          <span class="axd-hub-label axd-hub-label--n">α&gt;1 · sharpen → reason</span>
+          <span class="axd-hub-label axd-hub-label--s">α&lt;1 · flatten → create</span>
+          <span class="axd-hub-label axd-hub-label--w">no labels</span>
+          <span class="axd-hub-label axd-hub-label--e">standard decoding</span>
+          <div class="axd-hub">
+            <p class="axd-hub__name">PowerFlow</p>
+            <p class="axd-hub__sub">p<sub>α</sub> ∝ p<sub>base</sub><sup>α</sup></p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <p class="axd-device__note"><b>边界</b>:单卡内的徽章是装置;整版辐射轮盘(radial hub)是轴 1 的拓扑选项。构造:全部以容器 50% 为基准偏移,改徽章直径/辐线长只动 calc 常量。</p>
+  </section>
+
+  <!-- ================= D14 ================= -->
+  <section class="axd-device" id="d14">
+    <header class="axd-device__head">
+      <span class="axd-device__num">D14</span>
+      <h3 class="axd-device__cn">对立观点板<span class="axd-device__en">steelman panel</span></h3>
+      <span class="axd-device__anchors"><span class="axd-anchor-label">锚点</span><span class="axd-anchor">67229</span></span>
+    </header>
+    <p class="axd-device__scene"><b>适用</b>预判 reviewer / 观众的最强质疑并当场回应——"别人会说 X…我们的回应"两段式,替海报做一次公开的 steelman。</p>
+    <div class="axd-stage">
+      <div class="axd-mini">
+        <div class="axd-steel__block axd-steel__block--they">
+          <p class="axd-steel__tag">对方观点 · THEY'LL SAY</p>
+          <p class="axd-steel__text">"Unsupervised RLIF just needs better heuristic rewards — entropy bonuses, length penalties, format shaping."</p>
+        </div>
+        <div class="axd-steel__block axd-steel__block--we">
+          <p class="axd-steel__tag">我们的回应 · OUR RESPONSE</p>
+          <p class="axd-steel__text">Heuristics reward proxies, and proxies get hacked. Matching the α-power distribution removes the proxy entirely —
+            rankings provably preserved (IR ≈ 0.09), length handled by the I-projection, not a penalty.</p>
+        </div>
+      </div>
+    </div>
+    <p class="axd-device__note"><b>构造</b>:上段灰调 + 斜体引语,下段 accent 调正体;左侧色条区分立场,两段共享同一卡壳。</p>
+  </section>
+
+  <!-- ================= D15 ================= -->
+  <section class="axd-device" id="d15">
+    <header class="axd-device__head">
+      <span class="axd-device__num">D15</span>
+      <h3 class="axd-device__cn">行内标记<span class="axd-device__en">inline marker highlight</span></h3>
+      <span class="axd-device__anchors"><span class="axd-anchor-label">锚点</span><span class="axd-anchor">61312</span><span class="axd-anchor">63757</span><span class="axd-anchor">67045</span></span>
+    </header>
+    <p class="axd-device__scene"><b>适用</b>正文关键词或公式片段需要低成本强调时——荧光/浅底行内高亮,是最轻的装置。</p>
+    <div class="axd-stage">
+      <div class="axd-mini">
+        <p class="axd-mini__head">04 · Why length-aware?</p>
+        <p class="axd-mini__body">On LLMs, standard TB is dominated by sequence length, causing
+          <i class="axd-mark axd-mark--emph">length collapse</i> (α&gt;1) or
+          <i class="axd-mark axd-mark--emph">repetition explosion</i> (α&lt;1).
+          PowerFlow reparameterizes
+          <i class="axd-mark"><i>Z</i><sub>φ</sub>(q,y) = (<i>Z′</i><sub>φ</sub>(q))<sup>|y|</sup></i>
+          and normalizes the trajectory term by
+          <i class="axd-mark">1/|y|</i> — the induced target is a 1-D exponential tilt,
+          <i class="axd-mark"><i>π</i><sup>★</sup> ∝ <i>p</i><sub>base</sub><sup>α</sup> e<sup>−λ|y|</sup></i>.</p>
+      </div>
+    </div>
+    <p class="axd-device__note"><b>约束</b>:两个记号角色分别复用 palette 的 accent-soft(方法/公式)与 emph-soft(问题词),不新增色相;承接 clash rule 7 的语义一致性——同色同义,全页贯通。</p>
+  </section>
+
+  <!-- ================= D16 ================= -->
+  <section class="axd-device" id="d16">
+    <header class="axd-device__head">
+      <span class="axd-device__num">D16</span>
+      <h3 class="axd-device__cn">边缘连体标签<span class="axd-device__en">edge-attached subclaim chips</span></h3>
+      <span class="axd-device__anchors"><span class="axd-anchor-label">锚点</span><span class="axd-anchor">66057</span></span>
+    </header>
+    <p class="axd-device__scene"><b>适用</b>卡片主张带 2–3 个并列限定词(无标签、无手写奖励、标准解码)值得提出卡面时——小 chip 骑在卡边,一眼可数。</p>
+    <div class="axd-stage axd-stage--airy">
+      <div class="axd-mini axd-mini--chipped">
+        <span class="axd-chipx axd-chipx--p1">no labels</span>
+        <span class="axd-chipx axd-chipx--2 axd-chipx--p2">no handcrafted rewards</span>
+        <span class="axd-chipx axd-chipx--emph axd-chipx--p3">standard decoding</span>
+        <p class="axd-mini__head">Core Idea · Distribution matching</p>
+        <p class="axd-mini__body">Target the α-power (escort) distribution of the base model —
+          entropy modulates while <b>rankings &amp; mode structure are strictly preserved</b>.</p>
+      </div>
+    </div>
+    <p class="axd-device__note"><b>防截断构造(clash rule 8)</b>:chip 以 translateY(-50%) 骑卡顶边;卡及全部祖先不得 overflow:hidden,卡上方预留 ≥ chip 半高的余量,chip 白圈使其与卡框脱开。chip 横向偏移按内容宽度排布,不得互叠。</p>
+  </section>
+
+  <!-- ================= D17 ================= -->
+  <section class="axd-device" id="d17">
+    <header class="axd-device__head">
+      <span class="axd-device__num">D17</span>
+      <h3 class="axd-device__cn">跨卡流程线<span class="axd-device__en">cross-panel process connector</span></h3>
+      <span class="axd-device__anchors"><span class="axd-anchor-label">锚点</span><span class="axd-anchor">67218</span><span class="axd-anchor">63844</span></span>
+    </header>
+    <p class="axd-device__scene"><b>适用</b>相邻两卡之间存在真实的数据/流程传递时,带箭头连线把传递画出来;<b>低优先装置</b>——无真实流向勿为装饰而连。</p>
+    <div class="axd-stage">
+      <div class="axd-flowgrid">
+        <div class="axd-mini">
+          <p class="axd-mini__head">04 · Method</p>
+          <p class="axd-mini__body">Trajectory Balance as an amortized sampler — bypass the intractable <i>Z</i>(q).</p>
+        </div>
+        <div class="axd-flow"><span class="axd-flow__label">reparameterize</span></div>
+        <div class="axd-mini">
+          <p class="axd-mini__head">05 · Key</p>
+          <p class="axd-mini__body">Length-aware TB: normalize by |y|, project onto the length-calibrated surface.</p>
+        </div>
+      </div>
+    </div>
+    <p class="axd-device__note"><b>构造</b>:grid [1fr auto 1fr] 保证连线对两卡垂直居中,起点圆点 + 终点箭头 + 线上微标签;跨列/跨行版本改用绝对定位或 SVG,但同样先保证"两端锚在卡边"。</p>
+  </section>
+
+  </main>
+
+  <footer class="axd-foot">
+    <p>posterly · specimens/axes/devices.html — Devices 装置池选项目录。装置定义与锚点见
+      <code>templates/DESIGN-AXES.md</code>("Devices pool" 一节);本页为样张,不跑海报 gates。
+      占位文案:PowerFlow(ICML 2026)。假 QR 不可扫;吉祥物为 emoji 演示,成品海报可换纯 CSS 图形或本地矢量。</p>
+  </footer>
+
+</div>
+</body>
+</html>

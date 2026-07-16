@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<!-- ============================================================
+  posterly · design-axes 选项目录 — 轴 4 字体 Typography
+  独立演示页(非海报,不跑 gates)。字体全部本地 vendor 于 fonts/,
+  禁止 CDN 直链。class 一律 ax4- 前缀。
+  ============================================================ -->
+<html lang="zh-Hans">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>轴 4 · 字体 Typography — 选项目录</title>
+<style>
+  /* ========== 本地字体(fonts/*.woff2,latin 子集) ========== */
+  @font-face { font-family: "STIX Two Text";  font-weight: 400; font-style: normal; font-display: block; src: url("fonts/stix-two-text-latin-400-normal.woff2") format("woff2"); }
+  @font-face { font-family: "STIX Two Text";  font-weight: 600; font-style: normal; font-display: block; src: url("fonts/stix-two-text-latin-600-normal.woff2") format("woff2"); }
+  @font-face { font-family: "STIX Two Text";  font-weight: 700; font-style: normal; font-display: block; src: url("fonts/stix-two-text-latin-700-normal.woff2") format("woff2"); }
+  @font-face { font-family: "Source Serif 4"; font-weight: 600; font-style: normal; font-display: block; src: url("fonts/source-serif-4-latin-600-normal.woff2") format("woff2"); }
+  @font-face { font-family: "Source Serif 4"; font-weight: 700; font-style: normal; font-display: block; src: url("fonts/source-serif-4-latin-700-normal.woff2") format("woff2"); }
+  @font-face { font-family: "Source Sans 3";  font-weight: 400; font-style: normal; font-display: block; src: url("fonts/source-sans-3-latin-400-normal.woff2") format("woff2"); }
+  @font-face { font-family: "Source Sans 3";  font-weight: 600; font-style: normal; font-display: block; src: url("fonts/source-sans-3-latin-600-normal.woff2") format("woff2"); }
+  @font-face { font-family: "Archivo";        font-weight: 400; font-style: normal; font-display: block; src: url("fonts/archivo-latin-400-normal.woff2") format("woff2"); }
+  @font-face { font-family: "Archivo";        font-weight: 600; font-style: normal; font-display: block; src: url("fonts/archivo-latin-600-normal.woff2") format("woff2"); }
+  @font-face { font-family: "Archivo Narrow"; font-weight: 700; font-style: normal; font-display: block; src: url("fonts/archivo-narrow-latin-700-normal.woff2") format("woff2"); }
+  @font-face { font-family: "Nunito";         font-weight: 400; font-style: normal; font-display: block; src: url("fonts/nunito-latin-400-normal.woff2") format("woff2"); }
+  @font-face { font-family: "Nunito";         font-weight: 700; font-style: normal; font-display: block; src: url("fonts/nunito-latin-700-normal.woff2") format("woff2"); }
+  @font-face { font-family: "Nunito";         font-weight: 800; font-style: normal; font-display: block; src: url("fonts/nunito-latin-800-normal.woff2") format("woff2"); }
+  @font-face { font-family: "IBM Plex Mono";  font-weight: 400; font-style: normal; font-display: block; src: url("fonts/ibm-plex-mono-latin-400-normal.woff2") format("woff2"); }
+  @font-face { font-family: "IBM Plex Mono";  font-weight: 600; font-style: normal; font-display: block; src: url("fonts/ibm-plex-mono-latin-600-normal.woff2") format("woff2"); }
+
+  /* ========== 页面基座(UI 用系统字体;演示区只用上面的本地字体) ========== */
+  :root {
+    --ax4-accent:      #2D5F8B;   /* 全页唯一低调强调色 */
+    --ax4-accent-deep: #1F4566;
+    --ax4-ink:         #1A1A1A;
+    --ax4-ink-2:       #333333;
+    --ax4-muted:       #767676;
+    --ax4-page:        #F2F3F5;
+    --ax4-card:        #FFFFFF;
+    --ax4-line:        #E2E4E8;
+    --ax4-ui: -apple-system, "Segoe UI", "PingFang SC", "Hiragino Sans GB",
+              "Microsoft YaHei", "Noto Sans CJK SC", sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { overflow-x: hidden; }
+  body {
+    background: var(--ax4-page);
+    color: var(--ax4-ink);
+    font-family: var(--ax4-ui);
+    line-height: 1.6;
+  }
+  .ax4-wrap { max-width: 1180px; margin: 0 auto; padding: 34px 22px 70px; }
+
+  /* ---------- 页眉 ---------- */
+  .ax4-hero { margin-bottom: 26px; }
+  .ax4-hero-kicker {
+    font-size: 12px; font-weight: 600; letter-spacing: .16em;
+    text-transform: uppercase; color: var(--ax4-accent); margin-bottom: 6px;
+  }
+  .ax4-hero h1 { font-size: 27px; line-height: 1.3; margin-bottom: 10px; }
+  .ax4-hero-desc { font-size: 14.5px; color: var(--ax4-ink-2); max-width: 62em; margin-bottom: 4px; }
+  .ax4-hero-desc + .ax4-hero-desc { margin-top: 4px; }
+  .ax4-hero-desc strong { color: var(--ax4-accent-deep); }
+
+  .ax4-toc { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+  .ax4-toc a {
+    display: inline-block; font-size: 12.5px; text-decoration: none;
+    color: var(--ax4-accent-deep); background: var(--ax4-card);
+    border: 1px solid var(--ax4-line); border-radius: 999px;
+    padding: 4px 12px;
+  }
+  .ax4-toc a:hover { border-color: var(--ax4-accent); }
+  .ax4-toc-group { font-size: 12.5px; color: var(--ax4-muted); align-self: center; margin-right: 2px; }
+
+  /* ---------- 分节 ---------- */
+  .ax4-section { margin-top: 34px; }
+  .ax4-section > h2 {
+    font-size: 19px; margin-bottom: 4px;
+  }
+  .ax4-section > h2 .ax4-h2-en { font-weight: 400; color: var(--ax4-muted); font-size: 14px; margin-left: 8px; }
+  .ax4-section-note { font-size: 13.5px; color: var(--ax4-ink-2); margin-bottom: 16px; max-width: 66em; }
+
+  .ax4-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(480px, 100%), 1fr));
+    gap: 18px;
+  }
+  .ax4-grid--accent {
+    grid-template-columns: repeat(auto-fit, minmax(min(360px, 100%), 1fr));
+  }
+
+  /* ---------- 选项卡片(统一中性白卡 —— 字体是唯一变量) ---------- */
+  .ax4-card-box {
+    background: var(--ax4-card);
+    border: 1px solid var(--ax4-line);
+    border-radius: 10px;
+    overflow: hidden;
+    display: flex; flex-direction: column;
+  }
+  .ax4-card-head {
+    padding: 11px 18px 10px;
+    border-bottom: 1px solid var(--ax4-line);
+    background: #FAFBFC;
+  }
+  .ax4-opt-name { font-size: 15px; font-weight: 600; line-height: 1.4; }
+  .ax4-opt-name .ax4-opt-en { font-weight: 400; color: var(--ax4-muted); font-size: 13px; margin-left: 6px; }
+  .ax4-opt-meta { font-size: 12px; color: var(--ax4-muted); margin-top: 2px; line-height: 1.5; }
+  .ax4-opt-meta b { color: var(--ax4-ink-2); font-weight: 600; }
+
+  /* ---------- 迷你海报片段(演示区,只用 vendored 字体) ---------- */
+  .ax4-frag {
+    padding: 24px 26px 20px;
+    flex: 1;
+    overflow-wrap: break-word;
+  }
+  .ax4-f-title {
+    font-size: 23px; line-height: 1.18; color: var(--ax4-ink);
+    margin-bottom: 15px; font-weight: 700;
+  }
+  .ax4-f-eyebrow { display: none; }
+  .ax4-f-sec {
+    font-size: 16.5px; line-height: 1.3; color: var(--ax4-ink);
+    margin-bottom: 9px; font-weight: 600;
+  }
+  .ax4-f-secnum { color: var(--ax4-accent); margin-right: .4em; }
+  .ax4-f-body {
+    font-size: 14.5px; line-height: 1.58; color: var(--ax4-ink-2);
+  }
+  .ax4-f-cap {
+    font-size: 12.5px; line-height: 1.5; color: var(--ax4-muted);
+    margin-top: 13px; padding-top: 9px; border-top: 1px solid var(--ax4-line);
+  }
+  .ax4-m { /* mono 候选片段:仅在 mono accent 演示中变体 */ }
+
+  /* ===== base voice 1 · LaTeX 衬线论文风 ===== */
+  .ax4-v-latex .ax4-f-title { font-family: "STIX Two Text", serif; font-weight: 700; }
+  .ax4-v-latex .ax4-f-sec   { font-family: "STIX Two Text", serif; font-weight: 600; }
+  .ax4-v-latex .ax4-f-body,
+  .ax4-v-latex .ax4-f-cap   { font-family: "STIX Two Text", serif; font-weight: 400; }
+
+  /* ===== base voice 2 · 衬线展示 + 无衬线正文(accent 演示的载体声音) ===== */
+  .ax4-v-display .ax4-f-title { font-family: "Source Serif 4", serif; font-weight: 700; }
+  .ax4-v-display .ax4-f-sec   { font-family: "Source Serif 4", serif; font-weight: 600; }
+  .ax4-v-display .ax4-f-body,
+  .ax4-v-display .ax4-f-cap   { font-family: "Source Sans 3", sans-serif; font-weight: 400; }
+
+  /* ===== base voice 3 · 现代怪诞体(标题窄体大写) ===== */
+  .ax4-v-grotesque .ax4-f-title {
+    font-family: "Archivo Narrow", sans-serif; font-weight: 700;
+    text-transform: uppercase; letter-spacing: .012em; font-size: 24px;
+  }
+  .ax4-v-grotesque .ax4-f-sec {
+    font-family: "Archivo", sans-serif; font-weight: 600;
+    text-transform: uppercase; letter-spacing: .05em; font-size: 15px;
+  }
+  .ax4-v-grotesque .ax4-f-body,
+  .ax4-v-grotesque .ax4-f-cap { font-family: "Archivo", sans-serif; font-weight: 400; }
+
+  /* ===== base voice 4 · 圆角亲和体 ===== */
+  .ax4-v-rounded .ax4-f-title { font-family: "Nunito", sans-serif; font-weight: 800; }
+  .ax4-v-rounded .ax4-f-sec   { font-family: "Nunito", sans-serif; font-weight: 700; }
+  .ax4-v-rounded .ax4-f-body,
+  .ax4-v-rounded .ax4-f-cap   { font-family: "Nunito", sans-serif; font-weight: 400; }
+
+  /* ===== accent convention 2 · 字距小型大写眉线 ===== */
+  .ax4-acc-eyebrow .ax4-f-eyebrow {
+    display: block;
+    font-family: "Source Sans 3", sans-serif; font-weight: 600;
+    font-size: 11px; letter-spacing: .18em; text-transform: uppercase;
+    color: var(--ax4-accent); margin-bottom: 5px;
+  }
+
+  /* ===== accent convention 3 · 等宽点缀(数字/代码/URL/指标) ===== */
+  .ax4-acc-mono .ax4-m {
+    font-family: "IBM Plex Mono", monospace; font-weight: 400;
+    font-size: .93em; color: var(--ax4-accent-deep);
+  }
+
+  /* ---------- 白名单说明 ---------- */
+  .ax4-note {
+    margin-top: 34px; background: var(--ax4-card);
+    border: 1px solid var(--ax4-line); border-left: 3px solid var(--ax4-accent);
+    border-radius: 8px; padding: 14px 18px;
+    font-size: 13px; color: var(--ax4-ink-2); line-height: 1.7;
+  }
+  .ax4-note b { color: var(--ax4-accent-deep); }
+  .ax4-note code {
+    font-family: Menlo, Consolas, monospace; font-size: 12px;
+    background: #F0F2F4; border-radius: 4px; padding: 1px 5px;
+  }
+</style>
+</head>
+<body>
+<div class="ax4-wrap">
+
+  <!-- ================= 页眉:轴结构 + 目录 ================= -->
+  <header class="ax4-hero">
+    <p class="ax4-hero-kicker">posterly · design axes · 04 / 08</p>
+    <h1>轴 4 · 字体 <span style="color:var(--ax4-muted);font-weight:400">Typography = base voice + accent convention</span></h1>
+    <p class="ax4-hero-desc">
+      每张海报的字体选择是一个两层结构:先必选 <strong>1 个 base voice</strong>(全页文字的整体声音,决定标题/节标题/正文/图注的字族搭配),
+      再<strong>叠加 0 – 2 个 accent convention</strong>(局部点缀约定,可叠加在任意 voice 上;眉线与等宽点缀也可同时使用)。
+      两层独立组合,不互相绑定。
+    </p>
+    <p class="ax4-hero-desc">
+      本页控制变量:配色与卡样式全页统一中性(白卡 + 单一低调强调色),四个 voice 用同一段 PowerFlow 占位文案,<strong>字体是唯一变量</strong>。
+      节标题一律用素题(标题接合手法属轴 7,此处不演示)。
+    </p>
+    <nav class="ax4-toc">
+      <span class="ax4-toc-group">base voice:</span>
+      <a href="#ax4-voice-latex">① LaTeX 衬线论文风</a>
+      <a href="#ax4-voice-display">② 衬线展示 + 无衬线正文</a>
+      <a href="#ax4-voice-grotesque">③ 现代怪诞体</a>
+      <a href="#ax4-voice-rounded">④ 圆角亲和体</a>
+      <span class="ax4-toc-group">accent:</span>
+      <a href="#ax4-acc-none">无点缀</a>
+      <a href="#ax4-acc-eyebrow">小型大写眉线</a>
+      <a href="#ax4-acc-mono">等宽点缀</a>
+    </nav>
+  </header>
+
+  <!-- ================= 第一部分:base voice ×4 ================= -->
+  <section class="ax4-section" id="ax4-voices">
+    <h2>一、base voice(必选其一)<span class="ax4-h2-en">the page-wide typographic voice</span></h2>
+    <p class="ax4-section-note">
+      同一段占位文案在四种声音下重复,便于直接对比。每块标注实际字族与权重;锚点编号指向 80 张 ICML 2026 精选海报语料。
+    </p>
+    <div class="ax4-grid">
+
+      <!-- voice 1 -->
+      <article class="ax4-card-box" id="ax4-voice-latex">
+        <header class="ax4-card-head">
+          <h3 class="ax4-opt-name">① LaTeX 衬线论文风<span class="ax4-opt-en">LaTeX-serif paper</span></h3>
+          <p class="ax4-opt-meta"><b>STIX Two Text</b> — 标题 700 · 节标题 600 · 正文/图注 400(全片段同族)· 锚点 62587 / 66740 / 65107</p>
+        </header>
+        <div class="ax4-frag ax4-v-latex">
+          <h4 class="ax4-f-title">PowerFlow: Adaptive Gradient Routing for Sparse Mixture-of-Experts</h4>
+          <h5 class="ax4-f-sec"><span class="ax4-f-secnum">3</span>Adaptive Routing</h5>
+          <p class="ax4-f-body">PowerFlow assigns each token a learned energy budget. The router scores experts by marginal utility and prunes low-yield paths on the fly, activating only <span class="ax4-m">38%</span> of parameters while staying within <span class="ax4-m">0.3 BLEU</span> of the dense baseline — see <span class="ax4-m">powerflow.route(k=4)</span> at <span class="ax4-m">github.com/pflow-lab/powerflow</span>.</p>
+          <p class="ax4-f-cap">Figure 3 · Expert utilisation across 32 layers; darker cells mark experts with routing load above 0.8.</p>
+        </div>
+      </article>
+
+      <!-- voice 2 -->
+      <article class="ax4-card-box" id="ax4-voice-display">
+        <header class="ax4-card-head">
+          <h3 class="ax4-opt-name">② 衬线展示 + 无衬线正文<span class="ax4-opt-en">serif display + sans body</span></h3>
+          <p class="ax4-opt-meta"><b>Source Serif 4</b> 700/600(仅展示级大字:标题、节标题)+ <b>Source Sans 3</b> 400(正文/图注)· 锚点 64736 / 67045</p>
+        </header>
+        <div class="ax4-frag ax4-v-display">
+          <h4 class="ax4-f-title">PowerFlow: Adaptive Gradient Routing for Sparse Mixture-of-Experts</h4>
+          <h5 class="ax4-f-sec"><span class="ax4-f-secnum">3</span>Adaptive Routing</h5>
+          <p class="ax4-f-body">PowerFlow assigns each token a learned energy budget. The router scores experts by marginal utility and prunes low-yield paths on the fly, activating only <span class="ax4-m">38%</span> of parameters while staying within <span class="ax4-m">0.3 BLEU</span> of the dense baseline — see <span class="ax4-m">powerflow.route(k=4)</span> at <span class="ax4-m">github.com/pflow-lab/powerflow</span>.</p>
+          <p class="ax4-f-cap">Figure 3 · Expert utilisation across 32 layers; darker cells mark experts with routing load above 0.8.</p>
+        </div>
+      </article>
+
+      <!-- voice 3 -->
+      <article class="ax4-card-box" id="ax4-voice-grotesque">
+        <header class="ax4-card-head">
+          <h3 class="ax4-opt-name">③ 现代怪诞体<span class="ax4-opt-en">grotesque</span></h3>
+          <p class="ax4-opt-meta"><b>Archivo Narrow</b> 700(标题:窄体 + 大写)+ <b>Archivo</b> 600(节标题,大写加字距)/ 400(正文/图注)· 锚点 65423 / 67122 / 60655</p>
+        </header>
+        <div class="ax4-frag ax4-v-grotesque">
+          <h4 class="ax4-f-title">PowerFlow: Adaptive Gradient Routing for Sparse Mixture-of-Experts</h4>
+          <h5 class="ax4-f-sec"><span class="ax4-f-secnum">3</span>Adaptive Routing</h5>
+          <p class="ax4-f-body">PowerFlow assigns each token a learned energy budget. The router scores experts by marginal utility and prunes low-yield paths on the fly, activating only <span class="ax4-m">38%</span> of parameters while staying within <span class="ax4-m">0.3 BLEU</span> of the dense baseline — see <span class="ax4-m">powerflow.route(k=4)</span> at <span class="ax4-m">github.com/pflow-lab/powerflow</span>.</p>
+          <p class="ax4-f-cap">Figure 3 · Expert utilisation across 32 layers; darker cells mark experts with routing load above 0.8.</p>
+        </div>
+      </article>
+
+      <!-- voice 4 -->
+      <article class="ax4-card-box" id="ax4-voice-rounded">
+        <header class="ax4-card-head">
+          <h3 class="ax4-opt-name">④ 圆角亲和体<span class="ax4-opt-en">rounded-playful</span></h3>
+          <p class="ax4-opt-meta"><b>Nunito</b> — 标题 800 · 节标题 700 · 正文/图注 400(圆端笔画,仍保持学术可信)· 锚点 60472 / 64049</p>
+        </header>
+        <div class="ax4-frag ax4-v-rounded">
+          <h4 class="ax4-f-title">PowerFlow: Adaptive Gradient Routing for Sparse Mixture-of-Experts</h4>
+          <h5 class="ax4-f-sec"><span class="ax4-f-secnum">3</span>Adaptive Routing</h5>
+          <p class="ax4-f-body">PowerFlow assigns each token a learned energy budget. The router scores experts by marginal utility and prunes low-yield paths on the fly, activating only <span class="ax4-m">38%</span> of parameters while staying within <span class="ax4-m">0.3 BLEU</span> of the dense baseline — see <span class="ax4-m">powerflow.route(k=4)</span> at <span class="ax4-m">github.com/pflow-lab/powerflow</span>.</p>
+          <p class="ax4-f-cap">Figure 3 · Expert utilisation across 32 layers; darker cells mark experts with routing load above 0.8.</p>
+        </div>
+      </article>
+
+    </div>
+  </section>
+
+  <!-- ================= 第二部分:accent convention ×3 ================= -->
+  <section class="ax4-section" id="ax4-accents">
+    <h2>二、accent convention(0 – 2 个,可叠加于任意 voice)<span class="ax4-h2-en">stackable accent conventions</span></h2>
+    <p class="ax4-section-note">
+      下面用同一张片段(载体:voice ②「衬线展示 + 无衬线正文」)分别叠加三种点缀约定演示;换成其他 voice 同样成立,眉线与等宽点缀也可同时叠加。
+    </p>
+    <div class="ax4-grid ax4-grid--accent">
+
+      <!-- accent 1: none -->
+      <article class="ax4-card-box" id="ax4-acc-none">
+        <header class="ax4-card-head">
+          <h3 class="ax4-opt-name">A · 无点缀<span class="ax4-opt-en">none</span></h3>
+          <p class="ax4-opt-meta">基线对照:voice ② 原样,不加任何 accent。</p>
+        </header>
+        <div class="ax4-frag ax4-v-display">
+          <h4 class="ax4-f-title">PowerFlow: Adaptive Gradient Routing for Sparse Mixture-of-Experts</h4>
+          <p class="ax4-f-eyebrow">Section 03 — Method</p>
+          <h5 class="ax4-f-sec"><span class="ax4-f-secnum">3</span>Adaptive Routing</h5>
+          <p class="ax4-f-body">PowerFlow assigns each token a learned energy budget. The router scores experts by marginal utility and prunes low-yield paths on the fly, activating only <span class="ax4-m">38%</span> of parameters while staying within <span class="ax4-m">0.3 BLEU</span> of the dense baseline — see <span class="ax4-m">powerflow.route(k=4)</span> at <span class="ax4-m">github.com/pflow-lab/powerflow</span>.</p>
+          <p class="ax4-f-cap">Figure 3 · Expert utilisation across 32 layers; darker cells mark experts with routing load above 0.8.</p>
+        </div>
+      </article>
+
+      <!-- accent 2: eyebrow -->
+      <article class="ax4-card-box" id="ax4-acc-eyebrow">
+        <header class="ax4-card-head">
+          <h3 class="ax4-opt-name">B · 字距小型大写眉线<span class="ax4-opt-en">letterspaced small-caps eyebrow</span></h3>
+          <p class="ax4-opt-meta">节标题上方加一行小号大写、宽字距的眉线(<b>Source Sans 3</b> 600 · 字距 .18em)· 锚点 64736 / 65626 / 61797</p>
+        </header>
+        <div class="ax4-frag ax4-v-display ax4-acc-eyebrow">
+          <h4 class="ax4-f-title">PowerFlow: Adaptive Gradient Routing for Sparse Mixture-of-Experts</h4>
+          <p class="ax4-f-eyebrow">Section 03 — Method</p>
+          <h5 class="ax4-f-sec"><span class="ax4-f-secnum">3</span>Adaptive Routing</h5>
+          <p class="ax4-f-body">PowerFlow assigns each token a learned energy budget. The router scores experts by marginal utility and prunes low-yield paths on the fly, activating only <span class="ax4-m">38%</span> of parameters while staying within <span class="ax4-m">0.3 BLEU</span> of the dense baseline — see <span class="ax4-m">powerflow.route(k=4)</span> at <span class="ax4-m">github.com/pflow-lab/powerflow</span>.</p>
+          <p class="ax4-f-cap">Figure 3 · Expert utilisation across 32 layers; darker cells mark experts with routing load above 0.8.</p>
+        </div>
+      </article>
+
+      <!-- accent 3: mono -->
+      <article class="ax4-card-box" id="ax4-acc-mono">
+        <header class="ax4-card-head">
+          <h3 class="ax4-opt-name">C · 等宽点缀<span class="ax4-opt-en">mono accent</span></h3>
+          <p class="ax4-opt-meta">数字、指标、代码、URL 统一换等宽体(<b>IBM Plex Mono</b> 400)· 锚点 66427 / 66466 / 67122</p>
+        </header>
+        <div class="ax4-frag ax4-v-display ax4-acc-mono">
+          <h4 class="ax4-f-title">PowerFlow: Adaptive Gradient Routing for Sparse Mixture-of-Experts</h4>
+          <p class="ax4-f-eyebrow">Section 03 — Method</p>
+          <h5 class="ax4-f-sec"><span class="ax4-f-secnum">3</span>Adaptive Routing</h5>
+          <p class="ax4-f-body">PowerFlow assigns each token a learned energy budget. The router scores experts by marginal utility and prunes low-yield paths on the fly, activating only <span class="ax4-m">38%</span> of parameters while staying within <span class="ax4-m">0.3 BLEU</span> of the dense baseline — see <span class="ax4-m">powerflow.route(k=4)</span> at <span class="ax4-m">github.com/pflow-lab/powerflow</span>.</p>
+          <p class="ax4-f-cap">Figure 3 · Expert utilisation across 32 layers; darker cells mark experts with routing load above 0.8.</p>
+        </div>
+      </article>
+
+    </div>
+  </section>
+
+  <!-- ================= 白名单说明 ================= -->
+  <aside class="ax4-note">
+    <b>字体白名单与申报</b> — 真实海报中,字族必须落在 <code>tools/style_check.py</code> 的白名单内
+    (serif: Charter / Source Serif Pro / Georgia / Times New Roman;sans: Inter / Aptos / Helvetica Neue / Arial;mono: Menlo / Consolas),
+    白名单外的字体(含本页全部演示字族)需经 <code>--tokens</code> 的 <code>fonts:</code> 扩展逐一申报后方可使用。
+    webfont 一律本地 vendor(如本页 <code>fonts/*.woff2</code>),禁止 CDN 直链。本页是选项目录,不跑海报 gates。
+  </aside>
+
+</div>
+</body>
+</html>

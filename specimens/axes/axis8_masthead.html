@@ -1,0 +1,952 @@
+<!DOCTYPE html>
+<!--
+  posterly · specimens/axes/axis8_masthead.html
+  轴 8「页头页脚 Masthead & Footer」选项目录 —— 与 templates/DESIGN-AXES.md Axis 8 同步。
+  自包含:无 CDN / 无外链;logo 均为纯 CSS 占位方块,QR 为内联 SVG 假码(结构仿 QR v1,
+  不可扫描)。搬运 CSS 进组件库时,将占位件替换为真实素材。
+  锚点 ID 指 https://icml.cc/media/PosterPDFs/ICML%202026/<id>.png(80 张精选墙)。
+-->
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>轴 8 · 页头页脚 Masthead &amp; Footer — 选项目录</title>
+<style>
+  /* ============ 页面级令牌(演示页 UI,非海报令牌) ============ */
+  :root {
+    /* 海报条带缩放单位:60in 幅宽 = 1524 设计单位 → 约 900px(1u ≈ 0.59px) */
+    --ax8-pu: 0.59px;
+
+    /* 中性演示配色 —— 控制变量:全部条带共用一个深 teal,唯一变量是构造 */
+    --ax8-brand:      #1D5A63;
+    --ax8-deep:       #113940;
+    --ax8-band-ink:   #FFFFFF;
+    --ax8-band-ink2:  rgba(255,255,255,0.85);
+    --ax8-canvas:     #FBFAF7;
+    --ax8-ghost:      #ECEDE8;
+    --ax8-ghost-line: #DDDFD6;
+    --ax8-ink:        #22272A;
+    --ax8-ink2:       #596165;
+    --ax8-hairline:   #D8DAD2;
+    --ax8-tint:       #E5EDED;
+
+    /* 演示页 UI */
+    --ax8-page-bg:  #F1F2EE;
+    --ax8-card-bg:  #FFFFFF;
+    --ax8-ui-line:  #DFE1DA;
+
+    --ax8-font: "Helvetica Neue", "Segoe UI", Arial, "PingFang SC",
+                "Noto Sans CJK SC", "Noto Sans SC", sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { background: var(--ax8-page-bg); color: var(--ax8-ink);
+               font-family: var(--ax8-font); -webkit-font-smoothing: antialiased; }
+  body { overflow-x: hidden; }   /* 页面禁止横向滚动;条带由 .ax8-scroll 兜底 */
+
+  .ax8-page { max-width: 1004px; margin: 0 auto; padding: 30px 22px 72px; }
+
+  /* ============ 页首:轴名 + 结构说明 + 目录 ============ */
+  .ax8-head h1 { font-size: 26px; font-weight: 800; letter-spacing: 0.5px; }
+  .ax8-head h1 .ax8-en { color: var(--ax8-brand); }
+  .ax8-head .ax8-sub { margin-top: 6px; font-size: 13px; color: var(--ax8-ink2); }
+
+  .ax8-struct {
+    margin-top: 16px; background: var(--ax8-card-bg);
+    border: 1px solid var(--ax8-ui-line); border-left: 4px solid var(--ax8-brand);
+    border-radius: 8px; padding: 14px 18px; font-size: 14px; line-height: 1.75;
+  }
+  .ax8-struct p + p { margin-top: 8px; }
+  .ax8-struct strong { color: var(--ax8-deep); }
+
+  .ax8-toc {
+    margin-top: 14px; display: grid; grid-template-columns: 1.6fr 1.1fr 1fr;
+    gap: 12px; font-size: 13px;
+  }
+  .ax8-toc .ax8-toc-col {
+    background: var(--ax8-card-bg); border: 1px solid var(--ax8-ui-line);
+    border-radius: 8px; padding: 10px 14px;
+  }
+  .ax8-toc h3 { font-size: 13px; color: var(--ax8-deep); margin-bottom: 6px; }
+  .ax8-toc ol { list-style: none; }
+  .ax8-toc li { margin: 3px 0; }
+  .ax8-toc a { color: var(--ax8-ink); text-decoration: none; border-bottom: 1px dotted var(--ax8-brand); }
+  .ax8-toc a:hover { color: var(--ax8-brand); }
+  @media (max-width: 760px) { .ax8-toc { grid-template-columns: 1fr; } }
+
+  /* ============ 小节标题与选项块 ============ */
+  .ax8-sec { margin: 40px 0 6px; font-size: 19px; font-weight: 800; color: var(--ax8-deep); }
+  .ax8-sec .ax8-en { font-weight: 600; color: var(--ax8-brand); font-size: 15px; }
+  .ax8-sec-intro { font-size: 13px; color: var(--ax8-ink2); margin-bottom: 8px; line-height: 1.6; }
+
+  .ax8-block {
+    margin-top: 20px; background: var(--ax8-card-bg);
+    border: 1px solid var(--ax8-ui-line); border-radius: 10px;
+    padding: 14px 16px 16px;
+  }
+  .ax8-block-head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+  .ax8-opt-name { font-size: 16px; font-weight: 800; }
+  .ax8-opt-name .ax8-en { font-weight: 600; color: var(--ax8-brand); font-size: 13.5px; }
+  .ax8-anchors { display: inline-flex; gap: 5px; margin-left: auto; }
+  .ax8-chip {
+    font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+    font-size: 11px; color: var(--ax8-deep); background: var(--ax8-tint);
+    border: 1px solid var(--ax8-brand); border-radius: 999px; padding: 1px 8px;
+  }
+  .ax8-scene { margin-top: 6px; font-size: 13px; line-height: 1.65; }
+  .ax8-scene .ax8-lab { font-weight: 700; color: var(--ax8-brand); }
+  .ax8-note {
+    margin-top: 8px; font-size: 12.5px; color: var(--ax8-ink2); line-height: 1.6;
+    border-left: 3px solid var(--ax8-hairline); padding-left: 10px;
+  }
+
+  /* 条带容器:横向滚动兜底 */
+  .ax8-scroll { margin-top: 10px; overflow-x: auto; }
+
+  /* ============ 海报条带(60×36in 幅宽等比缩放) ============ */
+  .ax8-strip {
+    width: calc(1524 * var(--ax8-pu));
+    background: var(--ax8-canvas);
+    border: 1px solid #CFD2C8; border-radius: 4px;
+    overflow: hidden; position: relative; flex-shrink: 0;
+    font-family: var(--ax8-font); color: var(--ax8-ink);
+  }
+  /* 底部裁切渐隐(页头类条带)/ 顶部裁切渐隐(页脚类条带) */
+  .ax8-cropb::after {
+    content: ""; position: absolute; left: 0; right: 0; bottom: 0;
+    height: calc(42 * var(--ax8-pu));
+    background: linear-gradient(rgba(251,250,247,0), var(--ax8-canvas));
+    pointer-events: none;
+  }
+  .ax8-cropt::before {
+    content: ""; position: absolute; left: 0; right: 0; top: 0;
+    height: calc(42 * var(--ax8-pu));
+    background: linear-gradient(var(--ax8-canvas), rgba(251,250,247,0));
+    pointer-events: none; z-index: 1;
+  }
+
+  /* 正文占位(灰色幽灵卡,4 列) */
+  .ax8-ghost {
+    display: grid; grid-template-columns: 1fr 1.05fr 1.05fr 1fr;
+    gap: calc(10 * var(--ax8-pu));
+    padding: calc(6 * var(--ax8-pu)) calc(14 * var(--ax8-pu)) 0;
+    height: calc(64 * var(--ax8-pu));
+  }
+  .ax8-gcard {
+    background: var(--ax8-ghost); border: 1px solid var(--ax8-ghost-line);
+    border-radius: calc(5 * var(--ax8-pu)); position: relative; overflow: hidden;
+  }
+  .ax8-gcard::before {
+    content: ""; position: absolute; top: calc(6 * var(--ax8-pu));
+    left: calc(8 * var(--ax8-pu)); right: 34%;
+    height: calc(9 * var(--ax8-pu)); background: var(--ax8-ghost-line);
+    border-radius: 2px;
+  }
+  .ax8-gcard::after {
+    content: ""; position: absolute; top: calc(22 * var(--ax8-pu));
+    left: calc(8 * var(--ax8-pu)); right: 12%;
+    height: calc(4 * var(--ax8-pu)); background: var(--ax8-ghost-line);
+    border-radius: 2px; opacity: 0.7;
+  }
+  .ax8-ghost--above { padding: 0 calc(14 * var(--ax8-pu)) calc(6 * var(--ax8-pu)); }
+  .ax8-ghost--above .ax8-gcard::before { top: auto; bottom: calc(22 * var(--ax8-pu)); }
+  .ax8-ghost--above .ax8-gcard::after  { top: auto; bottom: calc(8 * var(--ax8-pu)); }
+  .ax8-ghost--h66 { height: calc(66 * var(--ax8-pu)); }
+  .ax8-ghost--h72 { height: calc(72 * var(--ax8-pu)); }
+  .ax8-ghost--floor { height: calc(96 * var(--ax8-pu)); padding-bottom: calc(10 * var(--ax8-pu)); }
+
+  /* ============ 海报内通用件:标题文字、logo 占位、QR ============ */
+  .ax8-title {
+    font-weight: 800; font-size: calc(32 * var(--ax8-pu));
+    line-height: 1.06; letter-spacing: -0.2px; color: var(--ax8-deep);
+  }
+  .ax8-tag {
+    font-size: calc(13 * var(--ax8-pu)); font-style: italic;
+    color: var(--ax8-ink2); margin-top: calc(3 * var(--ax8-pu));
+  }
+  .ax8-authors {
+    font-size: calc(12 * var(--ax8-pu)); font-weight: 600;
+    color: var(--ax8-brand); margin-top: calc(4 * var(--ax8-pu));
+  }
+  .ax8-aff {
+    font-size: calc(11 * var(--ax8-pu)); font-weight: 400;
+    color: var(--ax8-ink2); margin-top: calc(2 * var(--ax8-pu));
+  }
+
+  /* logo 占位:方块 / 圆形徽记 / 字标牌 —— 一律纯 CSS,不外链图片 */
+  .ax8-logo-block {
+    width: calc(52 * var(--ax8-pu)); height: calc(52 * var(--ax8-pu));
+    background: var(--ax8-brand); color: var(--ax8-band-ink);
+    border-radius: calc(6 * var(--ax8-pu));
+    display: inline-flex; align-items: center; justify-content: center;
+    font-weight: 800; font-size: calc(16 * var(--ax8-pu)); letter-spacing: 0.5px;
+    flex-shrink: 0;
+  }
+  .ax8-logo-seal {
+    width: calc(52 * var(--ax8-pu)); height: calc(52 * var(--ax8-pu));
+    border: calc(2.5 * var(--ax8-pu)) solid var(--ax8-brand); border-radius: 50%;
+    display: inline-flex; align-items: center; justify-content: center;
+    color: var(--ax8-deep); font-weight: 800; font-size: calc(13 * var(--ax8-pu));
+    box-shadow: inset 0 0 0 calc(4 * var(--ax8-pu)) var(--ax8-canvas),
+                inset 0 0 0 calc(5.5 * var(--ax8-pu)) var(--ax8-brand);
+    flex-shrink: 0; background: var(--ax8-canvas);
+  }
+  .ax8-logo-word {
+    border: calc(1.5 * var(--ax8-pu)) solid #C4C8BD; background: #FFFFFF;
+    border-radius: calc(4 * var(--ax8-pu));
+    padding: calc(5 * var(--ax8-pu)) calc(8 * var(--ax8-pu));
+    display: inline-flex; flex-direction: column; align-items: center;
+    gap: calc(2 * var(--ax8-pu)); flex-shrink: 0;
+  }
+  .ax8-logo-word .ax8-lw-main {
+    font-weight: 800; font-size: calc(11 * var(--ax8-pu));
+    letter-spacing: 1.5px; color: var(--ax8-deep);
+  }
+  .ax8-logo-word .ax8-lw-sub {
+    font-size: calc(7 * var(--ax8-pu)); letter-spacing: 2px; color: var(--ax8-ink2);
+  }
+
+  /* QR 假码:内联 SVG(结构仿 QR v1:三定位角 + 时序线 + 伪随机数据区) */
+  .ax8-qr {
+    background: #FFFFFF; border: calc(1.5 * var(--ax8-pu)) solid #C4C8BD;
+    border-radius: calc(4 * var(--ax8-pu)); padding: calc(4 * var(--ax8-pu));
+    display: inline-flex; flex-shrink: 0;
+  }
+  .ax8-qr svg { display: block; width: calc(58 * var(--ax8-pu)); height: calc(58 * var(--ax8-pu)); color: #1A1D1E; }
+  .ax8-qr--lg svg { width: calc(72 * var(--ax8-pu)); height: calc(72 * var(--ax8-pu)); }
+  .ax8-qr-cap {
+    font-size: calc(9 * var(--ax8-pu)); font-weight: 600; color: var(--ax8-brand);
+    text-align: center; margin-top: calc(2 * var(--ax8-pu));
+  }
+
+  /* ============ M1 传统居中 + 角标 ============ */
+  .ax8-h-center {
+    display: grid; grid-template-columns: 1fr minmax(50%, auto) 1fr;
+    align-items: center; gap: calc(16 * var(--ax8-pu));
+    padding: calc(10 * var(--ax8-pu)) calc(14 * var(--ax8-pu)) calc(8 * var(--ax8-pu));
+    border-bottom: calc(2 * var(--ax8-pu)) solid var(--ax8-brand);
+    margin-bottom: calc(6 * var(--ax8-pu));
+  }
+  .ax8-h-center .ax8-corner-l { justify-self: start; display: flex; gap: calc(8 * var(--ax8-pu)); align-items: center; }
+  .ax8-h-center .ax8-corner-r { justify-self: end;   display: flex; gap: calc(8 * var(--ax8-pu)); align-items: center; }
+  .ax8-h-center .ax8-titleblock { text-align: center; min-width: 0; }
+
+  /* ============ M2 左对齐无带 ============ */
+  .ax8-h-left {
+    display: grid; grid-template-columns: 1fr auto; align-items: start;
+    gap: calc(20 * var(--ax8-pu));
+    padding: calc(14 * var(--ax8-pu)) calc(14 * var(--ax8-pu)) calc(10 * var(--ax8-pu));
+    margin-bottom: calc(4 * var(--ax8-pu));
+  }
+  .ax8-h-left .ax8-title { font-size: calc(34 * var(--ax8-pu)); max-width: 74%; }
+  .ax8-h-left .ax8-idrow { display: flex; gap: calc(8 * var(--ax8-pu)); align-items: center; padding-top: calc(2 * var(--ax8-pu)); }
+
+  /* ============ M3 品牌色带 ============ */
+  .ax8-h-band {
+    display: grid; grid-template-columns: 1fr auto; align-items: center;
+    gap: calc(20 * var(--ax8-pu));
+    background: var(--ax8-brand); color: var(--ax8-band-ink);
+    border-bottom: calc(3 * var(--ax8-pu)) solid var(--ax8-deep);
+    padding: calc(11 * var(--ax8-pu)) calc(14 * var(--ax8-pu));
+    margin-bottom: calc(6 * var(--ax8-pu));
+  }
+  .ax8-h-band .ax8-title   { color: var(--ax8-band-ink); }
+  .ax8-h-band .ax8-tag     { color: var(--ax8-band-ink2); }
+  .ax8-h-band .ax8-authors { color: var(--ax8-band-ink); }
+  .ax8-h-band .ax8-aff     { color: var(--ax8-band-ink2); }
+  .ax8-chiplogo {          /* 色带上的 logo:白 chip 垫底,解决"白底 logo 在色带上发脏" */
+    background: #FFFFFF; border-radius: calc(5 * var(--ax8-pu));
+    padding: calc(4 * var(--ax8-pu)) calc(7 * var(--ax8-pu));
+    display: inline-flex; align-items: center; gap: calc(5 * var(--ax8-pu));
+  }
+  .ax8-h-band .ax8-idrow { display: flex; gap: calc(8 * var(--ax8-pu)); align-items: center; }
+
+  /* ============ M4 题入色板 ============ */
+  .ax8-h-slab {
+    display: grid; grid-template-columns: auto 1fr; align-items: center;
+    gap: calc(18 * var(--ax8-pu));
+    padding: calc(12 * var(--ax8-pu)) calc(14 * var(--ax8-pu)) calc(4 * var(--ax8-pu));
+    margin-bottom: calc(6 * var(--ax8-pu));
+  }
+  .ax8-slab {
+    background: var(--ax8-brand); color: var(--ax8-band-ink);
+    border-radius: calc(9 * var(--ax8-pu));
+    padding: calc(10 * var(--ax8-pu)) calc(16 * var(--ax8-pu)) calc(9 * var(--ax8-pu));
+    max-width: calc(920 * var(--ax8-pu));
+    box-shadow: 0 calc(3 * var(--ax8-pu)) calc(8 * var(--ax8-pu)) rgba(17,57,64,0.22);
+  }
+  .ax8-slab .ax8-title   { color: var(--ax8-band-ink); font-size: calc(30 * var(--ax8-pu)); }
+  .ax8-slab .ax8-authors { color: var(--ax8-band-ink); }
+  .ax8-slab .ax8-aff     { color: var(--ax8-band-ink2); }
+  .ax8-h-slab .ax8-sideid { display: flex; flex-direction: column; align-items: flex-end; gap: calc(6 * var(--ax8-pu)); justify-self: end; }
+  .ax8-h-slab .ax8-sideid .ax8-idrow { display: flex; gap: calc(8 * var(--ax8-pu)); align-items: center; }
+
+  /* ============ M5 眉线 + 展示刊头 ============ */
+  .ax8-h-display {
+    text-align: center;
+    padding: calc(14 * var(--ax8-pu)) calc(60 * var(--ax8-pu)) calc(12 * var(--ax8-pu));
+    border-bottom: calc(1 * var(--ax8-pu)) solid var(--ax8-hairline);
+    margin-bottom: calc(6 * var(--ax8-pu));
+  }
+  .ax8-eyebrow {
+    display: flex; align-items: center; gap: calc(12 * var(--ax8-pu));
+    color: var(--ax8-brand); font-weight: 700;
+    font-size: calc(11 * var(--ax8-pu)); letter-spacing: calc(4 * var(--ax8-pu));
+    text-transform: uppercase;
+  }
+  .ax8-eyebrow::before, .ax8-eyebrow::after {
+    content: ""; flex: 1; height: calc(1 * var(--ax8-pu)); background: var(--ax8-hairline);
+  }
+  .ax8-h-display .ax8-title {
+    font-size: calc(44 * var(--ax8-pu)); margin-top: calc(8 * var(--ax8-pu));
+    letter-spacing: -0.4px;
+  }
+  .ax8-h-display .ax8-authors { margin-top: calc(7 * var(--ax8-pu)); }
+
+  /* ============ M6 降题升问 ============ */
+  .ax8-h-question {
+    padding: calc(8 * var(--ax8-pu)) calc(14 * var(--ax8-pu)) calc(10 * var(--ax8-pu));
+    border-bottom: calc(2 * var(--ax8-pu)) solid var(--ax8-brand);
+    margin-bottom: calc(6 * var(--ax8-pu));
+  }
+  .ax8-h-question .ax8-demoted {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: calc(16 * var(--ax8-pu));
+    padding-bottom: calc(6 * var(--ax8-pu));
+    border-bottom: calc(1 * var(--ax8-pu)) solid var(--ax8-hairline);
+  }
+  .ax8-h-question .ax8-demoted-title {
+    font-size: calc(12 * var(--ax8-pu)); font-weight: 700; color: var(--ax8-deep);
+  }
+  .ax8-h-question .ax8-demoted-meta {
+    font-size: calc(10 * var(--ax8-pu)); color: var(--ax8-ink2);
+    margin-top: calc(1.5 * var(--ax8-pu));
+  }
+  .ax8-h-question .ax8-demoted .ax8-idrow { display: flex; gap: calc(7 * var(--ax8-pu)); align-items: center; }
+  .ax8-question {
+    font-size: calc(46 * var(--ax8-pu)); font-weight: 800; line-height: 1.08;
+    letter-spacing: -0.4px; color: var(--ax8-ink);
+    margin-top: calc(10 * var(--ax8-pu)); max-width: 88%;
+  }
+  .ax8-question .ax8-q-accent { color: var(--ax8-brand); }
+
+  /* ============ M7 项目字标 ============ */
+  .ax8-h-wordmark {
+    display: grid; grid-template-columns: 1fr auto; align-items: center;
+    gap: calc(20 * var(--ax8-pu));
+    padding: calc(12 * var(--ax8-pu)) calc(14 * var(--ax8-pu)) calc(9 * var(--ax8-pu));
+    border-bottom: calc(1 * var(--ax8-pu)) solid var(--ax8-hairline);
+    margin-bottom: calc(6 * var(--ax8-pu));
+  }
+  .ax8-wordmark { display: flex; align-items: center; gap: calc(10 * var(--ax8-pu)); }
+  .ax8-wm-glyph {
+    width: calc(40 * var(--ax8-pu)); height: calc(40 * var(--ax8-pu));
+    background: var(--ax8-brand); border-radius: calc(9 * var(--ax8-pu));
+    display: inline-flex; align-items: center; justify-content: center;
+    color: var(--ax8-band-ink); font-weight: 900; font-size: calc(22 * var(--ax8-pu));
+    transform: rotate(-6deg); flex-shrink: 0;
+  }
+  .ax8-wm-name {
+    font-size: calc(40 * var(--ax8-pu)); font-weight: 900;
+    letter-spacing: calc(2.5 * var(--ax8-pu)); color: var(--ax8-deep);
+  }
+  .ax8-wm-name .ax8-wm-half { color: var(--ax8-brand); }
+  .ax8-wm-ver {
+    align-self: flex-start;
+    font-size: calc(9 * var(--ax8-pu)); font-weight: 700; letter-spacing: 1px;
+    color: var(--ax8-band-ink); background: var(--ax8-brand);
+    border-radius: 999px; padding: calc(1.5 * var(--ax8-pu)) calc(6 * var(--ax8-pu));
+  }
+  .ax8-wm-paper {
+    margin-top: calc(6 * var(--ax8-pu));
+    font-size: calc(14 * var(--ax8-pu)); font-weight: 600; color: var(--ax8-ink);
+  }
+  .ax8-h-wordmark .ax8-idrow { display: flex; gap: calc(8 * var(--ax8-pu)); align-items: center; }
+
+  /* ============ F 页脚族 ============ */
+  .ax8-f-contact {
+    display: flex; justify-content: space-between; align-items: baseline;
+    gap: calc(10 * var(--ax8-pu)); flex-wrap: wrap;
+    border-top: calc(1 * var(--ax8-pu)) solid var(--ax8-hairline);
+    margin: calc(6 * var(--ax8-pu)) calc(14 * var(--ax8-pu)) 0;
+    padding: calc(6 * var(--ax8-pu)) 0 calc(9 * var(--ax8-pu));
+    font-size: calc(11 * var(--ax8-pu)); color: var(--ax8-ink2);
+  }
+  .ax8-f-contact .ax8-fc-name { font-weight: 800; color: var(--ax8-deep); }
+  .ax8-f-contact .ax8-fc-link { font-weight: 600; color: var(--ax8-brand); }
+
+  .ax8-f-manifesto {
+    display: grid; grid-template-columns: 1fr auto; align-items: center;
+    gap: calc(24 * var(--ax8-pu));
+    background: var(--ax8-brand); color: var(--ax8-band-ink);
+    border-top: calc(3 * var(--ax8-pu)) solid var(--ax8-deep);
+    margin-top: calc(6 * var(--ax8-pu));
+    padding: calc(10 * var(--ax8-pu)) calc(14 * var(--ax8-pu));
+  }
+  .ax8-f-manifesto .ax8-fm-say {
+    font-size: calc(21 * var(--ax8-pu)); font-weight: 800; line-height: 1.2;
+    letter-spacing: -0.2px;
+  }
+  .ax8-f-manifesto .ax8-fm-sub {
+    font-size: calc(10 * var(--ax8-pu)); color: var(--ax8-band-ink2);
+    margin-top: calc(2 * var(--ax8-pu)); font-weight: 400;
+  }
+  .ax8-fm-metrics { display: flex; align-items: stretch; }
+  .ax8-fm-metric {
+    text-align: center; padding: 0 calc(14 * var(--ax8-pu));
+    border-left: 1px solid rgba(255,255,255,0.35);
+  }
+  .ax8-fm-metric .ax8-fm-num { font-size: calc(20 * var(--ax8-pu)); font-weight: 800; line-height: 1.1; }
+  .ax8-fm-metric .ax8-fm-lab { font-size: calc(8.5 * var(--ax8-pu)); color: var(--ax8-band-ink2); margin-top: calc(1.5 * var(--ax8-pu)); }
+
+  /* F4 三明治:整版 60×36in 真实比例 */
+  .ax8-poster {
+    width: calc(1524 * var(--ax8-pu)); height: calc(914 * var(--ax8-pu));
+    background: var(--ax8-canvas);
+    border: 1px solid #CFD2C8; border-radius: 4px;
+    overflow: hidden; display: flex; flex-direction: column; flex-shrink: 0;
+    font-family: var(--ax8-font);
+  }
+  .ax8-poster .ax8-h-band { margin-bottom: 0; }
+  .ax8-sand-body {
+    flex: 1; display: grid; grid-template-columns: 1fr 1.05fr 1.05fr 1fr;
+    gap: calc(10 * var(--ax8-pu));
+    padding: calc(8 * var(--ax8-pu)) calc(14 * var(--ax8-pu));
+    min-height: 0;
+  }
+  .ax8-sand-col { display: flex; flex-direction: column; gap: calc(8 * var(--ax8-pu)); min-height: 0; }
+  .ax8-sand-col .ax8-gcard { flex: 1; }
+  .ax8-f-sandwich {
+    display: flex; justify-content: space-between; align-items: center;
+    gap: calc(10 * var(--ax8-pu));
+    background: var(--ax8-brand); color: var(--ax8-band-ink);
+    border-top: calc(3 * var(--ax8-pu)) solid var(--ax8-deep);
+    padding: calc(7 * var(--ax8-pu)) calc(14 * var(--ax8-pu));
+    font-size: calc(11 * var(--ax8-pu));
+  }
+  .ax8-f-sandwich .ax8-fs-name { font-weight: 800; }
+  .ax8-f-sandwich .ax8-fs-dim  { color: var(--ax8-band-ink2); }
+
+  /* ============ A 身份件族 ============ */
+  /* A1 logo 墙 */
+  .ax8-logowall {
+    display: flex; justify-content: center; align-items: center;
+    gap: calc(14 * var(--ax8-pu));
+    border-top: calc(1 * var(--ax8-pu)) solid var(--ax8-hairline);
+    margin: calc(7 * var(--ax8-pu)) calc(60 * var(--ax8-pu)) calc(2 * var(--ax8-pu));
+    padding-top: calc(6 * var(--ax8-pu));
+  }
+  .ax8-h-wall {
+    text-align: center;
+    padding: calc(10 * var(--ax8-pu)) calc(14 * var(--ax8-pu)) calc(6 * var(--ax8-pu));
+    border-bottom: calc(2 * var(--ax8-pu)) solid var(--ax8-brand);
+    margin-bottom: calc(6 * var(--ax8-pu));
+  }
+
+  /* A2 QR-CTA 带标签 */
+  .ax8-h-left .ax8-idrow.ax8-idrow--wide { gap: calc(14 * var(--ax8-pu)); }
+  .ax8-cta { display: inline-flex; flex-direction: column; align-items: center; }
+  .ax8-cta .ax8-qr { border-color: var(--ax8-brand); border-width: calc(2 * var(--ax8-pu)); }
+  .ax8-cta-tab {
+    margin-top: calc(-2 * var(--ax8-pu)); z-index: 1;
+    background: var(--ax8-brand); color: var(--ax8-band-ink);
+    font-weight: 800; font-size: calc(9.5 * var(--ax8-pu)); letter-spacing: calc(1.5 * var(--ax8-pu));
+    border-radius: calc(3 * var(--ax8-pu));
+    padding: calc(2.5 * var(--ax8-pu)) calc(8 * var(--ax8-pu));
+    box-shadow: 0 calc(1.5 * var(--ax8-pu)) calc(3 * var(--ax8-pu)) rgba(17,57,64,0.3);
+  }
+  .ax8-cta-sub { font-size: calc(8.5 * var(--ax8-pu)); color: var(--ax8-ink2); margin-top: calc(2.5 * var(--ax8-pu)); }
+
+  /* A3 logo+QR 侧轨 */
+  .ax8-h-rail {
+    display: grid; grid-template-columns: 1fr auto; align-items: stretch;
+    border-bottom: calc(2 * var(--ax8-pu)) solid var(--ax8-brand);
+    margin-bottom: calc(6 * var(--ax8-pu));
+  }
+  .ax8-h-rail .ax8-rail-main {
+    padding: calc(13 * var(--ax8-pu)) calc(14 * var(--ax8-pu)) calc(10 * var(--ax8-pu));
+  }
+  .ax8-h-rail .ax8-title { font-size: calc(33 * var(--ax8-pu)); max-width: 86%; }
+  .ax8-rail {
+    width: calc(96 * var(--ax8-pu));
+    background: var(--ax8-tint);
+    border-left: calc(1.5 * var(--ax8-pu)) solid var(--ax8-brand);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: calc(7 * var(--ax8-pu));
+    padding: calc(8 * var(--ax8-pu)) calc(6 * var(--ax8-pu));
+  }
+  .ax8-rail .ax8-rail-cap {
+    font-size: calc(8 * var(--ax8-pu)); font-weight: 700; letter-spacing: calc(2 * var(--ax8-pu));
+    color: var(--ax8-brand); text-transform: uppercase;
+  }
+
+  /* 隐藏的 SVG defs 母版(假 QR path,供 <use> 复用) */
+  .ax8-defs { position: absolute; width: 0; height: 0; overflow: hidden; }
+
+  /* ============ 页尾说明 ============ */
+  .ax8-foot { margin-top: 44px; font-size: 12.5px; color: var(--ax8-ink2); line-height: 1.7;
+              border-top: 1px solid var(--ax8-ui-line); padding-top: 14px; }
+</style>
+</head>
+<body>
+<div class="ax8-page">
+
+  <!-- 假 QR 母版:后文所有 QR 通过 <use> 复用 -->
+  <svg class="ax8-defs" aria-hidden="true">
+    <defs>
+      <path id="ax8-qrpath" fill="currentColor" d="M0 0h7v1h-7zM8 0h5v1h-5zM14 0h7v1h-7zM0 1h1v1h-1zM6 1h1v1h-1zM9 1h1v1h-1zM11 1h1v1h-1zM14 1h1v1h-1zM20 1h1v1h-1zM0 2h1v1h-1zM2 2h3v1h-3zM6 2h1v1h-1zM8 2h1v1h-1zM10 2h2v1h-2zM14 2h1v1h-1zM16 2h3v1h-3zM20 2h1v1h-1zM0 3h1v1h-1zM2 3h3v1h-3zM6 3h1v1h-1zM8 3h1v1h-1zM10 3h1v1h-1zM12 3h1v1h-1zM14 3h1v1h-1zM16 3h3v1h-3zM20 3h1v1h-1zM0 4h1v1h-1zM2 4h3v1h-3zM6 4h1v1h-1zM9 4h1v1h-1zM11 4h2v1h-2zM14 4h1v1h-1zM16 4h3v1h-3zM20 4h1v1h-1zM0 5h1v1h-1zM6 5h1v1h-1zM8 5h1v1h-1zM14 5h1v1h-1zM20 5h1v1h-1zM0 6h7v1h-7zM8 6h1v1h-1zM10 6h1v1h-1zM12 6h1v1h-1zM14 6h7v1h-7zM8 7h1v1h-1zM10 7h1v1h-1zM0 8h1v1h-1zM3 8h1v1h-1zM6 8h1v1h-1zM9 8h1v1h-1zM14 8h1v1h-1zM16 8h1v1h-1zM18 8h1v1h-1zM20 8h1v1h-1zM4 9h2v1h-2zM8 9h4v1h-4zM15 9h3v1h-3zM19 9h2v1h-2zM0 10h3v1h-3zM4 10h1v1h-1zM6 10h1v1h-1zM8 10h3v1h-3zM16 10h1v1h-1zM19 10h2v1h-2zM2 11h1v1h-1zM4 11h2v1h-2zM7 11h2v1h-2zM14 11h3v1h-3zM19 11h2v1h-2zM0 12h2v1h-2zM3 12h1v1h-1zM6 12h1v1h-1zM8 12h2v1h-2zM11 12h4v1h-4zM17 12h2v1h-2zM8 13h1v1h-1zM10 13h1v1h-1zM12 13h5v1h-5zM20 13h1v1h-1zM0 14h7v1h-7zM8 14h2v1h-2zM15 14h6v1h-6zM0 15h1v1h-1zM6 15h1v1h-1zM11 15h2v1h-2zM14 15h1v1h-1zM16 15h1v1h-1zM18 15h1v1h-1zM0 16h1v1h-1zM2 16h3v1h-3zM6 16h1v1h-1zM10 16h2v1h-2zM17 16h1v1h-1zM0 17h1v1h-1zM2 17h3v1h-3zM6 17h1v1h-1zM8 17h3v1h-3zM12 17h3v1h-3zM17 17h2v1h-2zM0 18h1v1h-1zM2 18h3v1h-3zM6 18h1v1h-1zM8 18h2v1h-2zM14 18h2v1h-2zM18 18h3v1h-3zM0 19h1v1h-1zM6 19h1v1h-1zM10 19h2v1h-2zM13 19h4v1h-4zM0 20h7v1h-7zM8 20h1v1h-1zM11 20h2v1h-2zM14 20h2v1h-2zM17 20h1v1h-1zM20 20h1v1h-1z"/>
+    </defs>
+  </svg>
+
+  <!-- ==================== 页首 ==================== -->
+  <header class="ax8-head">
+    <h1>轴 8 · 页头页脚 <span class="ax8-en">Masthead &amp; Footer</span> — 选项目录</h1>
+    <p class="ax8-sub">源自 80 张 ICML 2026 精选海报 · 锚点 ID 按
+      icml.cc/media/PosterPDFs/ICML%202026/&lt;id&gt;.png 重拉 · 与 templates/DESIGN-AXES.md Axis 8 同步</p>
+  </header>
+
+  <div class="ax8-struct">
+    <p><strong>结构:本轴 = masthead(页头)+ footer(页脚)+ identity accessory(身份件)三个独立子选择的组合。</strong>
+      三者自由搭配,互不绑定 —— 例如 63030 = 品牌色带页头 + 联系条页脚。身份件(logo、QR)挂在页头、页脚或侧轨均可。</p>
+    <p><strong>与轴 1 的分工:</strong>给标题留哪块<em>几何</em>(一整条竖轨、中央舞台、顶部 hero 区)是轴 1 的事;
+      拿到这块区域之后<em>轨道内怎么排</em>(居中还是左对齐、上不上色带、题要不要入色板、身份件怎么收纳)才归本轴。
+      冲突规则 3:masthead 模式必须与轴 1 预留的几何匹配(题入舞台 → 版式里真有个舞台)。</p>
+    <p><strong>控制变量:</strong>下方所有条带统一用一个深 teal + 系统无衬线字体(字体族属轴 4),
+      唯一变量是页头/页脚构造。条带按 60×36 in 海报幅宽等比缩放(1524 单位 → 约 900 px),
+      因此正文级文字很小 —— 这是真实比例,不是排版错误。</p>
+  </div>
+
+  <nav class="ax8-toc">
+    <div class="ax8-toc-col">
+      <h3>一、masthead 页头(7)</h3>
+      <ol>
+        <li><a href="#ax8-m1">M1 传统居中 + 角标</a></li>
+        <li><a href="#ax8-m2">M2 左对齐无带</a></li>
+        <li><a href="#ax8-m3">M3 品牌色带</a></li>
+        <li><a href="#ax8-m4">M4 题入色板</a></li>
+        <li><a href="#ax8-m5">M5 眉线 + 展示刊头</a></li>
+        <li><a href="#ax8-m6">M6 降题升问</a></li>
+        <li><a href="#ax8-m7">M7 项目字标</a></li>
+      </ol>
+    </div>
+    <div class="ax8-toc-col">
+      <h3>二、footer 页脚(4)</h3>
+      <ol>
+        <li><a href="#ax8-f1">F1 无页脚</a></li>
+        <li><a href="#ax8-f2">F2 联系条</a></li>
+        <li><a href="#ax8-f3">F3 宣言带</a></li>
+        <li><a href="#ax8-f4">F4 三明治</a></li>
+      </ol>
+    </div>
+    <div class="ax8-toc-col">
+      <h3>三、identity accessory 身份件(3)</h3>
+      <ol>
+        <li><a href="#ax8-a1">A1 logo 墙</a></li>
+        <li><a href="#ax8-a2">A2 QR-CTA 带标签</a></li>
+        <li><a href="#ax8-a3">A3 logo+QR 侧轨</a></li>
+      </ol>
+    </div>
+  </nav>
+
+  <!-- ==================== 一、masthead ==================== -->
+  <h2 class="ax8-sec" id="ax8-sec-m">一、masthead 页头 <span class="ax8-en">7 选 1</span></h2>
+  <p class="ax8-sec-intro">条带展示页头 + 一截灰色幽灵正文(向下渐隐 = 裁切)。占位内容统一:
+    标题 “Scaling Power-Flow Learning to Continent-Sized Grids” + 作者行 + 机构。</p>
+
+  <!-- M1 -->
+  <section class="ax8-block" id="ax8-m1">
+    <div class="ax8-block-head">
+      <h3 class="ax8-opt-name">M1 传统居中 + 角标 <span class="ax8-en">Plain centered + corner logos</span></h3>
+      <span class="ax8-anchors"><span class="ax8-chip">62396</span><span class="ax8-chip">65372</span></span>
+    </div>
+    <p class="ax8-scene"><span class="ax8-lab">适用:</span>最稳妥的学术默认 —— 标题中等长度、机构 logo 只有 1–2 个时不出错;与任何正文版式兼容。</p>
+    <div class="ax8-scroll">
+      <div class="ax8-strip ax8-cropb">
+        <div class="ax8-h-center">
+          <div class="ax8-corner-l">
+            <span class="ax8-logo-seal">GL</span>
+            <span class="ax8-logo-word"><span class="ax8-lw-main">GRID LAB</span><span class="ax8-lw-sub">EST. 1998</span></span>
+          </div>
+          <div class="ax8-titleblock">
+            <div class="ax8-title">Scaling Power-Flow Learning to Continent-Sized Grids</div>
+            <div class="ax8-tag">One graph model, twelve national grids, zero retraining at the boundary.</div>
+            <div class="ax8-authors">L. Fontaine &middot; R. Okafor &middot; S. Marchetti &middot; Y. Nakamura</div>
+            <div class="ax8-aff">Grid Learning Lab &middot; Institute of Energy Systems</div>
+          </div>
+          <div class="ax8-corner-r">
+            <span class="ax8-logo-block">IES</span>
+          </div>
+        </div>
+        <div class="ax8-ghost"><div class="ax8-gcard"></div><div class="ax8-gcard"></div><div class="ax8-gcard"></div><div class="ax8-gcard"></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- M2 -->
+  <section class="ax8-block" id="ax8-m2">
+    <div class="ax8-block-head">
+      <h3 class="ax8-opt-name">M2 左对齐无带 <span class="ax8-en">Left-aligned, no band</span></h3>
+      <span class="ax8-anchors"><span class="ax8-chip">66429</span><span class="ax8-chip">67122</span></span>
+    </div>
+    <p class="ax8-scene"><span class="ax8-lab">适用:</span>标题偏长、需要自然断行时;编辑/杂志气质,与留白多的 sparse 版式和左起阅读动线相配。不靠色带,靠字重与留白立住页头。</p>
+    <div class="ax8-scroll">
+      <div class="ax8-strip ax8-cropb">
+        <div class="ax8-h-left">
+          <div>
+            <div class="ax8-title">Scaling Power-Flow Learning to Continent-Sized Grids</div>
+            <div class="ax8-tag">One graph model, twelve national grids, zero retraining at the boundary.</div>
+            <div class="ax8-authors">L. Fontaine &middot; R. Okafor &middot; S. Marchetti &middot; Y. Nakamura</div>
+            <div class="ax8-aff">Grid Learning Lab &middot; Institute of Energy Systems</div>
+          </div>
+          <div class="ax8-idrow">
+            <span class="ax8-logo-seal">GL</span>
+            <span class="ax8-logo-block">IES</span>
+          </div>
+        </div>
+        <div class="ax8-ghost"><div class="ax8-gcard"></div><div class="ax8-gcard"></div><div class="ax8-gcard"></div><div class="ax8-gcard"></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- M3 -->
+  <section class="ax8-block" id="ax8-m3">
+    <div class="ax8-block-head">
+      <h3 class="ax8-opt-name">M3 品牌色带 <span class="ax8-en">Brand color band</span></h3>
+      <span class="ax8-anchors"><span class="ax8-chip">63030</span><span class="ax8-chip">65423</span><span class="ax8-chip">62378</span><span class="ax8-chip">65748</span></span>
+    </div>
+    <p class="ax8-scene"><span class="ax8-lab">适用:</span>会场远距识别优先、机构有现成品牌色;色带同时给白底 logo 一个体面的落点(白 chip 垫底)。注意冲突规则 9:带上文字按最差对比点检查。</p>
+    <div class="ax8-scroll">
+      <div class="ax8-strip ax8-cropb">
+        <div class="ax8-h-band">
+          <div>
+            <div class="ax8-title">Scaling Power-Flow Learning to Continent-Sized Grids</div>
+            <div class="ax8-tag">One graph model, twelve national grids, zero retraining at the boundary.</div>
+            <div class="ax8-authors">L. Fontaine &middot; R. Okafor &middot; S. Marchetti &middot; Y. Nakamura</div>
+            <div class="ax8-aff">Grid Learning Lab &middot; Institute of Energy Systems</div>
+          </div>
+          <div class="ax8-idrow">
+            <span class="ax8-chiplogo"><span class="ax8-logo-seal">GL</span></span>
+            <span class="ax8-chiplogo"><span class="ax8-logo-block">IES</span></span>
+          </div>
+        </div>
+        <div class="ax8-ghost"><div class="ax8-gcard"></div><div class="ax8-gcard"></div><div class="ax8-gcard"></div><div class="ax8-gcard"></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- M4 -->
+  <section class="ax8-block" id="ax8-m4">
+    <div class="ax8-block-head">
+      <h3 class="ax8-opt-name">M4 题入色板 <span class="ax8-en">Title-in-slab</span></h3>
+      <span class="ax8-anchors"><span class="ax8-chip">60655</span><span class="ax8-chip">63300</span></span>
+    </div>
+    <p class="ax8-scene"><span class="ax8-lab">适用:</span>想把标题做成一个“对象”而非一行字 —— 题与作者装进一块悬浮色板,画布在四周可见,页头自带卡片感。</p>
+    <div class="ax8-scroll">
+      <div class="ax8-strip ax8-cropb">
+        <div class="ax8-h-slab">
+          <div class="ax8-slab">
+            <div class="ax8-title">Scaling Power-Flow Learning to Continent-Sized Grids</div>
+            <div class="ax8-authors">L. Fontaine &middot; R. Okafor &middot; S. Marchetti &middot; Y. Nakamura</div>
+            <div class="ax8-aff">Grid Learning Lab &middot; Institute of Energy Systems</div>
+          </div>
+          <div class="ax8-sideid">
+            <div class="ax8-idrow">
+              <span class="ax8-logo-seal">GL</span>
+              <span class="ax8-logo-block">IES</span>
+            </div>
+          </div>
+        </div>
+        <div class="ax8-ghost"><div class="ax8-gcard"></div><div class="ax8-gcard"></div><div class="ax8-gcard"></div><div class="ax8-gcard"></div></div>
+      </div>
+    </div>
+    <p class="ax8-note">注:此处演示的是“页头位置的独立色板”。若题入<strong>中央舞台</strong>(60655 式,标题住进版心的彩色/深色主区),
+      舞台的几何属轴 1(冲突规则 3),本轴只管题在舞台内怎么排。</p>
+  </section>
+
+  <!-- M5 -->
+  <section class="ax8-block" id="ax8-m5">
+    <div class="ax8-block-head">
+      <h3 class="ax8-opt-name">M5 眉线 + 展示刊头 <span class="ax8-en">Eyebrow + display masthead</span></h3>
+      <span class="ax8-anchors"><span class="ax8-chip">64736</span></span>
+    </div>
+    <p class="ax8-scene"><span class="ax8-lab">适用:</span>sparse showcase 版式;眉线(字距拉开的小字)交代会议/领域,标题以展示级字号成为整页第一视觉。页头吃掉更多高度,内容多时慎用(容量规则 1)。</p>
+    <div class="ax8-scroll">
+      <div class="ax8-strip ax8-cropb">
+        <div class="ax8-h-display">
+          <div class="ax8-eyebrow">ICML 2026 &middot; Machine Learning for Power Systems</div>
+          <div class="ax8-title">Scaling Power-Flow Learning to Continent-Sized Grids</div>
+          <div class="ax8-authors">L. Fontaine &middot; R. Okafor &middot; S. Marchetti &middot; Y. Nakamura</div>
+          <div class="ax8-aff">Grid Learning Lab &middot; Institute of Energy Systems</div>
+        </div>
+        <div class="ax8-ghost"><div class="ax8-gcard"></div><div class="ax8-gcard"></div><div class="ax8-gcard"></div><div class="ax8-gcard"></div></div>
+      </div>
+    </div>
+    <p class="ax8-note">注:64736 原作眉线配衬线展示体;字体族属轴 4,此处按控制变量统一为无衬线,只演示“眉线 + 放大刊头”的结构。</p>
+  </section>
+
+  <!-- M6 -->
+  <section class="ax8-block" id="ax8-m6">
+    <div class="ax8-block-head">
+      <h3 class="ax8-opt-name">M6 降题升问 <span class="ax8-en">Demoted title + promoted question</span></h3>
+      <span class="ax8-anchors"><span class="ax8-chip">66579</span><span class="ax8-chip">67122</span></span>
+    </div>
+    <p class="ax8-scene"><span class="ax8-lab">适用:</span>有一句能拦住路人的问题句时 —— 正式标题缩小置角保学术合规,大字问题句当主视觉;适合问题驱动、结论反直觉的工作。</p>
+    <div class="ax8-scroll">
+      <div class="ax8-strip ax8-cropb">
+        <div class="ax8-h-question">
+          <div class="ax8-demoted">
+            <div>
+              <div class="ax8-demoted-title">Scaling Power-Flow Learning to Continent-Sized Grids</div>
+              <div class="ax8-demoted-meta">L. Fontaine &middot; R. Okafor &middot; S. Marchetti &middot; Y. Nakamura — Grid Learning Lab &middot; Institute of Energy Systems</div>
+            </div>
+            <div class="ax8-idrow">
+              <span class="ax8-logo-seal">GL</span>
+              <span class="ax8-logo-block">IES</span>
+            </div>
+          </div>
+          <div class="ax8-question">Does power-flow learning stop at <span class="ax8-q-accent">national borders?</span></div>
+        </div>
+        <div class="ax8-ghost"><div class="ax8-gcard"></div><div class="ax8-gcard"></div><div class="ax8-gcard"></div><div class="ax8-gcard"></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- M7 -->
+  <section class="ax8-block" id="ax8-m7">
+    <div class="ax8-block-head">
+      <h3 class="ax8-opt-name">M7 项目字标 <span class="ax8-en">Project wordmark</span></h3>
+      <span class="ax8-anchors"><span class="ax8-chip">65221</span><span class="ax8-chip">64049</span><span class="ax8-chip">66466</span></span>
+    </div>
+    <p class="ax8-scene"><span class="ax8-lab">适用:</span>系统 / 基准 / 工具类论文,项目名即品牌 —— 项目名做成 logo 感字标打头,论文全题退居次行;方便与代码仓库、demo 站共用视觉识别。</p>
+    <div class="ax8-scroll">
+      <div class="ax8-strip ax8-cropb">
+        <div class="ax8-h-wordmark">
+          <div>
+            <div class="ax8-wordmark">
+              <span class="ax8-wm-glyph">G</span>
+              <span class="ax8-wm-name">GRID<span class="ax8-wm-half">SCALE</span></span>
+              <span class="ax8-wm-ver">v2.0</span>
+            </div>
+            <div class="ax8-wm-paper">Scaling Power-Flow Learning to Continent-Sized Grids</div>
+            <div class="ax8-authors">L. Fontaine &middot; R. Okafor &middot; S. Marchetti &middot; Y. Nakamura</div>
+            <div class="ax8-aff">Grid Learning Lab &middot; Institute of Energy Systems</div>
+          </div>
+          <div class="ax8-idrow">
+            <span class="ax8-logo-seal">GL</span>
+            <span class="ax8-logo-block">IES</span>
+          </div>
+        </div>
+        <div class="ax8-ghost"><div class="ax8-gcard"></div><div class="ax8-gcard"></div><div class="ax8-gcard"></div><div class="ax8-gcard"></div></div>
+      </div>
+    </div>
+    <p class="ax8-note">注:字标的字形玩法(渐变、圆角图形字)属轴 3/轴 4 的修饰;本轴只管“项目名升格为刊头、论文题降级”的层级结构。字标与作者行之间用次行标题隔开,避免打架。</p>
+  </section>
+
+  <!-- ==================== 二、footer ==================== -->
+  <h2 class="ax8-sec" id="ax8-sec-f">二、footer 页脚 <span class="ax8-en">4 选 1</span></h2>
+  <p class="ax8-sec-intro">条带展示一截幽灵正文(向上渐隐 = 裁切)+ 页脚;F4 例外,整版真实比例画出,以展示页头页脚呼应。</p>
+
+  <!-- F1 -->
+  <section class="ax8-block" id="ax8-f1">
+    <div class="ax8-block-head">
+      <h3 class="ax8-opt-name">F1 无页脚 <span class="ax8-en">None</span></h3>
+      <span class="ax8-anchors"><span class="ax8-chip">—</span></span>
+    </div>
+    <p class="ax8-scene"><span class="ax8-lab">适用:</span>联系方式已由页头 QR / 角标承担时;正文直接收底,留白即收尾,最省高度 —— sparse 版式与画布感设计的常配。</p>
+    <div class="ax8-scroll">
+      <div class="ax8-strip ax8-cropt">
+        <div class="ax8-ghost ax8-ghost--above ax8-ghost--floor">
+          <div class="ax8-gcard"></div><div class="ax8-gcard"></div><div class="ax8-gcard"></div><div class="ax8-gcard"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- F2 -->
+  <section class="ax8-block" id="ax8-f2">
+    <div class="ax8-block-head">
+      <h3 class="ax8-opt-name">F2 联系条 <span class="ax8-en">Contact strip</span></h3>
+      <span class="ax8-anchors"><span class="ax8-chip">—</span></span>
+    </div>
+    <p class="ax8-scene"><span class="ax8-lab">适用:</span>默认收尾 —— 细分隔线 + 一行小字放方法名、代码仓库、邮箱、致谢;不抢正文,与任何页头兼容。</p>
+    <div class="ax8-scroll">
+      <div class="ax8-strip ax8-cropt">
+        <div class="ax8-ghost ax8-ghost--above ax8-ghost--h72">
+          <div class="ax8-gcard"></div><div class="ax8-gcard"></div><div class="ax8-gcard"></div><div class="ax8-gcard"></div>
+        </div>
+        <div class="ax8-f-contact">
+          <div><span class="ax8-fc-name">GRIDSCALE</span> &middot; ICML 2026 &middot; Acknowledgements: continental TSO data consortium.</div>
+          <div>Code: <span class="ax8-fc-link">github.com/gridlab/gridscale</span> &nbsp;&middot;&nbsp; Contact: <span class="ax8-fc-link">fontaine@ies.edu</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- F3 -->
+  <section class="ax8-block" id="ax8-f3">
+    <div class="ax8-block-head">
+      <h3 class="ax8-opt-name">F3 宣言带 <span class="ax8-en">Manifesto band</span></h3>
+      <span class="ax8-anchors"><span class="ax8-chip">65205</span><span class="ax8-chip">61797</span><span class="ax8-chip">60839</span></span>
+    </div>
+    <p class="ax8-scene"><span class="ax8-lab">适用:</span>有一句可执行的结论(65205 原句 “Front-load your dropout.” 式)+ 两三个硬指标;把“带走什么”压缩进观众离场前的最后一眼。</p>
+    <div class="ax8-scroll">
+      <div class="ax8-strip ax8-cropt">
+        <div class="ax8-ghost ax8-ghost--above ax8-ghost--h66">
+          <div class="ax8-gcard"></div><div class="ax8-gcard"></div><div class="ax8-gcard"></div><div class="ax8-gcard"></div>
+        </div>
+        <div class="ax8-f-manifesto">
+          <div>
+            <div class="ax8-fm-say">Pretrain on the continent. Dispatch every nation.</div>
+            <div class="ax8-fm-sub">One actionable sentence — what a practitioner should change tomorrow.</div>
+          </div>
+          <div class="ax8-fm-metrics">
+            <div class="ax8-fm-metric"><div class="ax8-fm-num">12</div><div class="ax8-fm-lab">national grids</div></div>
+            <div class="ax8-fm-metric"><div class="ax8-fm-num">0</div><div class="ax8-fm-lab">boundary retrains</div></div>
+            <div class="ax8-fm-metric"><div class="ax8-fm-num">40&times;</div><div class="ax8-fm-lab">faster than N&ndash;R</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- F4 -->
+  <section class="ax8-block" id="ax8-f4">
+    <div class="ax8-block-head">
+      <h3 class="ax8-opt-name">F4 三明治 <span class="ax8-en">Sandwich</span></h3>
+      <span class="ax8-anchors"><span class="ax8-chip">63627</span><span class="ax8-chip">64834</span><span class="ax8-chip">64160</span></span>
+    </div>
+    <p class="ax8-scene"><span class="ax8-lab">适用:</span>品牌色带页头的自然配对 —— 页脚复用同一色带,整版被上下两条带“夹住”,完成感最强;页脚带装联系信息或缩水版宣言均可。</p>
+    <div class="ax8-scroll">
+      <div class="ax8-poster">
+        <div class="ax8-h-band">
+          <div>
+            <div class="ax8-title">Scaling Power-Flow Learning to Continent-Sized Grids</div>
+            <div class="ax8-tag">One graph model, twelve national grids, zero retraining at the boundary.</div>
+            <div class="ax8-authors">L. Fontaine &middot; R. Okafor &middot; S. Marchetti &middot; Y. Nakamura</div>
+            <div class="ax8-aff">Grid Learning Lab &middot; Institute of Energy Systems</div>
+          </div>
+          <div class="ax8-idrow">
+            <span class="ax8-chiplogo"><span class="ax8-logo-seal">GL</span></span>
+            <span class="ax8-chiplogo"><span class="ax8-logo-block">IES</span></span>
+          </div>
+        </div>
+        <div class="ax8-sand-body">
+          <div class="ax8-sand-col"><div class="ax8-gcard"></div><div class="ax8-gcard"></div><div class="ax8-gcard"></div></div>
+          <div class="ax8-sand-col"><div class="ax8-gcard"></div><div class="ax8-gcard"></div></div>
+          <div class="ax8-sand-col"><div class="ax8-gcard"></div><div class="ax8-gcard"></div></div>
+          <div class="ax8-sand-col"><div class="ax8-gcard"></div><div class="ax8-gcard"></div><div class="ax8-gcard"></div></div>
+        </div>
+        <div class="ax8-f-sandwich">
+          <div><span class="ax8-fs-name">GRIDSCALE</span> <span class="ax8-fs-dim">&middot; ICML 2026 &middot; Grid Learning Lab</span></div>
+          <div class="ax8-fs-dim">github.com/gridlab/gridscale &nbsp;&middot;&nbsp; fontaine@ies.edu</div>
+        </div>
+      </div>
+    </div>
+    <p class="ax8-note">注:整版按 60×36 in 真实比例缩放,页脚带与页头带同色、同水平边距、下带更窄 —— “呼应”指色与边距的复用,不是等高复制。</p>
+  </section>
+
+  <!-- ==================== 三、identity accessory ==================== -->
+  <h2 class="ax8-sec" id="ax8-sec-a">三、identity accessory 身份件 <span class="ax8-en">3 选 0–1,可与任意页头页脚组合</span></h2>
+  <p class="ax8-sec-intro">身份件解决“logo 和 QR 放哪、怎么做”。演示均挂在中性页头上;换成 M3/M6 等页头同样成立。</p>
+
+  <!-- A1 -->
+  <section class="ax8-block" id="ax8-a1">
+    <div class="ax8-block-head">
+      <h3 class="ax8-opt-name">A1 logo 墙 <span class="ax8-en">Logo wall</span></h3>
+      <span class="ax8-anchors"><span class="ax8-chip">—</span></span>
+    </div>
+    <p class="ax8-scene"><span class="ax8-lab">适用:</span>多机构合作(3 个以上徽标)—— 归拢成一面等高的墙,避免徽标散落两角互相打架;墙可放页头下沿(本例)或页脚。</p>
+    <div class="ax8-scroll">
+      <div class="ax8-strip ax8-cropb">
+        <div class="ax8-h-wall">
+          <div class="ax8-title">Scaling Power-Flow Learning to Continent-Sized Grids</div>
+          <div class="ax8-authors">L. Fontaine &middot; R. Okafor &middot; S. Marchetti &middot; Y. Nakamura</div>
+          <div class="ax8-aff">Grid Learning Lab &middot; Institute of Energy Systems &middot; Continental TSO Consortium</div>
+          <div class="ax8-logowall">
+            <span class="ax8-logo-seal">GL</span>
+            <span class="ax8-logo-word"><span class="ax8-lw-main">GRID LAB</span><span class="ax8-lw-sub">EST. 1998</span></span>
+            <span class="ax8-logo-block">IES</span>
+            <span class="ax8-logo-word"><span class="ax8-lw-main">TSO&nbsp;CONSORTIUM</span><span class="ax8-lw-sub">EUROPE</span></span>
+            <span class="ax8-logo-seal">EU</span>
+          </div>
+        </div>
+        <div class="ax8-ghost"><div class="ax8-gcard"></div><div class="ax8-gcard"></div><div class="ax8-gcard"></div><div class="ax8-gcard"></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- A2 -->
+  <section class="ax8-block" id="ax8-a2">
+    <div class="ax8-block-head">
+      <h3 class="ax8-opt-name">A2 QR-CTA 带标签 <span class="ax8-en">QR-CTA with labeled tags</span></h3>
+      <span class="ax8-anchors"><span class="ax8-chip">65372</span><span class="ax8-chip">65748</span></span>
+    </div>
+    <p class="ax8-scene"><span class="ax8-lab">适用:</span>把“扫码”做成显式行动号召 —— 码下压一块实色标签牌(65372 原作 “SCAN ME” / “READ ME”),双码分流论文与代码;比默默摆一个码的转化率直觉上高得多。</p>
+    <div class="ax8-scroll">
+      <div class="ax8-strip ax8-cropb">
+        <div class="ax8-h-left">
+          <div>
+            <div class="ax8-title">Scaling Power-Flow Learning to Continent-Sized Grids</div>
+            <div class="ax8-tag">One graph model, twelve national grids, zero retraining at the boundary.</div>
+            <div class="ax8-authors">L. Fontaine &middot; R. Okafor &middot; S. Marchetti &middot; Y. Nakamura</div>
+            <div class="ax8-aff">Grid Learning Lab &middot; Institute of Energy Systems</div>
+          </div>
+          <div class="ax8-idrow ax8-idrow--wide">
+            <span class="ax8-cta">
+              <span class="ax8-qr ax8-qr--lg"><svg viewBox="0 0 21 21" role="img" aria-label="QR 占位"><use href="#ax8-qrpath"/></svg></span>
+              <span class="ax8-cta-tab">SCAN&nbsp;ME</span>
+              <span class="ax8-cta-sub">Paper</span>
+            </span>
+            <span class="ax8-cta">
+              <span class="ax8-qr ax8-qr--lg"><svg viewBox="0 0 21 21" role="img" aria-label="QR 占位"><use href="#ax8-qrpath"/></svg></span>
+              <span class="ax8-cta-tab">READ&nbsp;ME</span>
+              <span class="ax8-cta-sub">Code &amp; Data</span>
+            </span>
+          </div>
+        </div>
+        <div class="ax8-ghost"><div class="ax8-gcard"></div><div class="ax8-gcard"></div><div class="ax8-gcard"></div><div class="ax8-gcard"></div></div>
+      </div>
+    </div>
+    <p class="ax8-note">注:两码演示复用同一个假码 SVG;成品中两码内容不同,标签牌文案随目标动作改写(“TRY&nbsp;IT”“POSTER&nbsp;PDF”均可)。</p>
+  </section>
+
+  <!-- A3 -->
+  <section class="ax8-block" id="ax8-a3">
+    <div class="ax8-block-head">
+      <h3 class="ax8-opt-name">A3 logo+QR 侧轨 <span class="ax8-en">Logo + QR side rail</span></h3>
+      <span class="ax8-anchors"><span class="ax8-chip">65626</span><span class="ax8-chip">66579</span></span>
+    </div>
+    <p class="ax8-scene"><span class="ax8-lab">适用:</span>身份件多而杂(logo×2 + QR + 联系方式)时,在页头右端立一条通高竖轨集中收纳,标题区因此干净完整;与带状 / 暗色页头尤配。</p>
+    <div class="ax8-scroll">
+      <div class="ax8-strip ax8-cropb">
+        <div class="ax8-h-rail">
+          <div class="ax8-rail-main">
+            <div class="ax8-title">Scaling Power-Flow Learning to Continent-Sized Grids</div>
+            <div class="ax8-tag">One graph model, twelve national grids, zero retraining at the boundary.</div>
+            <div class="ax8-authors">L. Fontaine &middot; R. Okafor &middot; S. Marchetti &middot; Y. Nakamura</div>
+            <div class="ax8-aff">Grid Learning Lab &middot; Institute of Energy Systems</div>
+          </div>
+          <div class="ax8-rail">
+            <span class="ax8-rail-cap">Identity</span>
+            <span class="ax8-logo-seal">GL</span>
+            <span class="ax8-logo-block">IES</span>
+            <span class="ax8-qr"><svg viewBox="0 0 21 21" role="img" aria-label="QR 占位"><use href="#ax8-qrpath"/></svg></span>
+          </div>
+        </div>
+        <div class="ax8-ghost"><div class="ax8-gcard"></div><div class="ax8-gcard"></div><div class="ax8-gcard"></div><div class="ax8-gcard"></div></div>
+      </div>
+    </div>
+    <p class="ax8-note">注:65626 原作是暗底带状页头 + 右侧竖轨;此处按控制变量以浅色 tint 演示同一收纳结构。轨宽计入页头几何,若轴 1 已给标题留整条竖轨,则侧轨并入该轨而非再开一条。</p>
+  </section>
+
+  <!-- ==================== 页尾 ==================== -->
+  <footer class="ax8-foot">
+    <p>占位说明:所有 logo 为纯 CSS 方块 / 圆徽 / 字标牌,QR 为内联 SVG 假码(结构仿 QR v1,含三定位角与时序线,<strong>不可扫描</strong>)。
+      搬运 CSS 进组件库时替换为真实素材;真实 QR 生成方式见 templates/landscape_4col_neutral.html 页头注释。</p>
+    <p>组合提醒:三个子选择自由搭配(如 M3 + F4 + A2);唯一的硬约束是冲突规则 3(masthead 模式与轴 1 几何匹配)
+      与规则 9(色带上文字按最差对比点检查)。连发多张海报时注意反趋同规则:masthead 是四个必变维度之一。</p>
+  </footer>
+
+</div>
+</body>
+</html>

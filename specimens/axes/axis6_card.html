@@ -1,0 +1,804 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>轴 6 · 卡面与框 Card Surface &amp; Frame — 选项目录</title>
+<!--
+  posterly 设计轴选项目录 · 轴 6 卡面与框
+  ─ 自包含:无 CDN / 无外链 / 无脚本。
+  ─ 规格 CSS(class 前缀 ax6-)全部使用模板令牌体系(--u / --rs / 颜色 / 阴影令牌),
+    与 templates/landscape_4col_neutral.html 对齐,可直接搬运进组件库。
+  ─ 页面外壳(标题、目录、图注)不是搬运对象,用普通 px。
+  ─ 锚点编号为 ICML 2026 精选海报 ID:
+    https://icml.cc/media/PosterPDFs/ICML%202026/<id>.png
+-->
+<style>
+  /* =========================================================
+     令牌区 — 与 templates/landscape_4col_neutral.html 的 :root 对齐。
+     两处为演示可见性做了标注偏离(构造不变):
+       --bg-card-tint  模板默认 #FAFAFB(极淡);此处取 66429 的可见灰 #EEF0F2
+       --shadow-card   模板默认 alpha .05(极轻);此处 alpha .12 以便看清
+     ========================================================= */
+  :root {
+    --accent:        #2D5F8B;
+    --accent-deep:   #1F4566;
+    --accent-light:  #E8F1F8;
+    --accent-soft:   #D7E5F0;
+    --accent-ink:    #FFFFFF;
+
+    --emph:          #C9A24A;
+    --emph-soft:     #FFF7E0;
+    --emph-ink:      var(--accent-deep);
+
+    --text-primary:   #1A1A1A;
+    --text-secondary: #555555;
+    --text-muted:     #888888;
+
+    --bg-page:        #F6F2F0;
+    --bg-card:        #FFFFFF;
+    --bg-card-tint:   #EEF0F2;   /* 模板默认 #FAFAFB,见上方标注 */
+    --bg-emphasis:    var(--accent-light);
+
+    --border-soft:    #D8D8D8;
+    --border-strong:  var(--accent);
+
+    /* brand slab 专用填充。不能直接写 var(--accent-deep):slab 类内部
+       会把 --accent-deep 翻转成浅色墨,自引用会连 slab 底一起翻掉。 */
+    --slab:           #1F4566;
+
+    /* 局部暗底演示令牌(最小化搭建;真实海报中这是轴 2 的选择) */
+    --dk-canvas:      #14181E;
+    --dk-card:        #1C232C;
+    --dk-border:      #39434F;
+    --lum:            #7CC4F0;   /* luminous 框线亮色 */
+
+    /* 基准单位。模板 1.6px;目录页取 1.2px,迷你卡 250u ≈ 300px。 */
+    --u: 1.2px;
+
+    --fs-1: calc(9  * var(--u));
+    --fs-2: calc(10 * var(--u));
+    --fs-3: calc(11 * var(--u));
+    --fs-4: calc(12 * var(--u));
+    --fs-5: calc(13 * var(--u));
+    --fs-7: calc(16 * var(--u));
+    --fs-8: calc(22 * var(--u));
+
+    --font-serif: "Charter", "Source Serif Pro", "Georgia", serif;
+    --font-sans:  "Inter", "Helvetica Neue", "PingFang SC", "Noto Sans CJK SC", sans-serif;
+
+    --shadow-card: 0 calc(2 * var(--u)) calc(8 * var(--u)) rgba(45, 95, 139, 0.12);
+
+    /* 全类圆角比例乘子:每个 border-radius 都写作
+       calc(k * var(--u) * var(--rs));1 = 出厂软圆角,0 = 方角。 */
+    --rs: 1;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { overflow-x: clip; }
+  body {
+    background: #FBFBFC;
+    color: #24292F;
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* =========================================================
+     页面外壳(非搬运对象)
+     ========================================================= */
+  .ax6-page { max-width: 1240px; margin: 0 auto; padding: 30px clamp(14px, 3vw, 36px) 64px; }
+
+  .ax6-hero { border-bottom: 2px solid var(--accent); padding-bottom: 18px; margin-bottom: 26px; }
+  .ax6-hero .kicker { font-size: 12px; letter-spacing: .14em; color: var(--accent); font-weight: 700; text-transform: uppercase; }
+  .ax6-hero h1 { font-size: 27px; line-height: 1.25; margin: 6px 0 10px; color: #17202A; }
+  .ax6-hero h1 em { font-style: normal; color: var(--accent-deep); }
+  .ax6-hero p { font-size: 14px; line-height: 1.75; color: #454C54; max-width: 62em; margin-bottom: 8px; }
+  .ax6-hero code, .ax6-cap code, .ax6-secintro code {
+    font-family: "SFMono-Regular", "Menlo", "Consolas", monospace;
+    font-size: .92em; background: #EEF2F5; border-radius: 3px; padding: 0 4px; color: #1F4566;
+  }
+  .ax6-formula {
+    display: inline-block; background: #F0F5F9; border: 1px solid #D7E5F0;
+    border-radius: 6px; padding: 6px 12px; font-size: 13.5px; color: #1F4566; margin: 2px 0 6px;
+  }
+
+  .ax6-toc { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+  .ax6-toc a {
+    text-decoration: none; font-size: 13px; color: var(--accent-deep);
+    background: #EDF3F8; border: 1px solid #D7E5F0; border-radius: 999px; padding: 4px 12px;
+  }
+  .ax6-toc a b { font-weight: 700; }
+
+  .ax6-sec { margin: 40px 0 0; }
+  .ax6-sec > h2 {
+    font-size: 19px; color: #17202A; display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;
+    border-left: 5px solid var(--accent); padding-left: 12px;
+  }
+  .ax6-sec > h2 .en { font-size: 13px; font-weight: 600; color: #6A737D; }
+  .ax6-secintro { font-size: 13px; color: #57606A; line-height: 1.7; margin: 8px 0 16px; max-width: 66em; }
+
+  .ax6-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(352px, 100%), 1fr)); gap: 18px; }
+
+  figure.ax6-demo { background: #FFFFFF; border: 1px solid #E4E7EB; border-radius: 10px; overflow: hidden; }
+  .ax6-stage {
+    position: relative; background: var(--bg-page);
+    min-height: 196px; display: grid; place-items: center;
+    padding: 30px 18px 22px;
+    border-bottom: 1px solid #E4E7EB;
+  }
+  .ax6-stage-tag {
+    position: absolute; top: 7px; left: 10px;
+    font-size: 10.5px; letter-spacing: .04em; color: #98A1AA;
+  }
+  .ax6-stage--white      { background: var(--bg-card); }
+  .ax6-stage--brandlight { background: var(--accent-light); }
+  /* 局部暗底(轴 2 的选择,这里最小化搭建):画布换暗色,
+     同时把墨色/卡面/框线令牌整体翻转 —— 组件 CSS 本身不用改。 */
+  .ax6-stage--dark {
+    background: var(--dk-canvas);
+    --text-primary:  #E9F1F8;
+    --text-secondary:#B9C6D2;
+    --text-muted:    #93A7B8;
+    --accent-deep:   #BFE0F7;
+    --accent:        #8FCBF2;
+    --bg-card:       var(--dk-card);
+    --border-soft:   var(--dk-border);
+  }
+  .ax6-stage--dark .ax6-stage-tag { color: #7E8C99; }
+
+  figcaption.ax6-cap { padding: 11px 14px 13px; }
+  .ax6-cap .name { font-size: 14.5px; font-weight: 700; color: #17202A; }
+  .ax6-cap .name .en { font-weight: 600; font-size: 12.5px; color: #6A737D; margin-left: 6px; }
+  .ax6-cap .ids {
+    float: right; font-size: 11px; color: var(--accent);
+    background: #EDF3F8; border-radius: 999px; padding: 2px 8px; margin-left: 8px;
+  }
+  .ax6-cap p { clear: none; font-size: 12.5px; line-height: 1.65; color: #57606A; margin-top: 5px; }
+
+  .ax6-foot { margin-top: 46px; font-size: 12px; color: #98A1AA; border-top: 1px solid #E4E7EB; padding-top: 14px; line-height: 1.7; }
+
+  /* =========================================================
+     ▼▼ 规格 CSS(可直接搬运)——迷你内容卡 ▼▼
+     同一张卡演示所有选项:节标题 + 两行正文 + 一个小数字。
+     ========================================================= */
+  .ax6-card {
+    width: min(calc(250 * var(--u)), 100%);
+    position: relative;
+    border-radius: calc(5 * var(--u) * var(--rs));
+    padding: calc(8 * var(--u)) calc(11 * var(--u));
+    font-family: var(--font-serif);
+  }
+  .ax6-ct {
+    font-family: var(--font-sans); font-weight: 700;
+    font-size: var(--fs-7); line-height: 1.18;
+    color: var(--accent-deep);
+    margin-bottom: calc(3 * var(--u));
+  }
+  .ax6-body {
+    font-size: var(--fs-4); line-height: 1.38;
+    color: var(--text-primary);
+    margin-bottom: calc(5 * var(--u));
+  }
+  .ax6-metric {
+    font-family: var(--font-sans); font-weight: 800;
+    font-size: var(--fs-8); line-height: 1;
+    color: var(--accent);
+  }
+  .ax6-metric span {
+    font-size: var(--fs-2); font-weight: 600;
+    color: var(--text-muted); margin-left: calc(3 * var(--u));
+  }
+
+  /* =========================================================
+     子维度 1 · surface 卡面(5)
+     ========================================================= */
+  /* 1a 无卡:文字直接落在画布上。无框设计必须给替代分组信号
+        (此处 = 标题短杆 + 留白对齐;软规则)。 */
+  .ax6-s-transparent { background: transparent; padding-left: 0; padding-right: 0; }
+  .ax6-s-transparent .ax6-ct {
+    display: inline-block;
+    border-bottom: calc(2 * var(--u)) solid var(--accent);
+    padding-bottom: calc(2 * var(--u));
+    margin-bottom: calc(5 * var(--u));
+  }
+  /* 1b 画布同调浅灰:浅灰填充、无框,靠明度差分组。 */
+  .ax6-s-tint  { background: var(--bg-card-tint); }
+  /* 1c 白卡(出厂默认卡面)。 */
+  .ax6-s-white { background: var(--bg-card); }
+  /* 1d 品牌色块板:深色板 + 浅色墨。板内只翻转 ink 令牌,不引入新色相。 */
+  .ax6-s-slab {
+    background: var(--slab);
+    --text-primary: #F2F7FB;
+    --text-muted:   #A9C3D8;
+    --accent-deep:  #FFFFFF;   /* 节标题墨 */
+    --accent:       #A9CDEC;   /* 数字墨 */
+  }
+  /* 1e 白卡浮于色底:卡面即 white,"浮"来自画布(轴 2 选浅色底)。 */
+
+  /* =========================================================
+     子维度 2 · frame-line 框线(7)
+     ========================================================= */
+  .ax6-f-hairline { border: calc(1   * var(--u)) solid  var(--border-soft); }
+  .ax6-f-thin     { border: calc(1   * var(--u)) solid  var(--accent); }
+  .ax6-f-thick    { border: calc(3   * var(--u)) solid  var(--accent); }
+  .ax6-f-dashed   { border: calc(1.2 * var(--u)) dashed var(--accent); }
+  /* 2f 发光描边:亮色框线 + 紧贴线的小半径辉光。仅限局部暗底(硬规则 4/5)。 */
+  .ax6-f-luminous {
+    border: calc(1 * var(--u)) solid var(--lum);
+    box-shadow: 0 0 calc(6 * var(--u)) rgba(124, 196, 240, 0.60),
+                inset 0 0 calc(4 * var(--u)) rgba(124, 196, 240, 0.22);
+  }
+  /* 2g 装饰框:双线(外 1u + 内 0.6u 的 inset ::before)+ 四角菱形角饰。
+        纯 CSS 无图片;角饰用 4 个空元素 <i class="ax6-orn">,实心菱形
+        盖在内线四角上,小尺寸下比描边菱形更锐利。 */
+  .ax6-f-ornamental {
+    border: calc(1 * var(--u)) solid var(--accent);
+    padding: calc(12 * var(--u)) calc(15 * var(--u));
+  }
+  .ax6-f-ornamental::before {
+    content: ""; position: absolute; inset: calc(5 * var(--u));
+    border: calc(0.6 * var(--u)) solid var(--accent);
+    border-radius: calc(2 * var(--u) * var(--rs));
+    pointer-events: none;
+  }
+  .ax6-orn {
+    position: absolute; z-index: 1;
+    width: calc(6 * var(--u)); height: calc(6 * var(--u));
+    background: var(--accent);
+    transform: rotate(45deg);
+  }
+  /* 菱形中心压在内线角点(inset 5u)上:6u 元素偏移 2u 即中心 5u。 */
+  .ax6-orn--tl { top:    calc(2 * var(--u)); left:  calc(2 * var(--u)); }
+  .ax6-orn--tr { top:    calc(2 * var(--u)); right: calc(2 * var(--u)); }
+  .ax6-orn--bl { bottom: calc(2 * var(--u)); left:  calc(2 * var(--u)); }
+  .ax6-orn--br { bottom: calc(2 * var(--u)); right: calc(2 * var(--u)); }
+
+  /* =========================================================
+     子维度 3 · elevation 高度(3)
+     ========================================================= */
+  .ax6-e-shadow { box-shadow: var(--shadow-card); }
+  /* 3c 外发光:卡体外围弥散光晕(大半径),区别于贴着框线的 luminous。
+        仅限局部暗底(硬规则 5)。 */
+  .ax6-e-glow   { box-shadow: 0 0 calc(18 * var(--u)) rgba(124, 196, 240, 0.38); }
+
+  /* =========================================================
+     modifiers 修饰件(3)—— 与任意主框并存
+     ========================================================= */
+  /* m1 左缘色条:只替换左边线,与 hairline 主框其余三边并存。 */
+  .ax6-m-adm { border-left: calc(6 * var(--u)) solid var(--accent); }
+
+  /* m2 角标签:Theorem/Lemma 角签,绝对定位于卡左上角;
+        外角圆角走同一 --rs,与卡同步缩放;内容用 padding-top 让位。 */
+  .ax6-m-tab { padding-top: calc(19 * var(--u)); }
+  .ax6-tab {
+    position: absolute; top: 0; left: 0;
+    background: var(--accent); color: var(--accent-ink);
+    font-family: var(--font-sans); font-weight: 700;
+    font-size: var(--fs-1); letter-spacing: .07em;
+    padding: calc(2.5 * var(--u)) calc(8 * var(--u));
+    border-radius: calc(5 * var(--u) * var(--rs)) 0 calc(5 * var(--u) * var(--rs)) 0;
+  }
+
+  /* m3 边缘连体 chips(量测安全构造,参考 specimens/s4_capsule_frame):
+        卡的边框盒把 chip 出头区包含在内(上缘留 --chip-half),
+        可见卡面与框线由 inset ::before 下移半个 chip 高绘制,
+        chips 绝对定位 top:0 骑在可见边线上 —— 一切都在边框盒内,
+        任何 overflow / 量测脚本都不会截断(硬规则 8)。 */
+  .ax6-m-chips {
+    --chip-h:    calc(14 * var(--u));
+    --chip-half: calc(7  * var(--u));
+    z-index: 0;                            /* 自建层叠上下文,::before 沉底 */
+    background: transparent; border: none;
+    padding-top: calc(21 * var(--u));
+  }
+  .ax6-m-chips::before {
+    content: ""; position: absolute;
+    inset: var(--chip-half) 0 0 0;
+    background: var(--bg-card);
+    border: calc(1 * var(--u)) solid var(--accent);   /* 主框画在 ::before 上 */
+    border-radius: calc(5 * var(--u) * var(--rs));
+    z-index: -1;
+  }
+  .ax6-chip-row {
+    position: absolute; top: 0; right: calc(12 * var(--u));
+    display: flex; gap: calc(4 * var(--u));
+  }
+  .ax6-chip {
+    height: var(--chip-h);
+    display: inline-flex; align-items: center;
+    padding: 0 calc(8 * var(--u));
+    background: var(--accent); color: var(--accent-ink);
+    font-family: var(--font-sans); font-weight: 700; font-size: var(--fs-1);
+    border-radius: calc(7 * var(--u) * var(--rs));
+    white-space: nowrap;
+  }
+
+  /* =========================================================
+     secondary / inner profile 嵌套内层框
+     只有设计真的嵌套时才实例化第二套框形;它挂在自己的类上,
+     不继承主框 —— 全局把主框改成 none 时它仍成立(硬规则 8)。
+     ========================================================= */
+  .ax6-inner-row { display: flex; gap: calc(6 * var(--u)); margin-top: calc(2 * var(--u)); }
+  .ax6-inner {
+    flex: 1; min-width: 0;
+    border: calc(1 * var(--u)) dashed var(--accent);
+    border-radius: calc(3 * var(--u) * var(--rs));
+    padding: calc(4 * var(--u)) calc(7 * var(--u));
+  }
+  .ax6-inner .lbl {
+    display: block;
+    font-family: var(--font-sans); font-weight: 600;
+    font-size: var(--fs-1); letter-spacing: .05em;
+    color: var(--text-muted);
+  }
+  .ax6-inner .val {
+    font-family: var(--font-sans); font-weight: 800;
+    font-size: var(--fs-5); color: var(--accent);
+  }
+
+  /* 胶囊 pill(--rs 行用,展示第三个圆角类):7u·rs,rs=1 时全圆头。 */
+  .ax6-pill {
+    display: inline-flex; align-items: center;
+    height: calc(14 * var(--u));
+    padding: 0 calc(8 * var(--u));
+    background: var(--accent); color: var(--accent-ink);
+    font-family: var(--font-sans); font-weight: 700; font-size: var(--fs-1);
+    border-radius: calc(7 * var(--u) * var(--rs));
+    margin-bottom: calc(4 * var(--u));
+  }
+  /* ▲▲ 规格 CSS 结束 ▲▲ */
+
+  /* --rs 演示行(外壳):三格并排,各自覆写 --rs。 */
+  .ax6-rs-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(300px, 100%), 1fr)); gap: 18px; }
+  .ax6-rs-1  { --rs: 1; }
+  .ax6-rs-05 { --rs: 0.5; }
+  .ax6-rs-0  { --rs: 0; }
+</style>
+</head>
+<body>
+<div class="ax6-page">
+
+  <!-- ======================= 页头 ======================= -->
+  <header class="ax6-hero">
+    <div class="kicker">Posterly · Design Axes · 选项目录</div>
+    <h1>轴 6 · 卡面与框 <em>Card Surface &amp; Frame</em></h1>
+    <p class="ax6-formula">每张卡 = surface × frame-line × elevation&nbsp;&nbsp;( + 0–n 个 modifiers )&nbsp;&nbsp;( + 仅嵌套设计:secondary/inner profile )</p>
+    <p>本轴决定每个内容模块的"卡"长什么样。它<b>不是单选枚举</b>,而是三个<b>正交子维度</b>的自由组合:
+       <b>surface</b>(卡面填充)、<b>frame-line</b>(框线)、<b>elevation</b>(高度/光影);任何组合上还可叠加
+       <b>modifiers</b>(左缘色条、角标签、边缘连体 chips),嵌套模块可另行声明一套<b>内层框形</b>。
+       圆角由全局令牌 <code>--rs</code> 统一控制:所有 <code>border-radius</code> 写作
+       <code>calc(k · var(--u) · var(--rs))</code>,<code>--rs</code> 是<b>全类圆角比例乘子</b>——
+       一处调整,卡/内框/胶囊等所有元素类按各自的 k 等比缩放、层级关系不变;仅当设计需要跨类分化(方卡 + 胶囊 chip)才按类覆盖。</p>
+    <p>控制变量:全页统一中性配色(模板默认蓝 <code>#2D5F8B</code>)与中性字体;每节只改变本节子维度,其余固定。
+       需要暗底的选项(发光描边、外发光)各自带一小块最小化暗画布,并注明"依赖轴 2 局部暗底"。
+       图注中的编号是 ICML 2026 精选海报锚点 ID。</p>
+    <nav class="ax6-toc">
+      <a href="#surface"><b>一</b> 卡面 surface(5)</a>
+      <a href="#frame"><b>二</b> 框线 frame-line(7)</a>
+      <a href="#elevation"><b>三</b> 高度 elevation(3)</a>
+      <a href="#modifiers"><b>四</b> 修饰件 modifiers(3)</a>
+      <a href="#inner"><b>五</b> 嵌套内层框 inner profile(1)</a>
+      <a href="#rs"><b>六</b> 圆角缩放 --rs(3)</a>
+    </nav>
+  </header>
+
+  <!-- ======================= 一 · surface ======================= -->
+  <section class="ax6-sec" id="surface">
+    <h2>一 · 卡面 <span class="en">surface(5 选项)</span></h2>
+    <p class="ax6-secintro">控制变量:本节固定 frame-line = none、elevation = flat,只看"卡面拿什么当底"。</p>
+    <div class="ax6-grid">
+
+      <figure class="ax6-demo">
+        <div class="ax6-stage">
+          <span class="ax6-stage-tag">画布 --bg-page</span>
+          <div class="ax6-card ax6-s-transparent">
+            <div class="ax6-ct">Power-Tempered Sampling</div>
+            <p class="ax6-body">PowerFlow tempers the reward exponent &alpha; under trajectory balance, keeping sample length stable across the sweep.</p>
+            <div class="ax6-metric">+4.6 <span>MATH-500 pass@1</span></div>
+          </div>
+        </div>
+        <figcaption class="ax6-cap">
+          <span class="ids">64164 · 67122</span>
+          <span class="name">无卡 · 透明<span class="en">transparent</span></span>
+          <p>文字直接落在画布上。无框设计必须给<b>替代分组信号</b>——此处是标题短杆 + 留白对齐(软规则,间距/标题杆/对齐皆可)。硬规则 6:墨色对比按实际底色的<b>最差点</b>校验(分裂/渐变画布尤其)。</p>
+        </figcaption>
+      </figure>
+
+      <figure class="ax6-demo">
+        <div class="ax6-stage ax6-stage--white">
+          <span class="ax6-stage-tag">画布 --bg-card(白)</span>
+          <div class="ax6-card ax6-s-tint">
+            <div class="ax6-ct">Power-Tempered Sampling</div>
+            <p class="ax6-body">PowerFlow tempers the reward exponent &alpha; under trajectory balance, keeping sample length stable across the sweep.</p>
+            <div class="ax6-metric">+4.6 <span>MATH-500 pass@1</span></div>
+          </div>
+        </div>
+        <figcaption class="ax6-cap">
+          <span class="ids">66243 · 66429</span>
+          <span class="name">画布同调浅灰<span class="en">canvas-tint</span></span>
+          <p>浅灰填充、无框,靠明度差完成分组。令牌 <code>--bg-card-tint</code>(模板默认 <code>#FAFAFB</code> 极淡,此处取 66429 的可见灰度 <code>#EEF0F2</code>,构造不变)。</p>
+        </figcaption>
+      </figure>
+
+      <figure class="ax6-demo">
+        <div class="ax6-stage">
+          <span class="ax6-stage-tag">画布 --bg-page</span>
+          <div class="ax6-card ax6-s-white">
+            <div class="ax6-ct">Power-Tempered Sampling</div>
+            <p class="ax6-body">PowerFlow tempers the reward exponent &alpha; under trajectory balance, keeping sample length stable across the sweep.</p>
+            <div class="ax6-metric">+4.6 <span>MATH-500 pass@1</span></div>
+          </div>
+        </div>
+        <figcaption class="ax6-cap">
+          <span class="ids">出厂默认</span>
+          <span class="name">白卡<span class="en">white</span></span>
+          <p>白面 <code>--bg-card</code> 依赖画布的明度差成立(此处 <code>--bg-page #F6F2F0</code>);实际常与 hairline 或 shadow 组合,这里刻意全裸以隔离变量。</p>
+        </figcaption>
+      </figure>
+
+      <figure class="ax6-demo">
+        <div class="ax6-stage">
+          <span class="ax6-stage-tag">画布 --bg-page</span>
+          <div class="ax6-card ax6-s-slab">
+            <div class="ax6-ct">Power-Tempered Sampling</div>
+            <p class="ax6-body">PowerFlow tempers the reward exponent &alpha; under trajectory balance, keeping sample length stable across the sweep.</p>
+            <div class="ax6-metric">+4.6 <span>MATH-500 pass@1</span></div>
+          </div>
+        </div>
+        <figcaption class="ax6-cap">
+          <span class="ids">66579 · 66057</span>
+          <span class="name">品牌色块板<span class="en">brand slab</span></span>
+          <p>深色板 + 浅色墨:板内<b>局部覆写 ink 令牌</b>(<code>--text-primary</code> 等),不引入新色相。硬规则 9:板上文字按最差对比点校验。注意 slab 底色用独立令牌 <code>--slab</code>,避免与被翻转的 <code>--accent-deep</code> 自引用。</p>
+        </figcaption>
+      </figure>
+
+      <figure class="ax6-demo">
+        <div class="ax6-stage ax6-stage--brandlight">
+          <span class="ax6-stage-tag">画布 --accent-light(轴 2 浅色底)</span>
+          <div class="ax6-card ax6-s-white">
+            <div class="ax6-ct">Power-Tempered Sampling</div>
+            <p class="ax6-body">PowerFlow tempers the reward exponent &alpha; under trajectory balance, keeping sample length stable across the sweep.</p>
+            <div class="ax6-metric">+4.6 <span>MATH-500 pass@1</span></div>
+          </div>
+        </div>
+        <figcaption class="ax6-cap">
+          <span class="ids">63507 · 67218</span>
+          <span class="name">白卡浮于色底<span class="en">floating white on colored canvas</span></span>
+          <p>卡面本身仍是 white;"浮"来自<b>画布换成浅色底</b>(轴 2 的选择),白卡靠色差天然成立。常配 shadow(第三节),此处保持 flat 以隔离变量。</p>
+        </figcaption>
+      </figure>
+
+    </div>
+  </section>
+
+  <!-- ======================= 二 · frame-line ======================= -->
+  <section class="ax6-sec" id="frame">
+    <h2>二 · 框线 <span class="en">frame-line(7 选项)</span></h2>
+    <p class="ax6-secintro">控制变量:本节固定 surface = white、elevation = flat,只换框线。发光描边需局部暗底(硬规则 4/5),该演示块自带最小暗画布,墨色令牌整体翻转、组件 CSS 不变。</p>
+    <div class="ax6-grid">
+
+      <figure class="ax6-demo">
+        <div class="ax6-stage">
+          <span class="ax6-stage-tag">画布 --bg-page</span>
+          <div class="ax6-card ax6-s-white">
+            <div class="ax6-ct">Power-Tempered Sampling</div>
+            <p class="ax6-body">PowerFlow tempers the reward exponent &alpha; under trajectory balance, keeping sample length stable across the sweep.</p>
+            <div class="ax6-metric">+4.6 <span>MATH-500 pass@1</span></div>
+          </div>
+        </div>
+        <figcaption class="ax6-cap">
+          <span class="name">无框<span class="en">none</span></span>
+          <p>分组信号交还给 surface 与间距(软规则:无框布局需要<b>某种</b>替代分组信号)。</p>
+        </figcaption>
+      </figure>
+
+      <figure class="ax6-demo">
+        <div class="ax6-stage">
+          <span class="ax6-stage-tag">画布 --bg-page</span>
+          <div class="ax6-card ax6-s-white ax6-f-hairline">
+            <div class="ax6-ct">Power-Tempered Sampling</div>
+            <p class="ax6-body">PowerFlow tempers the reward exponent &alpha; under trajectory balance, keeping sample length stable across the sweep.</p>
+            <div class="ax6-metric">+4.6 <span>MATH-500 pass@1</span></div>
+          </div>
+        </div>
+        <figcaption class="ax6-cap">
+          <span class="ids">出厂默认</span>
+          <span class="name">发丝线<span class="en">hairline</span></span>
+          <p><code>calc(1·--u) solid --border-soft</code>——最轻的可见轮廓,不参与配色叙事。</p>
+        </figcaption>
+      </figure>
+
+      <figure class="ax6-demo">
+        <div class="ax6-stage">
+          <span class="ax6-stage-tag">画布 --bg-page</span>
+          <div class="ax6-card ax6-s-white ax6-f-thin">
+            <div class="ax6-ct">Power-Tempered Sampling</div>
+            <p class="ax6-body">PowerFlow tempers the reward exponent &alpha; under trajectory balance, keeping sample length stable across the sweep.</p>
+            <div class="ax6-metric">+4.6 <span>MATH-500 pass@1</span></div>
+          </div>
+        </div>
+        <figcaption class="ax6-cap">
+          <span class="ids">65714 · 66774</span>
+          <span class="name">细彩线<span class="en">thin colored</span></span>
+          <p><code>1·--u solid --accent</code>:框线开始携带品牌色,仍保持克制。66774 在此之上叠 fieldset-legend 标题(轴 7,需要真实边框——硬规则 2)。</p>
+        </figcaption>
+      </figure>
+
+      <figure class="ax6-demo">
+        <div class="ax6-stage">
+          <span class="ax6-stage-tag">画布 --bg-page</span>
+          <div class="ax6-card ax6-s-white ax6-f-thick">
+            <div class="ax6-ct">Power-Tempered Sampling</div>
+            <p class="ax6-body">PowerFlow tempers the reward exponent &alpha; under trajectory balance, keeping sample length stable across the sweep.</p>
+            <div class="ax6-metric">+4.6 <span>MATH-500 pass@1</span></div>
+          </div>
+        </div>
+        <figcaption class="ax6-cap">
+          <span class="ids">63300 · 67045 · 63713</span>
+          <span class="name">粗彩线<span class="en">thick colored</span></span>
+          <p><code>3·--u solid --accent</code>:框线本身成为版面元素,模块感强,适合 mosaic / 工程报告类骨架。</p>
+        </figcaption>
+      </figure>
+
+      <figure class="ax6-demo">
+        <div class="ax6-stage">
+          <span class="ax6-stage-tag">画布 --bg-page</span>
+          <div class="ax6-card ax6-s-white ax6-f-dashed">
+            <div class="ax6-ct">Power-Tempered Sampling</div>
+            <p class="ax6-body">PowerFlow tempers the reward exponent &alpha; under trajectory balance, keeping sample length stable across the sweep.</p>
+            <div class="ax6-metric">+4.6 <span>MATH-500 pass@1</span></div>
+          </div>
+        </div>
+        <figcaption class="ax6-cap">
+          <span class="ids">62901 · 66383</span>
+          <span class="name">虚线<span class="en">dashed</span></span>
+          <p><code>1.2·--u dashed --accent</code>,比 solid 轻一档的手绘/草稿气质。62901 在虚线框上骑一枚胶囊标题(轴 7 ribbon-tab,见 specimens/s4)。</p>
+        </figcaption>
+      </figure>
+
+      <figure class="ax6-demo">
+        <div class="ax6-stage ax6-stage--dark">
+          <span class="ax6-stage-tag">画布 局部暗底 · 依赖轴 2</span>
+          <div class="ax6-card ax6-f-luminous ax6-s-white">
+            <div class="ax6-ct">Power-Tempered Sampling</div>
+            <p class="ax6-body">PowerFlow tempers the reward exponent &alpha; under trajectory balance, keeping sample length stable across the sweep.</p>
+            <div class="ax6-metric">+4.6 <span>MATH-500 pass@1</span></div>
+          </div>
+        </div>
+        <figcaption class="ax6-cap">
+          <span class="ids">66072</span>
+          <span class="name">发光描边<span class="en">luminous outline</span></span>
+          <p>亮色框线 + <b>紧贴线</b>的小半径辉光(外 6u + 内 4u 的 box-shadow)。硬规则 4/5:仅限<b>局部为暗</b>的底;暗底内 <code>--bg-card / --text-* / --accent*</code> 令牌整体翻转,组件规则不动。</p>
+        </figcaption>
+      </figure>
+
+      <figure class="ax6-demo">
+        <div class="ax6-stage">
+          <span class="ax6-stage-tag">画布 --bg-page</span>
+          <div class="ax6-card ax6-s-white ax6-f-ornamental">
+            <i class="ax6-orn ax6-orn--tl"></i><i class="ax6-orn ax6-orn--tr"></i><i class="ax6-orn ax6-orn--bl"></i><i class="ax6-orn ax6-orn--br"></i>
+            <div class="ax6-ct">Power-Tempered Sampling</div>
+            <p class="ax6-body">PowerFlow tempers the reward exponent &alpha; under trajectory balance, keeping sample length stable across the sweep.</p>
+            <div class="ax6-metric">+4.6 <span>MATH-500 pass@1</span></div>
+          </div>
+        </div>
+        <figcaption class="ax6-cap">
+          <span class="ids">66372</span>
+          <span class="name">装饰框<span class="en">ornamental</span></span>
+          <p>双线(外 <code>1u</code> 边框 + 内 <code>0.6u</code> 的 inset <code>::before</code>)+ 四角实心菱形角饰(4 个空元素压在内线角点上)。纯 CSS 无图片。66372 的整页描金框属轴 2 treatment,本选项是<b>模块级</b>装饰框。</p>
+        </figcaption>
+      </figure>
+
+    </div>
+  </section>
+
+  <!-- ======================= 三 · elevation ======================= -->
+  <section class="ax6-sec" id="elevation">
+    <h2>三 · 高度 <span class="en">elevation(3 选项)</span></h2>
+    <p class="ax6-secintro">控制变量:本节固定 surface = white、frame-line = hairline,只换光影。外发光同样只允许出现在局部暗底上(硬规则 5)。</p>
+    <div class="ax6-grid">
+
+      <figure class="ax6-demo">
+        <div class="ax6-stage">
+          <span class="ax6-stage-tag">画布 --bg-page</span>
+          <div class="ax6-card ax6-s-white ax6-f-hairline">
+            <div class="ax6-ct">Power-Tempered Sampling</div>
+            <p class="ax6-body">PowerFlow tempers the reward exponent &alpha; under trajectory balance, keeping sample length stable across the sweep.</p>
+            <div class="ax6-metric">+4.6 <span>MATH-500 pass@1</span></div>
+          </div>
+        </div>
+        <figcaption class="ax6-cap">
+          <span class="name">平贴<span class="en">flat</span></span>
+          <p>无光影,层级完全交给 surface / frame-line 表达。印刷最稳。</p>
+        </figcaption>
+      </figure>
+
+      <figure class="ax6-demo">
+        <div class="ax6-stage">
+          <span class="ax6-stage-tag">画布 --bg-page</span>
+          <div class="ax6-card ax6-s-white ax6-f-hairline ax6-e-shadow">
+            <div class="ax6-ct">Power-Tempered Sampling</div>
+            <p class="ax6-body">PowerFlow tempers the reward exponent &alpha; under trajectory balance, keeping sample length stable across the sweep.</p>
+            <div class="ax6-metric">+4.6 <span>MATH-500 pass@1</span></div>
+          </div>
+        </div>
+        <figcaption class="ax6-cap">
+          <span class="ids">出厂默认令牌</span>
+          <span class="name">投影<span class="en">shadow</span></span>
+          <p>阴影令牌 <code>--shadow-card</code>(模板默认 alpha .05 极轻,此处 .12 以便看清,构造不变)。软规则:暗底上避免低对比灰投影——用描边/辉光/内阴影替代。</p>
+        </figcaption>
+      </figure>
+
+      <figure class="ax6-demo">
+        <div class="ax6-stage ax6-stage--dark">
+          <span class="ax6-stage-tag">画布 局部暗底 · 依赖轴 2</span>
+          <div class="ax6-card ax6-s-white ax6-f-hairline ax6-e-glow">
+            <div class="ax6-ct">Power-Tempered Sampling</div>
+            <p class="ax6-body">PowerFlow tempers the reward exponent &alpha; under trajectory balance, keeping sample length stable across the sweep.</p>
+            <div class="ax6-metric">+4.6 <span>MATH-500 pass@1</span></div>
+          </div>
+        </div>
+        <figcaption class="ax6-cap">
+          <span class="ids">66072 同族</span>
+          <span class="name">外发光<span class="en">outer glow</span></span>
+          <p>卡体外围<b>弥散</b>光晕(18u 大半径 box-shadow)。与发光描边正交:那是"线自己亮",这是"卡在暗中浮起";两者都只允许在局部暗底上(硬规则 5)。</p>
+        </figcaption>
+      </figure>
+
+    </div>
+  </section>
+
+  <!-- ======================= 四 · modifiers ======================= -->
+  <section class="ax6-sec" id="modifiers">
+    <h2>四 · 修饰件 <span class="en">modifiers(3,可与任意主框并存)</span></h2>
+    <p class="ax6-secintro">修饰件不是第四个互斥维度,而是<b>叠加件</b>:以下三例都叠在带框的白卡上,证明与主框并存。附着/出头构造受硬规则 8 约束:不得被裁切、不得与上方块碰撞。</p>
+    <div class="ax6-grid">
+
+      <figure class="ax6-demo">
+        <div class="ax6-stage">
+          <span class="ax6-stage-tag">画布 --bg-page</span>
+          <div class="ax6-card ax6-s-white ax6-f-hairline ax6-m-adm">
+            <div class="ax6-ct">Power-Tempered Sampling</div>
+            <p class="ax6-body">PowerFlow tempers the reward exponent &alpha; under trajectory balance, keeping sample length stable across the sweep.</p>
+            <div class="ax6-metric">+4.6 <span>MATH-500 pass@1</span></div>
+          </div>
+        </div>
+        <figcaption class="ax6-cap">
+          <span class="ids">66427 · 61312</span>
+          <span class="name">左缘色条<span class="en">left-edge admonition bar</span></span>
+          <p><code>border-left: 6·--u solid --accent</code>,只替换左边线,与 hairline 主框其余三边自然并存。文档式"注意/要点"语气,常配 <code>--bg-emphasis</code> 浅底。</p>
+        </figcaption>
+      </figure>
+
+      <figure class="ax6-demo">
+        <div class="ax6-stage">
+          <span class="ax6-stage-tag">画布 --bg-page</span>
+          <div class="ax6-card ax6-s-white ax6-f-hairline ax6-m-tab">
+            <span class="ax6-tab">THEOREM 1</span>
+            <div class="ax6-ct">Power-Tempered Sampling</div>
+            <p class="ax6-body">PowerFlow tempers the reward exponent &alpha; under trajectory balance, keeping sample length stable across the sweep.</p>
+            <div class="ax6-metric">+4.6 <span>MATH-500 pass@1</span></div>
+          </div>
+        </div>
+        <figcaption class="ax6-cap">
+          <span class="ids">62998</span>
+          <span class="name">角标签<span class="en">corner type-tab</span></span>
+          <p>"Lemma / Theorem" 类型角签:卡内绝对定位于左上角,外角圆角与卡共用同一 <code>--rs</code> 因而同步缩放;内容用 <code>padding-top</code> 让位,不碰撞。</p>
+        </figcaption>
+      </figure>
+
+      <figure class="ax6-demo">
+        <div class="ax6-stage">
+          <span class="ax6-stage-tag">画布 --bg-page</span>
+          <div class="ax6-card ax6-m-chips">
+            <span class="ax6-chip-row"><span class="ax6-chip">&alpha;-robust</span><span class="ax6-chip">len-stable</span></span>
+            <div class="ax6-ct">Power-Tempered Sampling</div>
+            <p class="ax6-body">PowerFlow tempers the reward exponent &alpha; under trajectory balance, keeping sample length stable across the sweep.</p>
+            <div class="ax6-metric">+4.6 <span>MATH-500 pass@1</span></div>
+          </div>
+        </div>
+        <figcaption class="ax6-cap">
+          <span class="ids">66057</span>
+          <span class="name">边缘连体 chips<span class="en">edge-attached chips</span></span>
+          <p>子主张 chips <b>骑在卡上缘</b>。量测安全构造(参考 specimens/s4):卡的边框盒包含 chip 出头区,可见卡面+主框由 inset <code>::before</code> 下移半个 chip 高绘制,chips 定位 <code>top:0</code>——一切在边框盒内,overflow / 量测脚本都不会截断(硬规则 8)。主框画在 ::before 上,故与任意 frame-line 并存。</p>
+        </figcaption>
+      </figure>
+
+    </div>
+  </section>
+
+  <!-- ======================= 五 · inner profile ======================= -->
+  <section class="ax6-sec" id="inner">
+    <h2>五 · 嵌套内层框 <span class="en">secondary / inner profile</span></h2>
+    <p class="ax6-secintro">只有设计<b>真的嵌套</b>(卡内还有成组的小模块)时才实例化第二套框形;不嵌套就不声明。内层框挂在自己的类上、不继承主框——全局把主框换成 none 时它必须仍然成立(硬规则 8)。</p>
+    <div class="ax6-grid">
+
+      <figure class="ax6-demo">
+        <div class="ax6-stage">
+          <span class="ax6-stage-tag">画布 --bg-page</span>
+          <div class="ax6-card ax6-s-white ax6-f-hairline ax6-e-shadow">
+            <div class="ax6-ct">Power-Tempered Sampling</div>
+            <p class="ax6-body">Two nested readouts share a second, dashed frame profile.</p>
+            <div class="ax6-inner-row">
+              <div class="ax6-inner"><span class="lbl">PASS@1</span><span class="val">+4.6</span></div>
+              <div class="ax6-inner"><span class="lbl">LEN DRIFT</span><span class="val">&minus;0.2%</span></div>
+            </div>
+          </div>
+        </div>
+        <figcaption class="ax6-cap">
+          <span class="ids">63640 · 60839 · 65372</span>
+          <span class="name">外层软卡 + 内层虚线方框<span class="en">soft outer + dashed inner</span></span>
+          <p>外层 = 白卡 + hairline + shadow(软圆角 5u·rs);内层 = 第二套框形:<code>1u dashed --accent</code>、更小的圆角 3u·rs。两套框形各自完整声明,互不派生。</p>
+        </figcaption>
+      </figure>
+
+    </div>
+  </section>
+
+  <!-- ======================= 六 · --rs ======================= -->
+  <section class="ax6-sec" id="rs">
+    <h2>六 · 圆角缩放 <span class="en">--rs(全类比例乘子)</span></h2>
+    <p class="ax6-secintro">同一张卡(细彩框 5u·rs + 胶囊 7u·rs + 内框 3u·rs)在 <code>--rs: 1 / 0.5 / 0</code> 下并排:所有元素类按各自系数<b>等比</b>缩放,"胶囊 &gt; 卡 &gt; 内框"的圆角层级不变。仅当设计需要跨类分化(方卡 + 胶囊 chip)才按类覆盖。</p>
+    <div class="ax6-rs-grid">
+
+      <figure class="ax6-demo ax6-rs-1">
+        <div class="ax6-stage">
+          <span class="ax6-stage-tag">--rs: 1</span>
+          <div class="ax6-card ax6-s-white ax6-f-thin">
+            <span class="ax6-pill">&alpha;-robust</span>
+            <div class="ax6-ct">Power-Tempered Sampling</div>
+            <div class="ax6-inner-row">
+              <div class="ax6-inner"><span class="lbl">PASS@1</span><span class="val">+4.6</span></div>
+            </div>
+          </div>
+        </div>
+        <figcaption class="ax6-cap">
+          <span class="name">--rs: 1<span class="en">出厂软圆角</span></span>
+          <p>卡 5u · 胶囊 7u(全圆头)· 内框 3u。</p>
+        </figcaption>
+      </figure>
+
+      <figure class="ax6-demo ax6-rs-05">
+        <div class="ax6-stage">
+          <span class="ax6-stage-tag">--rs: 0.5</span>
+          <div class="ax6-card ax6-s-white ax6-f-thin">
+            <span class="ax6-pill">&alpha;-robust</span>
+            <div class="ax6-ct">Power-Tempered Sampling</div>
+            <div class="ax6-inner-row">
+              <div class="ax6-inner"><span class="lbl">PASS@1</span><span class="val">+4.6</span></div>
+            </div>
+          </div>
+        </div>
+        <figcaption class="ax6-cap">
+          <span class="name">--rs: 0.5<span class="en">半径减半</span></span>
+          <p>所有类同乘 0.5,层级关系保持。</p>
+        </figcaption>
+      </figure>
+
+      <figure class="ax6-demo ax6-rs-0">
+        <div class="ax6-stage">
+          <span class="ax6-stage-tag">--rs: 0</span>
+          <div class="ax6-card ax6-s-white ax6-f-thin">
+            <span class="ax6-pill">&alpha;-robust</span>
+            <div class="ax6-ct">Power-Tempered Sampling</div>
+            <div class="ax6-inner-row">
+              <div class="ax6-inner"><span class="lbl">PASS@1</span><span class="val">+4.6</span></div>
+            </div>
+          </div>
+        </div>
+        <figcaption class="ax6-cap">
+          <span class="name">--rs: 0<span class="en">方角</span></span>
+          <p>全部归零成方角——一枚令牌完成"圆角气质"的整体切换。</p>
+        </figcaption>
+      </figure>
+
+    </div>
+  </section>
+
+  <footer class="ax6-foot">
+    specimens/axes/axis6_card.html · 轴 6 选项目录 · 令牌体系与 templates/landscape_4col_neutral.html 对齐(<code>--u</code> 基准单位、<code>--rs</code> 全类圆角乘子、颜色/阴影令牌)· 规格 CSS 位于「规格 CSS(可直接搬运)」注释块内 · 锚点为 ICML 2026 精选海报 ID
+  </footer>
+
+</div>
+</body>
+</html>

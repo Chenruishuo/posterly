@@ -1,0 +1,795 @@
+<!DOCTYPE html>
+<!--
+  AXIS CATALOG — Axis 7: section-heading joint (joint shape × marker × content form)
+  Self-contained option catalog distilled from the 80-poster ICML 2026 corpus
+  (anchor numbers are poster IDs). Controlled variables: every demo uses the
+  SAME mini card (white card, single slate-teal accent, same title + two lines
+  of PowerFlow-flavored body); the joint construction is the ONLY variable.
+
+  Portability notes (component library):
+  - All classes are ax7- prefixed; constructions are dependency-free.
+  - When porting into the poster system, swap literal colors/sizes for the
+    --accent/--fs-*/--u tokens of templates/landscape_4col_neutral.html.
+  - ribbon-tab uses the measurement-safe construction from
+    specimens/s4_capsule_frame: the capsule sits INSIDE the card's border box
+    (top: 0); the visible frame is drawn by an inset ::before starting at half
+    the capsule height, so the capsule straddles the frame line without
+    overflowing the measured box (clash rule 8 safe).
+  - fieldset-legend avoids background masking entirely: the inset ::before
+    draws left/right/bottom borders only; the top line is drawn as two flex
+    segments inside the legend row, so the gap is a REAL gap and the
+    construction works on any canvas color.
+-->
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>轴 7 · 节标题接合 — 选项目录</title>
+<style>
+  /* =========================================================
+     TOKENS — single slate-teal accent; neutral chrome
+     ========================================================= */
+  :root {
+    --ax7-accent:      #0F6070;   /* slate teal          */
+    --ax7-deep:        #0A434E;   /* deep teal (headings)*/
+    --ax7-accent-soft: #D9E6E9;   /* soft teal line      */
+    --ax7-ink:         #1A1A1A;
+    --ax7-sub:         #555555;
+    --ax7-muted:       #888888;
+    --ax7-line:        #D8D8D8;   /* hairline neutral    */
+    --ax7-card:        #FFFFFF;
+    --ax7-page:        #EEF1F2;
+    --ax7-sans:  "Inter", "Helvetica Neue", Arial, sans-serif;
+    --ax7-serif: "Charter", "Georgia", serif;
+    --ax7-mono:  ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    /* ribbon-tab geometry (s4): capsule height + half */
+    --ax7-cap-h:    32px;
+    --ax7-cap-half: 16px;
+    /* fieldset geometry: legend row height + line offset */
+    --ax7-leg-h: 32px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { background: var(--ax7-page); color: var(--ax7-ink); font-family: var(--ax7-sans); }
+
+  /* =========================================================
+     PAGE CHROME (catalog UI, not part of the portable kit)
+     ========================================================= */
+  .ax7-page-wrap { max-width: 1140px; margin: 0 auto; padding: 36px 26px 72px; }
+
+  .ax7-kicker {
+    font-size: 11px; font-weight: 700; letter-spacing: 0.22em;
+    color: var(--ax7-accent); text-transform: uppercase; margin-bottom: 10px;
+  }
+  .ax7-hero h1 { font-size: 26px; line-height: 1.2; color: var(--ax7-deep); letter-spacing: -0.01em; }
+  .ax7-hero h1 i { font-style: normal; font-weight: 500; color: var(--ax7-sub); font-size: 19px; margin-left: 8px; }
+  .ax7-lede { max-width: 60em; font-size: 13.5px; line-height: 1.7; color: var(--ax7-sub); margin-top: 12px; }
+  .ax7-lede b { color: var(--ax7-deep); }
+
+  .ax7-slots { display: flex; flex-wrap: wrap; align-items: stretch; gap: 10px; margin-top: 16px; }
+  .ax7-slot {
+    background: var(--ax7-card); border: 1px solid var(--ax7-accent-soft);
+    border-top: 3px solid var(--ax7-accent); border-radius: 8px;
+    padding: 8px 14px; display: flex; flex-direction: column; gap: 1px; min-width: 148px;
+  }
+  .ax7-slot b { font-size: 13.5px; color: var(--ax7-deep); }
+  .ax7-slot span { font-size: 11px; color: var(--ax7-muted); }
+  .ax7-slot i { font-style: normal; font-size: 11px; font-weight: 700; color: var(--ax7-accent); margin-top: 3px; }
+  .ax7-x { align-self: center; font-size: 16px; font-weight: 700; color: var(--ax7-muted); }
+  .ax7-eq { align-self: center; font-size: 12.5px; font-weight: 700; color: var(--ax7-deep); }
+
+  .ax7-toc { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px; }
+  .ax7-toc a {
+    text-decoration: none; font-size: 12px; font-weight: 600;
+    color: var(--ax7-deep); background: var(--ax7-card);
+    border: 1px solid var(--ax7-line); border-radius: 999px; padding: 5px 13px;
+  }
+  .ax7-toc a:hover { border-color: var(--ax7-accent); color: var(--ax7-accent); }
+  .ax7-ctrl {
+    margin-top: 16px; font-size: 12px; line-height: 1.6; color: var(--ax7-muted);
+    border-left: 3px solid var(--ax7-accent-soft); padding-left: 10px; max-width: 62em;
+  }
+
+  .ax7-section { margin-top: 44px; }
+  .ax7-section > h2 {
+    font-size: 17px; color: var(--ax7-deep); display: flex; flex-wrap: wrap;
+    align-items: baseline; gap: 10px;
+  }
+  .ax7-section > h2 i { font-style: normal; font-weight: 500; font-size: 13px; color: var(--ax7-muted); }
+  .ax7-secnote { font-size: 12.5px; line-height: 1.65; color: var(--ax7-sub); margin-top: 6px; max-width: 62em; }
+
+  .ax7-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+    gap: 26px 22px; margin-top: 18px;
+  }
+  .ax7-demo { min-width: 0; display: flex; flex-direction: column; }
+  .ax7-demo--wide { grid-column: 1 / -1; }
+
+  .ax7-demo-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px; }
+  .ax7-demo-name { font-size: 13.5px; font-weight: 700; color: var(--ax7-ink); }
+  .ax7-demo-name i { font-style: normal; font-weight: 500; color: var(--ax7-accent); }
+  .ax7-anchors { font-family: var(--ax7-mono); font-size: 11px; color: var(--ax7-muted); }
+  .ax7-flag {
+    display: inline-block; width: fit-content; margin-top: 5px;
+    font-size: 10.5px; font-weight: 600; color: var(--ax7-sub);
+    border: 1px dashed var(--ax7-muted); border-radius: 4px; padding: 2px 7px;
+  }
+  .ax7-stage { padding: 10px 0 4px; }
+  .ax7-note { font-size: 11.5px; line-height: 1.55; color: var(--ax7-muted); margin-top: 7px; max-width: 40em; }
+
+  .ax7-foot {
+    margin-top: 52px; border-top: 1px solid var(--ax7-line); padding-top: 16px;
+    font-size: 12px; line-height: 1.7; color: var(--ax7-muted); max-width: 66em;
+  }
+  .ax7-foot b { color: var(--ax7-sub); }
+
+  /* =========================================================
+     MINI CARD — the shared demo unit (portable base)
+     ========================================================= */
+  .ax7-card {
+    position: relative;
+    width: 320px; max-width: 100%;
+    background: var(--ax7-card);
+    border: 1px solid var(--ax7-line);
+    border-radius: 10px;
+    padding: 14px 18px 16px;
+  }
+  .ax7-body p, .ax7-band p {
+    font-family: var(--ax7-serif);
+    font-size: 12.5px; line-height: 1.5; color: var(--ax7-ink);
+  }
+  .ax7-body p + p { margin-top: 6px; }
+
+  /* shared heading base */
+  .ax7-h {
+    font-family: var(--ax7-sans); font-weight: 700; font-size: 15px;
+    line-height: 1.3; color: var(--ax7-deep); margin: 0 0 9px;
+  }
+
+  /* =========================================================
+     JOINT SHAPES (11 + 1 variant)
+     ========================================================= */
+
+  /* 1 · plain (63953) — weight/size does all the work */
+  /* (base .ax7-h, no extra construction) */
+
+  /* 2 · underline rule (65287, 66243) — rule hugs the title width */
+  .ax7-h--underline {
+    width: fit-content;
+    border-bottom: 3px solid var(--ax7-accent);
+    padding-bottom: 5px; margin-bottom: 10px;
+  }
+
+  /* 3 · trailing rule to the card edge (63030, 61312) —
+     ::after stretches to the border-box edge (negative margin stays
+     INSIDE the border box: no overflow) */
+  .ax7-h--trailing {
+    display: flex; align-items: center; gap: 10px;
+    margin-right: -18px; margin-bottom: 10px;
+  }
+  .ax7-h--trailing::after {
+    content: ""; flex: 1; height: 2px; background: var(--ax7-accent);
+  }
+
+  /* 4 · full-width bar (61273, 63136, 64164, 67229) —
+     card padding collapses to 0, the bar owns the first row */
+  .ax7-card--bar { padding: 0; overflow: hidden; }
+  .ax7-h--bar {
+    display: flex; align-items: center; gap: 9px;
+    background: var(--ax7-accent); color: #FFFFFF;
+    padding: 9px 18px; margin: 0;
+  }
+  .ax7-card--bar .ax7-body { padding: 11px 18px 15px; }
+
+  /* 5 · capsule-bar variant (63819) — thin-framed card, inset pill bar */
+  .ax7-card--capsulebar { border: 1.5px solid var(--ax7-accent); }
+  .ax7-h--capsulebar {
+    display: block; text-align: center;
+    background: var(--ax7-accent); color: #FFFFFF;
+    border-radius: 999px; padding: 7px 14px;
+    font-size: 14px; margin: 0 0 11px;
+  }
+
+  /* 6 · floating pill above the card (63640) — pill and card are
+     siblings in normal flow: detached look, measured inside the block,
+     nothing to clip (clash rule 8 safe) */
+  .ax7-pillblock { width: 320px; max-width: 100%; }
+  .ax7-h--pill {
+    display: inline-flex; align-items: center; width: fit-content; max-width: 94%;
+    background: var(--ax7-accent); color: #FFFFFF;
+    border-radius: 999px; padding: 8px 18px;
+    font-size: 14px; margin: 0 0 8px 12px;
+  }
+  .ax7-pillblock .ax7-card { width: 100%; }
+
+  /* 7 · fieldset-legend (66774, 63030) — the title breaks the border.
+     Inset ::before draws left/right/bottom borders + card fill starting
+     at the legend line; the TOP line is two real segments inside the
+     legend row (::before fixed, ::after flex) — the gap is a real gap,
+     no background masking, works on any canvas color. */
+  .ax7-card--fieldset {
+    z-index: 0; background: transparent; border: none;
+    padding: 0 18px 16px;
+  }
+  .ax7-card--fieldset::before {
+    content: ""; position: absolute;
+    top: calc(var(--ax7-leg-h) / 2 - 0.75px);   /* = legend line y */
+    left: 0; right: 0; bottom: 0;
+    background: var(--ax7-card);
+    border: 1.5px solid var(--ax7-accent); border-top: none;
+    border-radius: 0 0 10px 10px;               /* fieldset keeps square shoulders */
+    z-index: -1;
+  }
+  .ax7-h--fieldset {
+    display: flex; align-items: center; gap: 9px;
+    height: var(--ax7-leg-h);
+    margin: 0 -18px 6px;                        /* reach the border-box edges */
+    font-size: 14.5px;
+  }
+  .ax7-h--fieldset::before {
+    content: ""; width: 14px; height: 1.5px; background: var(--ax7-accent);
+  }
+  .ax7-h--fieldset::after {
+    content: ""; flex: 1; min-width: 12px; height: 1.5px; background: var(--ax7-accent);
+  }
+
+  /* 8 · ribbon-tab riding the border (62901) — s4 measurement-safe
+     construction: capsule at top:0 INSIDE the border box; the visible
+     dashed frame is an inset ::before starting at --ax7-cap-half, so the
+     capsule straddles the frame line without overflowing the measured box */
+  .ax7-card--ribbon {
+    z-index: 0; background: transparent; border: none;
+    padding: calc(var(--ax7-cap-h) + 12px) 18px 16px;
+  }
+  .ax7-card--ribbon::before {
+    content: ""; position: absolute;
+    top: var(--ax7-cap-half); left: 0; right: 0; bottom: 0;
+    background: var(--ax7-card);
+    border: 1.5px dashed var(--ax7-accent);
+    border-radius: 10px;
+    z-index: -1;
+  }
+  .ax7-h--ribbon {
+    position: absolute; top: 0; left: 0; right: 0;
+    margin: 0 auto; width: fit-content; max-width: 92%;
+    height: var(--ax7-cap-h);
+    display: flex; align-items: center; justify-content: center;
+    background: var(--ax7-accent); color: #FFFFFF;
+    border-radius: 999px; padding: 0 18px;
+    font-size: 14px; white-space: nowrap;
+    z-index: 1;
+  }
+
+  /* 9 · centered title + flanking dashes (64834, 63713) */
+  .ax7-h--dashes {
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+    text-align: center; margin-bottom: 10px;
+  }
+  .ax7-h--dashes::before, .ax7-h--dashes::after {
+    content: ""; width: 26px; height: 2.5px; border-radius: 2px;
+    background: var(--ax7-accent); flex: 0 0 auto;
+  }
+
+  /* 10 · vertical rotated rail (65221, 62054) — title stands on the card's
+     left edge; body is band-rows (the structure this joint requires) */
+  .ax7-card--rail { display: flex; padding: 0; overflow: hidden; min-height: 200px; }
+  .ax7-rail {
+    flex: 0 0 36px; background: var(--ax7-accent);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .ax7-h--rail {
+    margin: 0; writing-mode: vertical-rl; transform: rotate(180deg);
+    font-size: 13.5px; letter-spacing: 0.04em; white-space: nowrap;
+    color: #FFFFFF; line-height: 1;
+  }
+  .ax7-bands { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+  .ax7-band { flex: 1; display: flex; align-items: center; padding: 10px 14px; }
+  .ax7-band + .ax7-band { border-top: 1px solid var(--ax7-line); }
+
+  /* 11 · margin-detached side tab (60472) — the grid RESERVES the margin
+     column; the tab hangs in it, right-aligned, detached from the card */
+  .ax7-tabwrap {
+    display: grid; grid-template-columns: 100px minmax(0, 1fr);
+    column-gap: 12px; width: 432px; max-width: 100%;
+  }
+  .ax7-h--sidetab {
+    justify-self: end; align-self: start;
+    margin: 10px 0 0; max-width: 100%;
+    background: var(--ax7-accent); color: #FFFFFF;
+    font-size: 11.5px; line-height: 1.35; text-align: right;
+    border-radius: 8px; padding: 7px 10px;
+  }
+  .ax7-tabwrap .ax7-card { width: auto; }
+
+  /* 12 · chevron banner (64618) — clip-path cuts the arrow tail; the flag
+     starts flush at the card's left border-box edge (negative margin stays
+     inside the box: no overflow) */
+  .ax7-card--chevron { padding-top: 16px; }
+  .ax7-h--chevron {
+    display: inline-flex; align-items: center;
+    width: fit-content; max-width: calc(100% + 18px);
+    margin: 0 0 11px -18px;
+    background: var(--ax7-accent); color: #FFFFFF;
+    font-size: 14px; padding: 8px 30px 8px 18px;
+    clip-path: polygon(0 0, calc(100% - 14px) 0, 100% 50%, calc(100% - 14px) 100%, 0 100%);
+  }
+
+  /* =========================================================
+     MARKERS (4) — demoed on the full-width bar joint
+     ========================================================= */
+  .ax7-chip {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 21px; height: 21px; border-radius: 50%;
+    background: var(--ax7-accent); color: #FFFFFF;
+    font-family: var(--ax7-sans); font-size: 11px; font-weight: 800;
+    flex: 0 0 auto;
+  }
+  .ax7-chip--inverse { background: #FFFFFF; color: var(--ax7-accent); }
+  .ax7-chip--icon { font-size: 12px; }
+
+  .ax7-giantnum {
+    font-size: 30px; font-weight: 800; line-height: 0.95;
+    letter-spacing: -0.02em; color: rgba(255, 255, 255, 0.62);
+    flex: 0 0 auto;
+  }
+  .ax7-giantnum--ink { color: var(--ax7-accent); font-size: 28px; }
+  .ax7-h--bargiant { padding-top: 8px; padding-bottom: 8px; gap: 12px; }
+  .ax7-two { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+
+  .ax7-eyebrow {
+    display: block; font-family: var(--ax7-sans);
+    font-size: 9.5px; font-weight: 700; letter-spacing: 0.14em;
+    text-transform: uppercase; color: var(--ax7-accent);
+  }
+  .ax7-eyebrow--onbar { color: rgba(255, 255, 255, 0.82); }
+  /* keep math symbols out of the uppercase transform (α must not become Α) */
+  .ax7-nocase { text-transform: none; font-style: normal; }
+
+  /* =========================================================
+     CONTENT FORMS (4) — demoed on the underline joint
+     ========================================================= */
+  .ax7-h--twotier { display: block; }
+  .ax7-h--twotier .ax7-eyebrow { margin-bottom: 3px; }
+
+  /* =========================================================
+     FREE COMBOS
+     ========================================================= */
+  /* combo 2: giant numeral + eyebrow marker × claim form × trailing joint */
+  .ax7-h--gtrail { display: flex; align-items: flex-start; gap: 10px; margin: 0 0 10px; }
+  .ax7-gt-col { flex: 1; min-width: 0; }
+  .ax7-gt-col .ax7-eyebrow { margin-bottom: 3px; }
+  .ax7-gt-line {
+    display: flex; align-items: center; gap: 8px;
+    margin-right: -18px;
+    font-family: var(--ax7-sans); font-size: 14px; font-weight: 700;
+    line-height: 1.3; color: var(--ax7-deep);
+  }
+  .ax7-gt-line::after {
+    content: ""; flex: 1; min-width: 12px; height: 2px; background: var(--ax7-accent);
+  }
+</style>
+</head>
+<body>
+<main class="ax7-page-wrap">
+
+  <!-- ================= HERO ================= -->
+  <header class="ax7-hero">
+    <p class="ax7-kicker">Posterly · Design Axes · 选项目录</p>
+    <h1>轴 7 · 节标题接合<i>section-heading joint</i></h1>
+    <p class="ax7-lede">
+      语料 80 张海报中最丰富的一条轴:节标题如何与卡片/边框「咬合」。一次轴 7 的选择<b>不是单选枚举</b>,
+      而是三个正交子选择的组合 —— <b>接合形态 joint shape</b>(标题与卡的几何关系)、<b>标记 marker</b>(题前的编号/图标件)、
+      <b>题文形式 content form</b>(标题本身写什么)。三者自由组合(数字片 + 疑问句 + 断框线完全合法),
+      仅受 clash 规则 2 / 8 约束。锚点编号为语料海报 ID。
+    </p>
+    <div class="ax7-slots">
+      <span class="ax7-slot"><b>接合形态</b><span>joint shape</span><i>11 选 1(含 1 变体)</i></span>
+      <span class="ax7-x">×</span>
+      <span class="ax7-slot"><b>标记</b><span>marker</span><i>4 选 1</i></span>
+      <span class="ax7-x">×</span>
+      <span class="ax7-slot"><b>题文形式</b><span>content form</span><i>4 选 1</i></span>
+      <span class="ax7-eq">= 176 种接合,任意换装</span>
+    </div>
+    <nav class="ax7-toc">
+      <a href="#joint">A · 接合形态 ×11</a>
+      <a href="#marker">B · 标记 ×4</a>
+      <a href="#content">C · 题文形式 ×4</a>
+      <a href="#combo">D · 自由组合</a>
+    </nav>
+    <p class="ax7-ctrl">
+      控制变量:全部演示共用同一张迷你卡(白卡 · 单一 slate-teal 强调 · 同一标题 “Convergence Analysis” 与两行 PowerFlow 风格正文,宽 320px)。
+      接合构造是唯一变量;需要真实边框的选项(断框线 / 骑线胶囊等)演示卡自带细框,并以虚线徽标注明 clash 规则。
+    </p>
+  </header>
+
+  <!-- ================= A · JOINT SHAPES ================= -->
+  <section class="ax7-section" id="joint">
+    <h2>A · 接合形态 joint shape <i>11 选 1(capsule-bar 为 full-width bar 的变体,共 12 张)</i></h2>
+    <p class="ax7-secnote">标题与卡/框的几何关系。从「无构造」到「骑线」「断框」「悬浮」「竖立」,咬合越深,对 Axis 6 边框的要求越硬。</p>
+
+    <div class="ax7-grid">
+
+      <!-- 1 plain -->
+      <article class="ax7-demo" id="demo-plain">
+        <div class="ax7-demo-head"><h3 class="ax7-demo-name">素题 <i>plain</i></h3><span class="ax7-anchors">63953</span></div>
+        <div class="ax7-stage">
+          <div class="ax7-card">
+            <h4 class="ax7-h">Convergence Analysis</h4>
+            <div class="ax7-body">
+              <p>The <em>α</em>-power target <em>p<sub>α</sub></em> ∝ <em>p</em><sub>base</sub><sup><em>α</em></sup> modulates entropy while preserving the base ranking.</p>
+              <p>Length-aware TB projects out the |y| bias, so training stays stable in both <em>α</em> regimes.</p>
+            </div>
+          </div>
+        </div>
+        <p class="ax7-note">构造:零附加元素,仅靠字重/字号分层。任何画布、任何边框皆可用。</p>
+      </article>
+
+      <!-- 2 underline rule -->
+      <article class="ax7-demo" id="demo-underline">
+        <div class="ax7-demo-head"><h3 class="ax7-demo-name">下划线 <i>underline rule</i></h3><span class="ax7-anchors">65287 · 66243</span></div>
+        <div class="ax7-stage">
+          <div class="ax7-card">
+            <h4 class="ax7-h ax7-h--underline">Convergence Analysis</h4>
+            <div class="ax7-body">
+              <p>The <em>α</em>-power target <em>p<sub>α</sub></em> ∝ <em>p</em><sub>base</sub><sup><em>α</em></sup> modulates entropy while preserving the base ranking.</p>
+              <p>Length-aware TB projects out the |y| bias, so training stays stable in both <em>α</em> regimes.</p>
+            </div>
+          </div>
+        </div>
+        <p class="ax7-note">构造:<code>fit-content + border-bottom</code>,线宽随题文本身。</p>
+      </article>
+
+      <!-- 3 trailing rule -->
+      <article class="ax7-demo" id="demo-trailing">
+        <div class="ax7-demo-head"><h3 class="ax7-demo-name">题末延伸线 <i>trailing rule</i></h3><span class="ax7-anchors">63030 · 61312</span></div>
+        <div class="ax7-stage">
+          <div class="ax7-card">
+            <h4 class="ax7-h ax7-h--trailing">Convergence Analysis</h4>
+            <div class="ax7-body">
+              <p>The <em>α</em>-power target <em>p<sub>α</sub></em> ∝ <em>p</em><sub>base</sub><sup><em>α</em></sup> modulates entropy while preserving the base ranking.</p>
+              <p>Length-aware TB projects out the |y| bias, so training stays stable in both <em>α</em> regimes.</p>
+            </div>
+          </div>
+        </div>
+        <p class="ax7-note">构造:flex 行内 <code>::after</code> 拉伸至卡缘;负 margin 只到 border-box 边,不溢出。</p>
+      </article>
+
+      <!-- 4 full-width bar -->
+      <article class="ax7-demo" id="demo-bar">
+        <div class="ax7-demo-head"><h3 class="ax7-demo-name">整宽色条 <i>full-width bar</i></h3><span class="ax7-anchors">61273 · 63136 · 64164 · 67229</span></div>
+        <div class="ax7-stage">
+          <div class="ax7-card ax7-card--bar">
+            <h4 class="ax7-h ax7-h--bar">Convergence Analysis</h4>
+            <div class="ax7-body">
+              <p>The <em>α</em>-power target <em>p<sub>α</sub></em> ∝ <em>p</em><sub>base</sub><sup><em>α</em></sup> modulates entropy while preserving the base ranking.</p>
+              <p>Length-aware TB projects out the |y| bias, so training stays stable in both <em>α</em> regimes.</p>
+            </div>
+          </div>
+        </div>
+        <p class="ax7-note">构造:卡 padding 归零,色条独占首行;<code>overflow:hidden</code> 使色条随卡圆角。</p>
+      </article>
+
+      <!-- 5 capsule-bar variant -->
+      <article class="ax7-demo" id="demo-capsulebar">
+        <div class="ax7-demo-head"><h3 class="ax7-demo-name">胶囊条(变体)<i>capsule-bar</i></h3><span class="ax7-anchors">63819</span></div>
+        <div class="ax7-stage">
+          <div class="ax7-card ax7-card--capsulebar">
+            <h4 class="ax7-h ax7-h--capsulebar">Convergence Analysis</h4>
+            <div class="ax7-body">
+              <p>The <em>α</em>-power target <em>p<sub>α</sub></em> ∝ <em>p</em><sub>base</sub><sup><em>α</em></sup> modulates entropy while preserving the base ranking.</p>
+              <p>Length-aware TB projects out the |y| bias, so training stays stable in both <em>α</em> regimes.</p>
+            </div>
+          </div>
+        </div>
+        <p class="ax7-note">构造:full-width bar 的圆角变体 —— 细框卡内一条内缩的整圆角胶囊条(锚点原貌自带细框)。</p>
+      </article>
+
+      <!-- 6 floating pill -->
+      <article class="ax7-demo" id="demo-pill">
+        <div class="ax7-demo-head"><h3 class="ax7-demo-name">悬浮胶囊 <i>floating pill</i></h3><span class="ax7-anchors">63640</span></div>
+        <div class="ax7-stage">
+          <div class="ax7-pillblock">
+            <h4 class="ax7-h ax7-h--pill">Convergence Analysis</h4>
+            <div class="ax7-card">
+              <div class="ax7-body">
+                <p>The <em>α</em>-power target <em>p<sub>α</sub></em> ∝ <em>p</em><sub>base</sub><sup><em>α</em></sup> modulates entropy while preserving the base ranking.</p>
+                <p>Length-aware TB projects out the |y| bias, so training stays stable in both <em>α</em> regimes.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <p class="ax7-note">构造:胶囊与卡是同块流内的兄弟元素,自然分离悬浮;计量含于块盒,无裁切风险(clash 8 安全)。</p>
+      </article>
+
+      <!-- 7 fieldset-legend -->
+      <article class="ax7-demo" id="demo-fieldset">
+        <div class="ax7-demo-head"><h3 class="ax7-demo-name">断框线题 <i>fieldset-legend</i></h3><span class="ax7-anchors">66774 · 63030</span></div>
+        <span class="ax7-flag">clash 2 · 需真实边框 frame-line ≠ none</span>
+        <div class="ax7-stage">
+          <div class="ax7-card ax7-card--fieldset">
+            <h4 class="ax7-h ax7-h--fieldset">Convergence Analysis</h4>
+            <div class="ax7-body">
+              <p>The <em>α</em>-power target <em>p<sub>α</sub></em> ∝ <em>p</em><sub>base</sub><sup><em>α</em></sup> modulates entropy while preserving the base ranking.</p>
+              <p>Length-aware TB projects out the |y| bias, so training stays stable in both <em>α</em> regimes.</p>
+            </div>
+          </div>
+        </div>
+        <p class="ax7-note">构造:inset <code>::before</code> 画左右底三边框;顶线由题行 <code>::before/::after</code> 两段实线补齐 —— 缺口是真缺口,无背景遮罩,任何画布色可用。</p>
+      </article>
+
+      <!-- 8 ribbon-tab -->
+      <article class="ax7-demo" id="demo-ribbon">
+        <div class="ax7-demo-head"><h3 class="ax7-demo-name">骑线胶囊 <i>ribbon-tab</i></h3><span class="ax7-anchors">62901</span></div>
+        <span class="ax7-flag">clash 2 · 需真实边框 frame-line ≠ none</span>
+        <div class="ax7-stage">
+          <div class="ax7-card ax7-card--ribbon">
+            <h4 class="ax7-h ax7-h--ribbon">Convergence Analysis</h4>
+            <div class="ax7-body">
+              <p>The <em>α</em>-power target <em>p<sub>α</sub></em> ∝ <em>p</em><sub>base</sub><sup><em>α</em></sup> modulates entropy while preserving the base ranking.</p>
+              <p>Length-aware TB projects out the |y| bias, so training stays stable in both <em>α</em> regimes.</p>
+            </div>
+          </div>
+        </div>
+        <p class="ax7-note">构造(s4 量测安全法):胶囊位于卡 border-box 内 <code>top:0</code>;可见虚线框由 inset <code>::before</code> 自胶囊半高处起画 → 视觉骑线,量测不溢出(clash 8 安全)。</p>
+      </article>
+
+      <!-- 9 centered + flanking dashes -->
+      <article class="ax7-demo" id="demo-dashes">
+        <div class="ax7-demo-head"><h3 class="ax7-demo-name">居中题两侧短横 <i>centered + flanking dashes</i></h3><span class="ax7-anchors">64834 · 63713</span></div>
+        <div class="ax7-stage">
+          <div class="ax7-card">
+            <h4 class="ax7-h ax7-h--dashes">Convergence Analysis</h4>
+            <div class="ax7-body">
+              <p>The <em>α</em>-power target <em>p<sub>α</sub></em> ∝ <em>p</em><sub>base</sub><sup><em>α</em></sup> modulates entropy while preserving the base ranking.</p>
+              <p>Length-aware TB projects out the |y| bias, so training stays stable in both <em>α</em> regimes.</p>
+            </div>
+          </div>
+        </div>
+        <p class="ax7-note">构造:flex 居中,两侧 <code>::before/::after</code> 定宽短横(非通栏线,与 trailing rule 区分)。</p>
+      </article>
+
+      <!-- 10 vertical rotated rail -->
+      <article class="ax7-demo" id="demo-rail">
+        <div class="ax7-demo-head"><h3 class="ax7-demo-name">竖排侧轨 <i>vertical rotated rail</i></h3><span class="ax7-anchors">65221 · 62054</span></div>
+        <span class="ax7-flag">clash 2 · 需横带行结构 + 轨道宽度</span>
+        <div class="ax7-stage">
+          <div class="ax7-card ax7-card--rail">
+            <div class="ax7-rail"><h4 class="ax7-h ax7-h--rail">Convergence Analysis</h4></div>
+            <div class="ax7-bands">
+              <div class="ax7-band"><p>The <em>α</em>-power target <em>p<sub>α</sub></em> ∝ <em>p</em><sub>base</sub><sup><em>α</em></sup> modulates entropy while preserving the base ranking.</p></div>
+              <div class="ax7-band"><p>Length-aware TB projects out the |y| bias, so training stays stable in both <em>α</em> regimes.</p></div>
+            </div>
+          </div>
+        </div>
+        <p class="ax7-note">构造:<code>writing-mode:vertical-rl + rotate(180deg)</code>,标题立在左轨自下而上读;正文以横带行分层(本接合要求的结构)。</p>
+      </article>
+
+      <!-- 12 chevron banner (placed before the wide side-tab demo to keep the grid tight) -->
+      <article class="ax7-demo" id="demo-chevron">
+        <div class="ax7-demo-head"><h3 class="ax7-demo-name">箭头旗 <i>chevron banner</i></h3><span class="ax7-anchors">64618</span></div>
+        <div class="ax7-stage">
+          <div class="ax7-card ax7-card--chevron">
+            <h4 class="ax7-h ax7-h--chevron">Convergence Analysis</h4>
+            <div class="ax7-body">
+              <p>The <em>α</em>-power target <em>p<sub>α</sub></em> ∝ <em>p</em><sub>base</sub><sup><em>α</em></sup> modulates entropy while preserving the base ranking.</p>
+              <p>Length-aware TB projects out the |y| bias, so training stays stable in both <em>α</em> regimes.</p>
+            </div>
+          </div>
+        </div>
+        <p class="ax7-note">构造:<code>clip-path</code> 多边形切出箭头尾;旗面从卡左 border-box 边起,负 margin 不出盒。</p>
+      </article>
+
+      <!-- 11 margin-detached side tab — needs reserved margin, gets a full row -->
+      <article class="ax7-demo ax7-demo--wide" id="demo-sidetab">
+        <div class="ax7-demo-head"><h3 class="ax7-demo-name">边缘侧标签 <i>margin-detached side tab</i></h3><span class="ax7-anchors">60472</span></div>
+        <span class="ax7-flag">clash 2 · 需预留边缘留白(此处 grid 保留 100px 左列)</span>
+        <div class="ax7-stage">
+          <div class="ax7-tabwrap">
+            <h4 class="ax7-h ax7-h--sidetab">Convergence Analysis</h4>
+            <div class="ax7-card">
+              <div class="ax7-body">
+                <p>The <em>α</em>-power target <em>p<sub>α</sub></em> ∝ <em>p</em><sub>base</sub><sup><em>α</em></sup> modulates entropy while preserving the base ranking.</p>
+                <p>Length-aware TB projects out the |y| bias, so training stays stable in both <em>α</em> regimes.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <p class="ax7-note">构造:两列 grid 显式预留留白列,标签右对齐悬在卡外 —— 标题完全脱离卡片,留白由版式保证,非溢出实现。</p>
+      </article>
+
+    </div>
+  </section>
+
+  <!-- ================= B · MARKERS ================= -->
+  <section class="ax7-section" id="marker">
+    <h2>B · 标记 marker <i>4 选 1 —— 统一叠加在整宽色条上,控制变量</i></h2>
+    <p class="ax7-secnote">题前的编号/图标件。可挂在任何接合形态上;此处固定用 full-width bar 演示,标记是唯一变量。</p>
+
+    <div class="ax7-grid">
+
+      <article class="ax7-demo" id="demo-m-none">
+        <div class="ax7-demo-head"><h3 class="ax7-demo-name">无标记 <i>none</i></h3><span class="ax7-anchors">—</span></div>
+        <div class="ax7-stage">
+          <div class="ax7-card ax7-card--bar">
+            <h4 class="ax7-h ax7-h--bar">Convergence Analysis</h4>
+            <div class="ax7-body">
+              <p>The <em>α</em>-power target <em>p<sub>α</sub></em> ∝ <em>p</em><sub>base</sub><sup><em>α</em></sup> modulates entropy while preserving the base ranking.</p>
+              <p>Length-aware TB projects out the |y| bias, so training stays stable in both <em>α</em> regimes.</p>
+            </div>
+          </div>
+        </div>
+        <p class="ax7-note">基线:接合形态不变,题前无附件。</p>
+      </article>
+
+      <article class="ax7-demo" id="demo-m-chip">
+        <div class="ax7-demo-head"><h3 class="ax7-demo-name">数字片 <i>number chip</i></h3><span class="ax7-anchors">63757 · 64736 · 63574</span></div>
+        <div class="ax7-stage">
+          <div class="ax7-card ax7-card--bar">
+            <h4 class="ax7-h ax7-h--bar"><span class="ax7-chip ax7-chip--inverse">02</span><span>Convergence Analysis</span></h4>
+            <div class="ax7-body">
+              <p>The <em>α</em>-power target <em>p<sub>α</sub></em> ∝ <em>p</em><sub>base</sub><sup><em>α</em></sup> modulates entropy while preserving the base ranking.</p>
+              <p>Length-aware TB projects out the |y| bias, so training stays stable in both <em>α</em> regimes.</p>
+            </div>
+          </div>
+        </div>
+        <p class="ax7-note">构造:定宽圆片;深底上反白片,白底上实色片(<code>.ax7-chip / .ax7-chip--inverse</code>)。</p>
+      </article>
+
+      <article class="ax7-demo" id="demo-m-giant">
+        <div class="ax7-demo-head"><h3 class="ax7-demo-name">巨号数字+眉线 <i>giant numeral + eyebrow</i></h3><span class="ax7-anchors">65626 · 66466</span></div>
+        <div class="ax7-stage">
+          <div class="ax7-card ax7-card--bar">
+            <h4 class="ax7-h ax7-h--bar ax7-h--bargiant">
+              <span class="ax7-giantnum">02</span>
+              <span class="ax7-two"><span class="ax7-eyebrow ax7-eyebrow--onbar">Section · Theory</span><span>Convergence Analysis</span></span>
+            </h4>
+            <div class="ax7-body">
+              <p>The <em>α</em>-power target <em>p<sub>α</sub></em> ∝ <em>p</em><sub>base</sub><sup><em>α</em></sup> modulates entropy while preserving the base ranking.</p>
+              <p>Length-aware TB projects out the |y| bias, so training stays stable in both <em>α</em> regimes.</p>
+            </div>
+          </div>
+        </div>
+        <p class="ax7-note">构造:两位数大字(降透明度作装饰层)+ 小型大写字距眉线,题文列上下两层。</p>
+      </article>
+
+      <article class="ax7-demo" id="demo-m-icon">
+        <div class="ax7-demo-head"><h3 class="ax7-demo-name">图标 <i>icon</i></h3><span class="ax7-anchors">60505</span></div>
+        <div class="ax7-stage">
+          <div class="ax7-card ax7-card--bar">
+            <h4 class="ax7-h ax7-h--bar"><span class="ax7-chip ax7-chip--inverse ax7-chip--icon">📈</span><span>Convergence Analysis</span></h4>
+            <div class="ax7-body">
+              <p>The <em>α</em>-power target <em>p<sub>α</sub></em> ∝ <em>p</em><sub>base</sub><sup><em>α</em></sup> modulates entropy while preserving the base ranking.</p>
+              <p>Length-aware TB projects out the |y| bias, so training stays stable in both <em>α</em> regimes.</p>
+            </div>
+          </div>
+        </div>
+        <p class="ax7-note">构造:emoji 或纯 CSS 图形入圆片;打印敏感场景优先纯 CSS 图形。</p>
+      </article>
+
+    </div>
+  </section>
+
+  <!-- ================= C · CONTENT FORMS ================= -->
+  <section class="ax7-section" id="content">
+    <h2>C · 题文形式 content form <i>4 选 1 —— 统一叠加在下划线接合上,控制变量</i></h2>
+    <p class="ax7-secnote">标题本身写什么。题文是本组唯一变量;正文两行不变。</p>
+
+    <div class="ax7-grid">
+
+      <article class="ax7-demo" id="demo-c-nominal">
+        <div class="ax7-demo-head"><h3 class="ax7-demo-name">名词标签 <i>nominal label</i></h3><span class="ax7-anchors">—(语料默认)</span></div>
+        <div class="ax7-stage">
+          <div class="ax7-card">
+            <h4 class="ax7-h ax7-h--underline">Convergence Analysis</h4>
+            <div class="ax7-body">
+              <p>The <em>α</em>-power target <em>p<sub>α</sub></em> ∝ <em>p</em><sub>base</sub><sup><em>α</em></sup> modulates entropy while preserving the base ranking.</p>
+              <p>Length-aware TB projects out the |y| bias, so training stays stable in both <em>α</em> regimes.</p>
+            </div>
+          </div>
+        </div>
+        <p class="ax7-note">传统节名:Motivation / Method / Results 一类的名词短语。</p>
+      </article>
+
+      <article class="ax7-demo" id="demo-c-claim">
+        <div class="ax7-demo-head"><h3 class="ax7-demo-name">主张句作题 <i>claim sentence</i></h3><span class="ax7-anchors">66207 · 67122</span></div>
+        <div class="ax7-stage">
+          <div class="ax7-card">
+            <h4 class="ax7-h ax7-h--underline">Sharpening preserves the base ranking</h4>
+            <div class="ax7-body">
+              <p>The <em>α</em>-power target <em>p<sub>α</sub></em> ∝ <em>p</em><sub>base</sub><sup><em>α</em></sup> modulates entropy while preserving the base ranking.</p>
+              <p>Length-aware TB projects out the |y| bias, so training stays stable in both <em>α</em> regimes.</p>
+            </div>
+          </div>
+        </div>
+        <p class="ax7-note">标题即结论:读者只扫标题也能带走主张。</p>
+      </article>
+
+      <article class="ax7-demo" id="demo-c-question">
+        <div class="ax7-demo-head"><h3 class="ax7-demo-name">疑问句 <i>question form</i></h3><span class="ax7-anchors">65205 · 63210</span></div>
+        <div class="ax7-stage">
+          <div class="ax7-card">
+            <h4 class="ax7-h ax7-h--underline">Does sharpening collapse diversity?</h4>
+            <div class="ax7-body">
+              <p>The <em>α</em>-power target <em>p<sub>α</sub></em> ∝ <em>p</em><sub>base</sub><sup><em>α</em></sup> modulates entropy while preserving the base ranking.</p>
+              <p>Length-aware TB projects out the |y| bias, so training stays stable in both <em>α</em> regimes.</p>
+            </div>
+          </div>
+        </div>
+        <p class="ax7-note">以问题作钩子,正文回答;常与 question-hook 开篇卡(devices)呼应。</p>
+      </article>
+
+      <article class="ax7-demo" id="demo-c-twotier">
+        <div class="ax7-demo-head"><h3 class="ax7-demo-name">两层题 <i>two-tier eyebrow + headline</i></h3><span class="ax7-anchors">61797 · 61894</span></div>
+        <div class="ax7-stage">
+          <div class="ax7-card">
+            <h4 class="ax7-h ax7-h--underline ax7-h--twotier">
+              <span class="ax7-eyebrow">Section 03 · Theory</span>
+              <span>Convergence Analysis</span>
+            </h4>
+            <div class="ax7-body">
+              <p>The <em>α</em>-power target <em>p<sub>α</sub></em> ∝ <em>p</em><sub>base</sub><sup><em>α</em></sup> modulates entropy while preserving the base ranking.</p>
+              <p>Length-aware TB projects out the |y| bias, so training stays stable in both <em>α</em> regimes.</p>
+            </div>
+          </div>
+        </div>
+        <p class="ax7-note">小型大写字距眉线 + 主题行两层;眉线承载分区/编号等元信息。</p>
+      </article>
+
+    </div>
+  </section>
+
+  <!-- ================= D · FREE COMBOS ================= -->
+  <section class="ax7-section" id="combo">
+    <h2>D · 自由组合 free combination <i>三个子选择正交 —— 两例混搭</i></h2>
+    <p class="ax7-secnote">同一套构造语汇,子选择任意换装。以下两例分别横跨三条子轴,证明 joint × marker × content form 不互相绑定。</p>
+
+    <div class="ax7-grid">
+
+      <article class="ax7-demo" id="demo-x-1">
+        <div class="ax7-demo-head"><h3 class="ax7-demo-name">断框线 × 数字片 × 疑问句</h3><span class="ax7-anchors">fieldset-legend + number chip + question</span></div>
+        <span class="ax7-flag">clash 2 · 需真实边框 frame-line ≠ none</span>
+        <div class="ax7-stage">
+          <div class="ax7-card ax7-card--fieldset">
+            <h4 class="ax7-h ax7-h--fieldset"><span class="ax7-chip">03</span><span>Does α collapse diversity?</span></h4>
+            <div class="ax7-body">
+              <p>The <em>α</em>-power target <em>p<sub>α</sub></em> ∝ <em>p</em><sub>base</sub><sup><em>α</em></sup> modulates entropy while preserving the base ranking.</p>
+              <p>Length-aware TB projects out the |y| bias, so training stays stable in both <em>α</em> regimes.</p>
+            </div>
+          </div>
+        </div>
+        <p class="ax7-note">数字片与疑问句同时嵌进边框缺口 —— 三个子选择互不干涉。</p>
+      </article>
+
+      <article class="ax7-demo" id="demo-x-2">
+        <div class="ax7-demo-head"><h3 class="ax7-demo-name">题末延伸线 × 巨号数字+眉线 × 主张句</h3><span class="ax7-anchors">trailing rule + giant numeral + claim</span></div>
+        <div class="ax7-stage">
+          <div class="ax7-card">
+            <div class="ax7-h--gtrail">
+              <span class="ax7-giantnum ax7-giantnum--ink">04</span>
+              <span class="ax7-gt-col">
+                <span class="ax7-eyebrow">Creativity · <i class="ax7-nocase">α</i> &lt; 1</span>
+                <span class="ax7-gt-line">Flattening restores diversity</span>
+              </span>
+            </div>
+            <div class="ax7-body">
+              <p>The <em>α</em>-power target <em>p<sub>α</sub></em> ∝ <em>p</em><sub>base</sub><sup><em>α</em></sup> modulates entropy while preserving the base ranking.</p>
+              <p>Length-aware TB projects out the |y| bias, so training stays stable in both <em>α</em> regimes.</p>
+            </div>
+          </div>
+        </div>
+        <p class="ax7-note">巨号数字改用强调色立在白卡上,主张句题末接延伸线 —— 同一 marker 换接合形态照常成立。</p>
+      </article>
+
+    </div>
+  </section>
+
+  <!-- ================= FOOT NOTES ================= -->
+  <footer class="ax7-foot">
+    <p><b>搬运说明</b>:所有类名 <code>ax7-</code> 前缀、构造自包含,可直接迁入组件库;入库时将直写色值/字号替换为海报系统 tokens(<code>--accent / --fs-* / --u</code>)。</p>
+    <p><b>clash 规则 2</b>:fieldset / ribbon 类接合需要真实边框(frame-line ≠ none);侧标签需要预留边缘留白;竖排侧轨需要横带行结构与轨道宽度。<b>clash 规则 8</b>:悬浮/骑线构造不得被 overflow 裁切 —— 本页 ribbon-tab 用 s4 的 border-box 内置法、floating pill 用同块流内排布,均量测安全。</p>
+    <p>锚点编号为 80 张 ICML 2026 精选语料的海报 ID(<code>icml.cc/media/PosterPDFs/ICML%202026/&lt;id&gt;.png</code>)。</p>
+  </footer>
+
+</main>
+</body>
+</html>

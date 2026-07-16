@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>posterly 设计轴选项目录</title>
+<style>
+  :root {
+    --ink: #1f2933;
+    --ink-soft: #52606d;
+    --line: #d9e0e6;
+    --paper: #f7f8fa;
+    --card: #ffffff;
+    --teal: #0f6070;
+    --teal-soft: #e3eef1;
+    --warm: #a2521c;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Source Han Sans SC", "Noto Sans CJK SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: var(--paper); color: var(--ink);
+    line-height: 1.65; padding: 40px 24px 80px;
+  }
+  .wrap { max-width: 1080px; margin: 0 auto; }
+  header.page { border-bottom: 3px solid var(--teal); padding-bottom: 18px; margin-bottom: 28px; }
+  header.page h1 { font-size: 30px; letter-spacing: 0.5px; }
+  header.page p.sub { color: var(--ink-soft); margin-top: 8px; font-size: 15px; max-width: 72ch; }
+  header.page p.sub code { background: var(--teal-soft); padding: 1px 6px; border-radius: 4px; font-size: 13px; }
+
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; margin: 24px 0 40px; }
+  a.axis-card {
+    display: block; background: var(--card); border: 1px solid var(--line);
+    border-radius: 10px; padding: 18px 20px; text-decoration: none; color: var(--ink);
+    transition: border-color .15s, box-shadow .15s;
+  }
+  a.axis-card:hover { border-color: var(--teal); box-shadow: 0 2px 10px rgba(15,96,112,.12); }
+  a.axis-card .no { display: inline-block; font-size: 12px; font-weight: 700; letter-spacing: 1.5px;
+    color: var(--teal); background: var(--teal-soft); border-radius: 999px; padding: 2px 10px; margin-bottom: 8px; }
+  a.axis-card h2 { font-size: 18px; margin-bottom: 6px; }
+  a.axis-card h2 small { font-weight: 400; color: var(--ink-soft); font-size: 13px; margin-left: 6px; }
+  a.axis-card p { font-size: 13.5px; color: var(--ink-soft); }
+  a.axis-card .count { margin-top: 10px; font-size: 12.5px; color: var(--warm); font-weight: 600; }
+
+  section.rules { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 24px 28px; margin-top: 12px; }
+  section.rules h2 { font-size: 20px; margin-bottom: 12px; color: var(--teal); }
+  section.rules h3 { font-size: 15.5px; margin: 18px 0 8px; }
+  section.rules ol, section.rules ul { padding-left: 22px; font-size: 14px; color: var(--ink); }
+  section.rules li { margin-bottom: 6px; }
+  section.rules .soft li { color: var(--ink-soft); }
+  .note { font-size: 13px; color: var(--ink-soft); margin-top: 16px; border-left: 3px solid var(--warm); padding-left: 12px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="page">
+    <h1>posterly 设计轴选项目录</h1>
+    <p class="sub">8 个正交设计轴 + 1 个局部装置池,提炼自 80 张 ICML 2026 精选海报。
+    每张海报的设计 = 每轴选一个「主选项 + 小修饰符」,再加 0–2 个装置;轴与轴自由组合,由下方冲突规则约束。
+    每页里的构造都是可直接搬运的真实 CSS(令牌体系与 <code>templates/</code> 一致),块内标注了锚点海报 ID
+    (<code>https://icml.cc/media/PosterPDFs/ICML%202026/&lt;id&gt;.png</code>)。</p>
+  </header>
+
+  <div class="grid">
+    <a class="axis-card" href="axis1_layout.html">
+      <span class="no">轴 1</span>
+      <h2>版式骨架 <small>Layout skeleton</small></h2>
+      <p>base topology + span 修饰 + focal 焦点内容。3 栏 / 中央舞台 / 横带行 / 拼板等 10 种拓扑。</p>
+      <p class="count">10 种拓扑 + 3 span + 4 focal</p>
+    </a>
+    <a class="axis-card" href="axis2_canvas.html">
+      <span class="no">轴 2</span>
+      <h2>底色 <small>Canvas</small></h2>
+      <p>base + treatment + coverage。奶油 / 品牌色 / 近黑底;渐变与纹理;分区双色、色缝作框。</p>
+      <p class="count">5 base × 3 treatment × 3 coverage</p>
+    </a>
+    <a class="axis-card" href="axis3_palette.html">
+      <span class="no">轴 3</span>
+      <h2>配色 <small>Palette</small></h2>
+      <p>role topology + hue relationship + paint。双语义色、同色相纯明暗强调、渐变签名、neon。</p>
+      <p class="count">4 拓扑 + 2 色相关系 + 3 paint</p>
+    </a>
+    <a class="axis-card" href="axis4_typography.html">
+      <span class="no">轴 4</span>
+      <h2>字体 <small>Typography</small></h2>
+      <p>base voice + accent convention。论文衬线 / 衬线展示+无衬正文 / 怪诞体 / 圆角体;眉线与等宽点缀。</p>
+      <p class="count">4 voice + 3 accent(可叠加)</p>
+    </a>
+    <a class="axis-card" href="axis5_density.html">
+      <span class="no">轴 5</span>
+      <h2>密度节奏 <small>Density</small></h2>
+      <p>sparse / balanced / dense,联动字号、padding、gutter 令牌。是容量决策,不是缩字手段。</p>
+      <p class="count">3 档 + 反面教材</p>
+    </a>
+    <a class="axis-card" href="axis6_card.html">
+      <span class="no">轴 6</span>
+      <h2>卡面与框 <small>Card surface &amp; frame</small></h2>
+      <p>surface × frame-line × elevation,外加左缘条 / 角标签 / 连体 chip 修饰与嵌套内层框;--rs 圆角缩放。</p>
+      <p class="count">5 surface × 7 frame × 3 elevation + 修饰</p>
+    </a>
+    <a class="axis-card" href="axis7_heading.html">
+      <span class="no">轴 7</span>
+      <h2>节标题接合 <small>Section-heading joint</small></h2>
+      <p>joint shape + marker + content form。骑线胶囊、断框线题、悬浮胶囊、竖排侧轨…语料里最丰富的轴。</p>
+      <p class="count">11 joint × 4 marker × 4 content form</p>
+    </a>
+    <a class="axis-card" href="axis8_masthead.html">
+      <span class="no">轴 8</span>
+      <h2>页头页脚 <small>Masthead &amp; footer</small></h2>
+      <p>masthead + footer + identity accessory 三者独立。品牌色带、降题升问、项目字标、宣言页脚、三明治。</p>
+      <p class="count">7 masthead + 4 footer + 3 accessory</p>
+    </a>
+    <a class="axis-card" href="devices.html">
+      <span class="no">装置池</span>
+      <h2>局部装置 <small>Devices pool</small></h2>
+      <p>每张海报选 0–2 个:TL;DR 通栏、巨数字墙、对立观点板、赢家格高亮、跨卡连线、吉祥物贴纸……</p>
+      <p class="count">17 个可插拔装置</p>
+    </a>
+  </div>
+
+  <section class="rules">
+    <h2>冲突规则(组合时校验)</h2>
+    <h3>硬规则 —— 校验,不辩论</h3>
+    <ol>
+      <li><strong>容量 gate</strong>:内容量 × 版式 × 密度必须满足最低字号/padding;塞不下就换轴或裁内容,绝不缩正文。</li>
+      <li><strong>结构前提</strong>:fieldset / 骑线胶囊需要真实边框(frame-line ≠ none);侧标签需要预留边距;竖排侧轨需要横带行结构与轨道宽度。</li>
+      <li><strong>页头与版式一致</strong>:巨题列刊头 → 版式必须有标题轨道;题入色板 → 版式必须有舞台区。</li>
+      <li><strong>neon</strong> → 低亮度底 + 发光描边;白底禁用。</li>
+      <li><strong>发光效果</strong>只在<em>局部</em>背景为暗时启用(白海报里的一块暗板,发光只许出现在板内)。</li>
+      <li><strong>透明卡面</strong>:文字对比按实际底面最差点校验(分区/渐变底也算);暗底上的论文插图要加浅色衬板或反相。</li>
+      <li><strong>语义贯穿</strong>:承载语义的色全页不变;categorical 配色过色差与色盲检查;占用的语义色不得挪作装饰。</li>
+      <li><strong>外伸构造</strong>(连体 chip / 悬浮胶囊)防 overflow 截断、防与上行元素相撞;嵌套内层框要在全局关边框时幸存。</li>
+      <li><strong>渐变/色板上的文字</strong>:对比按文字覆盖区的最差点计算,不用平均色。</li>
+    </ol>
+    <h3>软规则 —— 合法,但要权衡</h3>
+    <ul class="soft">
+      <li>暗底可以有阴影/发光(只避免低对比灰投影,66072 为证)。</li>
+      <li>无边框布局需要<em>某种</em>替代分组信号(间距、规则线、标题条、对齐皆可,不一定是更大间距)。</li>
+      <li>少见但合法:sparse + 4 栏、奶油底 + 怪诞体、tonal 配色 + 巨数字墙。</li>
+    </ul>
+    <h3>反趋同</h3>
+    <ul>
+      <li>同一批连续海报必须在「底色 / 框线 / 节标题接合 / 页头」中至少两轴不同;出厂默认(白底·软卡·素题·居中页头)也算一种组合,不许每张都塌缩回去。</li>
+    </ul>
+    <p class="note">七个命名配方(宣言色板 / 纸感学术 / 暗夜编辑 / 奶油刊头 / 工程报告 / 机构单色 / 粉彩圆角)只是「各轴默认值包」——起点,不是套餐;换掉任何一轴都正常,换完重查上面的规则即可。五张成品样张见<a href="../">画廊首页</a>。</p>
+  </section>
+</div>
+</body>
+</html>

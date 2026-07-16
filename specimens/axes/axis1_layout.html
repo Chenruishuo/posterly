@@ -1,0 +1,907 @@
+<!DOCTYPE html>
+<!--
+  posterly · specimens/axes/axis1_layout.html
+  轴 1「版式骨架 Layout Skeleton」选项目录 — 独立浏览页,非海报。
+  每个演示块是【真实的 CSS grid 构造】(grid-template-rows/columns/areas 照实),
+  代码注释块中给出可直接搬进模板的定义。锚点 ID 来自 80 张 ICML 2026 精选:
+  https://icml.cc/media/PosterPDFs/ICML%202026/<id>.png
+  控制变量:全部演示用中性基线(白底 / 浅灰块 / slate 蓝 #2D5F8B 标签色),
+  不引入其他轴的花样 — 拓扑差异是唯一变量。
+-->
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>轴 1 · 版式骨架 Layout Skeleton — posterly 选项目录</title>
+<style>
+  /* =========================================================
+     页面外壳(目录 UI,非搬运对象)
+     ========================================================= */
+  :root {
+    --ax1-slate:       #2D5F8B;   /* 唯一标签色(= 模板 --accent) */
+    --ax1-slate-deep:  #1F4566;
+    --ax1-slate-tint:  #E8F1F8;   /* 焦点几何块填充(= --accent-light) */
+    --ax1-slate-line:  #C6DAEA;
+    --ax1-ink:         #1A1A1A;
+    --ax1-ink-2:       #555555;
+    --ax1-ink-3:       #8A8F94;
+    --ax1-block:       #EEF1F4;   /* 内容轨道块 */
+    --ax1-block-line:  #DDE3E9;
+    --ax1-chrome:      #E4E9EE;   /* 页眉/页脚 chrome 块 */
+    --ax1-chrome-line: #D3DAE1;
+    --ax1-page-line:   #C9D1D9;   /* 迷你海报画布描边 */
+    --ax1-hairline:    #E5E8EB;
+    --ax1-mono: "SF Mono", "JetBrains Mono", "Consolas", "Menlo", monospace;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: #FFFFFF; }
+  body {
+    font-family: "Inter", "Helvetica Neue", "PingFang SC", "Noto Sans CJK SC",
+                 "Microsoft YaHei", sans-serif;
+    color: var(--ax1-ink);
+    line-height: 1.6;
+  }
+  .ax1-wrap { max-width: 1060px; margin: 0 auto; padding: 40px 28px 80px; }
+
+  /* ---------- 页头 ---------- */
+  .ax1-eyebrow {
+    font-family: var(--ax1-mono);
+    font-size: 12px; letter-spacing: 0.14em;
+    color: var(--ax1-slate); margin: 0 0 10px;
+  }
+  .ax1-h1 { font-size: 27px; font-weight: 700; margin: 0 0 4px; line-height: 1.3; }
+  .ax1-h1 span { font-weight: 400; color: var(--ax1-ink-2); font-size: 19px; margin-left: 10px; }
+  .ax1-lede { font-size: 14.5px; color: var(--ax1-ink); margin: 14px 0 0; max-width: 62em; }
+  .ax1-lede b { color: var(--ax1-slate-deep); }
+  .ax1-ownership {
+    font-size: 13.5px; color: var(--ax1-ink-2); margin: 10px 0 0; max-width: 62em;
+    padding: 10px 14px; background: #F6F8FA;
+    border-left: 3px solid var(--ax1-slate); border-radius: 0 4px 4px 0;
+  }
+  .ax1-ownership b { color: var(--ax1-slate-deep); }
+
+  /* ---------- 目录 ---------- */
+  .ax1-toc { display: flex; flex-wrap: wrap; gap: 8px; margin: 20px 0 0; }
+  .ax1-toc a {
+    font-size: 13px; text-decoration: none; color: var(--ax1-slate-deep);
+    border: 1px solid var(--ax1-block-line); border-radius: 999px;
+    padding: 3px 12px; background: #FBFCFD; white-space: nowrap;
+  }
+  .ax1-toc a:hover { border-color: var(--ax1-slate); background: var(--ax1-slate-tint); }
+  .ax1-toc a.ax1-toc--mod { border-style: dashed; }
+
+  /* ---------- 分节标题 ---------- */
+  .ax1-sec { margin-top: 52px; }
+  .ax1-sec > h2 {
+    font-size: 19px; font-weight: 700; margin: 0 0 4px;
+    padding-top: 18px; border-top: 2px solid var(--ax1-ink);
+  }
+  .ax1-sec > h2 span { font-weight: 400; color: var(--ax1-ink-2); font-size: 15px; margin-left: 8px; }
+  .ax1-sec > .ax1-secnote { font-size: 13.5px; color: var(--ax1-ink-2); margin: 2px 0 0; max-width: 62em; }
+  .ax1-legend {
+    display: flex; flex-wrap: wrap; gap: 16px; margin: 12px 0 0;
+    font-size: 12.5px; color: var(--ax1-ink-2);
+  }
+  .ax1-legend i {
+    display: inline-block; width: 14px; height: 14px; border-radius: 3px;
+    vertical-align: -2px; margin-right: 6px;
+  }
+  .ax1-legend .ax1-sw-block  { background: var(--ax1-block);  border: 1px solid var(--ax1-block-line); }
+  .ax1-legend .ax1-sw-focal  { background: var(--ax1-slate-tint); border: 1px solid var(--ax1-slate-line); }
+  .ax1-legend .ax1-sw-chrome { background: var(--ax1-chrome); border: 1px solid var(--ax1-chrome-line); }
+
+  /* ---------- 选项条目 ---------- */
+  .ax1-item { border-top: 1px solid var(--ax1-hairline); margin-top: 30px; padding-top: 24px; }
+  .ax1-item-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 12px; }
+  .ax1-no {
+    font-family: var(--ax1-mono); font-size: 13px; font-weight: 700;
+    color: #FFFFFF; background: var(--ax1-slate);
+    border-radius: 4px; padding: 1px 7px; align-self: center;
+  }
+  .ax1-item-head h3 { font-size: 17px; font-weight: 700; margin: 0; }
+  .ax1-item-head h3 span { font-weight: 400; color: var(--ax1-ink-2); font-size: 14px; margin-left: 7px; }
+  .ax1-tag {
+    font-size: 11.5px; color: var(--ax1-slate-deep); background: var(--ax1-slate-tint);
+    border: 1px solid var(--ax1-slate-line); border-radius: 999px; padding: 1px 9px;
+    white-space: nowrap;
+  }
+  .ax1-anchors { font-size: 12.5px; color: var(--ax1-ink-3); margin-left: auto; white-space: nowrap; }
+  .ax1-anchors code {
+    font-family: var(--ax1-mono); font-size: 12px; color: var(--ax1-ink-2);
+    background: #F3F5F7; border: 1px solid var(--ax1-hairline);
+    border-radius: 4px; padding: 0 5px; margin-left: 4px;
+  }
+  .ax1-item-body { display: flex; flex-wrap: wrap; gap: 16px 26px; margin-top: 16px; align-items: flex-start; }
+  .ax1-demo { flex: 0 0 auto; max-width: 100%; }
+  .ax1-demo-cap {
+    font-size: 11.5px; color: var(--ax1-ink-3); margin-top: 6px;
+    font-family: var(--ax1-mono);
+  }
+  .ax1-meta { flex: 1 1 300px; min-width: 0; }
+  .ax1-code {
+    margin: 0; padding: 10px 12px; background: #F6F8FA;
+    border: 1px solid var(--ax1-hairline); border-radius: 6px;
+    font-family: var(--ax1-mono); font-size: 11.5px; line-height: 1.55;
+    color: var(--ax1-ink); overflow-x: auto; white-space: pre;
+  }
+  .ax1-code em { font-style: normal; color: var(--ax1-ink-3); }
+  .ax1-scene { font-size: 13.5px; margin: 10px 0 0; color: var(--ax1-ink); }
+  .ax1-scene b { color: var(--ax1-slate-deep); font-size: 12.5px; margin-right: 6px; }
+  .ax1-extra { font-size: 12.5px; margin: 6px 0 0; color: var(--ax1-ink-2); }
+
+  /* =========================================================
+     迷你海报线框 — 真实 grid 构造(可搬运部分)
+     每个 .ax1-poster 是一张海报画布;grid-template-* 与代码
+     注释块逐字一致。--u 缩放:约 0.128px/mm(60in 画布 → 460px)。
+     ========================================================= */
+  .ax1-poster {
+    width: 460px; max-width: 100%;
+    aspect-ratio: 60 / 36;
+    background: #FFFFFF;
+    border: 1px solid var(--ax1-page-line);
+    border-radius: 3px;
+    box-shadow: 0 1px 4px rgba(30, 50, 70, 0.10);
+    display: grid;
+    gap: 5px;             /* 栏间距(缩放后) */
+    padding: 8px;         /* 画布页边距(缩放后) */
+  }
+  .ax1-poster--portrait { width: 250px; aspect-ratio: 24 / 36; }
+  .ax1-poster--s { width: 320px; }
+
+  /* ---------- 区域块 ---------- */
+  .ax1-r {
+    background: var(--ax1-block);
+    border: 1px solid var(--ax1-block-line);
+    border-radius: 2px;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 0; padding: 2px 4px;
+    min-width: 0; min-height: 0; overflow: hidden;
+    text-align: center; line-height: 1.25;
+  }
+  .ax1-r b {
+    font-size: 10px; font-weight: 600; color: var(--ax1-slate);
+    letter-spacing: 0.02em; white-space: nowrap;
+  }
+  .ax1-r .ax1-fr {
+    font-family: var(--ax1-mono); font-style: normal;
+    font-size: 9px; color: var(--ax1-ink-3); white-space: nowrap;
+  }
+  .ax1-r--chrome { background: var(--ax1-chrome); border-color: var(--ax1-chrome-line); }
+  .ax1-r--focal  { background: var(--ax1-slate-tint); border-color: var(--ax1-slate-line); }
+  .ax1-r--focal b { color: var(--ax1-slate-deep); }
+  .ax1-r--strip  { flex-direction: row; gap: 5px; padding: 3px 4px; }
+  .ax1-r--faint b { color: var(--ax1-ink-3); font-weight: 500; }
+  .ax1-r--v b { writing-mode: vertical-rl; letter-spacing: 0.12em; }
+
+  /* ---------- 区域名 → grid-area 映射 ---------- */
+  .ax1-ga-ht    { grid-area: ht; }     .ax1-ga-ft   { grid-area: ft; }
+  .ax1-ga-c1    { grid-area: c1; }     .ax1-ga-c2   { grid-area: c2; }
+  .ax1-ga-c3    { grid-area: c3; }     .ax1-ga-c4   { grid-area: c4; }
+  .ax1-ga-hero  { grid-area: hero; }   .ax1-ga-side { grid-area: side; }
+  .ax1-ga-w1    { grid-area: w1; }     .ax1-ga-w2   { grid-area: w2; }
+  .ax1-ga-stage { grid-area: stage; }  .ax1-ga-title{ grid-area: title; }
+  .ax1-ga-nav   { grid-area: nav; }
+  .ax1-ga-b1    { grid-area: b1; }     .ax1-ga-b2   { grid-area: b2; }
+  .ax1-ga-b3    { grid-area: b3; }
+  .ax1-ga-ma    { grid-area: ma; }     .ax1-ga-mb   { grid-area: mb; }
+  .ax1-ga-mc    { grid-area: mc; }     .ax1-ga-md   { grid-area: md; }
+  .ax1-ga-me    { grid-area: me; }
+  .ax1-ga-g1    { grid-area: g1; }     .ax1-ga-g2   { grid-area: g2; }
+  .ax1-ga-g3    { grid-area: g3; }
+  .ax1-ga-hub   { grid-area: hub; }
+  .ax1-ga-s1 { grid-area: s1; } .ax1-ga-s2 { grid-area: s2; }
+  .ax1-ga-s3 { grid-area: s3; } .ax1-ga-s4 { grid-area: s4; }
+  .ax1-ga-s5 { grid-area: s5; } .ax1-ga-s6 { grid-area: s6; }
+  .ax1-ga-s7 { grid-area: s7; } .ax1-ga-s8 { grid-area: s8; }
+  .ax1-ga-band  { grid-area: band; }
+  .ax1-ga-u1 { grid-area: u1; } .ax1-ga-u2 { grid-area: u2; } .ax1-ga-u3 { grid-area: u3; }
+  .ax1-ga-l1 { grid-area: l1; } .ax1-ga-l2 { grid-area: l2; } .ax1-ga-l3 { grid-area: l3; }
+
+  /* =========================================================
+     10 个 base topology 的 grid 定义(与各代码块逐字一致)
+     ========================================================= */
+  /* 01 四栏(shipped 默认 landscape_4col_neutral) */
+  .ax1-t-4col {
+    grid-template-rows:    auto 1fr auto;
+    grid-template-columns: 1fr 1.05fr 1.05fr 1fr;
+    grid-template-areas:   "ht ht ht ht"
+                           "c1 c2 c3 c4"
+                           "ft ft ft ft";
+  }
+  /* 02 三栏 */
+  .ax1-t-3col {
+    grid-template-rows:    auto 1fr auto;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-areas:   "ht ht ht"
+                           "c1 c2 c3"
+                           "ft ft ft";
+  }
+  /* 03 双栏纵流(竖版 24:36,shipped portrait_2col_neutral) */
+  .ax1-t-2col {
+    grid-template-rows:    auto 1fr auto;
+    grid-template-columns: 1fr 1fr;
+    grid-template-areas:   "ht ht"
+                           "c1 c2"
+                           "ft ft";
+  }
+  /* 04 英雄面板(shipped landscape_hero_neutral;嵌套 .hero-grid 摊平后同几何) */
+  .ax1-t-hero {
+    grid-template-rows:    auto 1fr auto;
+    grid-template-columns: 1.5fr 1fr;
+    grid-template-areas:   "ht ht"
+                           "hero side"
+                           "ft ft";
+  }
+  /* 05 中央舞台 + 两翼 */
+  .ax1-t-stage {
+    grid-template-rows:    auto 1fr auto;
+    grid-template-columns: 1fr 1.7fr 1fr;
+    grid-template-areas:   "ht ht ht"
+                           "w1 stage w2"
+                           "ft ft ft";
+  }
+  /* 06 非对称标题列(标题独占一条完整垂直轨道) */
+  .ax1-t-title {
+    grid-template-rows:    1fr auto;
+    grid-template-columns: 1.2fr 1fr 1fr 1fr;
+    grid-template-areas:   "title c1 c2 c3"
+                           "title ft ft ft";
+  }
+  /* 07 横向条带行(行不等高;侧导航轨道内容定宽) */
+  .ax1-t-bands {
+    grid-template-rows:    auto 1fr 1.2fr 1fr auto;
+    grid-template-columns: auto 1fr;
+    grid-template-areas:   "ht  ht"
+                           "nav b1"
+                           "nav b2"
+                           "nav b3"
+                           "ft  ft";
+  }
+  /* 08 马赛克 / 命名区网格(模块跨行跨列) */
+  .ax1-t-mosaic {
+    grid-template-rows:    auto 1fr 1fr auto;
+    grid-template-columns: repeat(4, 1fr);
+    grid-template-areas:   "ht ht ht ht"
+                           "ma mb mb mc"
+                           "md md me mc"
+                           "ft ft ft ft";
+  }
+  /* 09 顶部英雄 + 底部网格 */
+  .ax1-t-tophero {
+    grid-template-rows:    auto 1.3fr 1fr auto;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-areas:   "ht ht ht"
+                           "hero hero hero"
+                           "g1 g2 g3"
+                           "ft ft ft";
+  }
+  /* 10 放射轮毂(罕见;底层轨道就是 3×3 网格,轮辐连线属装饰层) */
+  .ax1-t-radial {
+    grid-template-rows:    auto 1fr 1.15fr 1fr auto;
+    grid-template-columns: 1fr 1.15fr 1fr;
+    grid-template-areas:   "ht ht ht"
+                           "s1 s2 s3"
+                           "s4 hub s5"
+                           "s6 s7 s8"
+                           "ft ft ft";
+  }
+  .ax1-hubcell { background: none; border: none; padding: 0; }
+  .ax1-hub-circle {
+    height: 100%; aspect-ratio: 1 / 1; max-width: 100%;
+    margin: 0 auto; border-radius: 50%;
+    background: var(--ax1-slate-tint); border: 1px solid var(--ax1-slate-line);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+  }
+  .ax1-hub-circle b { font-size: 10px; font-weight: 600; color: var(--ax1-slate-deep); }
+  .ax1-hub-circle .ax1-fr { font-family: var(--ax1-mono); font-size: 9px; color: var(--ax1-ink-3); }
+
+  /* =========================================================
+     span modifier 三小样(基础拓扑固定为三栏,修饰是唯一变量)
+     ========================================================= */
+  .ax1-m-none {
+    grid-template-rows:    auto 1fr auto;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-areas:   "ht ht ht"
+                           "c1 c2 c3"
+                           "ft ft ft";
+  }
+  .ax1-m-tophero {
+    grid-template-rows:    auto 0.8fr 1.6fr auto;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-areas:   "ht ht ht"
+                           "hero hero hero"
+                           "c1 c2 c3"
+                           "ft ft ft";
+  }
+  .ax1-m-midband {
+    grid-template-rows:    auto 1fr auto 1fr auto;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-areas:   "ht ht ht"
+                           "u1 u2 u3"
+                           "band band band"
+                           "l1 l2 l3"
+                           "ft ft ft";
+  }
+  .ax1-mods { display: flex; flex-wrap: wrap; gap: 24px; margin-top: 18px; }
+  .ax1-mod { flex: 1 1 300px; max-width: 340px; min-width: 0; }
+  .ax1-mod h4 { font-size: 14.5px; margin: 0 0 8px; }
+  .ax1-mod h4 span { font-weight: 400; color: var(--ax1-ink-2); font-size: 12.5px; margin-left: 6px; }
+  .ax1-mod .ax1-code { margin-top: 10px; font-size: 10.5px; }
+  .ax1-mod p { font-size: 12.5px; color: var(--ax1-ink-2); margin: 8px 0 0; }
+
+  /* =========================================================
+     focal content 四小样(同一中央舞台几何,焦点内容是唯一变量)
+     ========================================================= */
+  .ax1-focals { display: flex; flex-wrap: wrap; gap: 24px; margin-top: 18px; }
+  .ax1-focal { flex: 1 1 300px; max-width: 340px; min-width: 0; }
+  .ax1-focal h4 { font-size: 14.5px; margin: 0 0 8px; }
+  .ax1-focal h4 span { font-weight: 400; color: var(--ax1-ink-2); font-size: 12.5px; margin-left: 6px; }
+  .ax1-focal h4 code {
+    font-family: var(--ax1-mono); font-size: 11px; color: var(--ax1-ink-2);
+    background: #F3F5F7; border: 1px solid var(--ax1-hairline);
+    border-radius: 4px; padding: 0 5px; margin-left: 6px;
+  }
+  .ax1-focal p { font-size: 12.5px; color: var(--ax1-ink-2); margin: 8px 0 0; }
+
+  .ax1-stage-body {
+    background: var(--ax1-slate-tint); border: 1px solid var(--ax1-slate-line);
+    border-radius: 2px; min-width: 0; min-height: 0; overflow: hidden;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 4px; padding: 8px 10px; text-align: center;
+  }
+  /* figure 焦点 */
+  .ax1-figplate {
+    width: 84%; flex: 1 1 auto; min-height: 0;
+    background: #FFFFFF; border: 1px solid var(--ax1-slate-line); border-radius: 2px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .ax1-figplate b {
+    font-family: var(--ax1-mono); font-size: 12px; font-weight: 700;
+    color: var(--ax1-slate); letter-spacing: 0.18em;
+  }
+  .ax1-figcap { font-size: 8.5px; color: var(--ax1-ink-3); }
+  /* statement 焦点 */
+  .ax1-statement { font-size: 13px; font-weight: 700; color: var(--ax1-slate-deep); line-height: 1.45; }
+  .ax1-statement-sub { font-size: 8.5px; color: var(--ax1-ink-3); }
+  /* metric wall 焦点 */
+  .ax1-metrics {
+    width: 100%; flex: 1 1 auto; min-height: 0;
+    display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 4px;
+  }
+  .ax1-metric {
+    background: #FFFFFF; border: 1px solid var(--ax1-slate-line); border-radius: 2px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    min-height: 0; overflow: hidden; line-height: 1.2;
+  }
+  .ax1-metric b { font-family: var(--ax1-mono); font-size: 13px; font-weight: 700; color: var(--ax1-slate-deep); }
+  .ax1-metric i { font-style: normal; font-size: 8.5px; color: var(--ax1-ink-3); }
+  /* title 焦点 */
+  .ax1-stagetitle { font-size: 13px; font-weight: 700; color: var(--ax1-slate-deep); line-height: 1.35; }
+  .ax1-stageauthors { font-size: 8.5px; color: var(--ax1-ink-2); }
+  .ax1-stagerule { width: 46%; height: 2px; background: var(--ax1-slate); border-radius: 1px; }
+
+  /* ---------- 页脚 ---------- */
+  .ax1-pagefoot {
+    margin-top: 56px; padding-top: 16px; border-top: 1px solid var(--ax1-hairline);
+    font-size: 12px; color: var(--ax1-ink-3);
+  }
+  .ax1-pagefoot code { font-family: var(--ax1-mono); font-size: 11.5px; overflow-wrap: anywhere; }
+</style>
+</head>
+<body>
+<div class="ax1-wrap">
+
+  <!-- ================= 页头 ================= -->
+  <header>
+    <p class="ax1-eyebrow">POSTERLY · DESIGN AXES · 选项目录 SPECIMEN</p>
+    <h1 class="ax1-h1">轴 1 · 版式骨架<span>Axis 1 · Layout Skeleton</span></h1>
+    <p class="ax1-lede">
+      本轴的一次选择是一个结构化对象,不是单选枚举:
+      <b>base topology</b>(基础拓扑,下列 10 选 1)
+      + <b>span modifier</b>(跨列修饰:none / top-hero / 全宽中段横带)
+      + <b>focal content</b>(焦点区放什么:figure / statement / metric wall / title,选型时必须写明)。
+    </p>
+    <p class="ax1-ownership">
+      <b>所有权注记:</b>本轴只管<b>几何轨道</b>——标题轨道、舞台、英雄区这些区域是否存在、轨道比例多少;
+      轨道内部标题/身份如何排版归<b>轴 8(刊头与页脚)</b>。
+      对应硬冲突规则 3:刊头模式必须与本轴预留的几何匹配(选了"标题列刊头",版式就得真有标题轨道)。
+      画布横竖朝向是会场元数据(输入),从来不是风格选择。
+    </p>
+    <nav class="ax1-toc">
+      <a href="#t01">01 四栏</a>
+      <a href="#t02">02 三栏</a>
+      <a href="#t03">03 双栏纵流·竖版</a>
+      <a href="#t04">04 英雄面板</a>
+      <a href="#t05">05 中央舞台+两翼</a>
+      <a href="#t06">06 非对称标题列</a>
+      <a href="#t07">07 横向条带行</a>
+      <a href="#t08">08 马赛克命名区</a>
+      <a href="#t09">09 顶部英雄+底部网格</a>
+      <a href="#t10">10 放射轮毂</a>
+      <a href="#sec-span" class="ax1-toc--mod">修饰 · span modifier</a>
+      <a href="#sec-focal" class="ax1-toc--mod">焦点 · focal content</a>
+    </nav>
+  </header>
+
+  <!-- ================= 第一节:base topology ================= -->
+  <section class="ax1-sec" id="sec-base">
+    <h2>Base topology 基础拓扑<span>10 选 1 · 每格都是真实 grid 轨道</span></h2>
+    <p class="ax1-secnote">
+      线框按 60:36(竖版项 24:36)真实比例绘制;每张线框的
+      <code>grid-template-rows / columns / areas</code> 与旁边代码块逐字一致,可直接搬进模板。
+    </p>
+    <div class="ax1-legend">
+      <span><i class="ax1-sw-block"></i>内容轨道</span>
+      <span><i class="ax1-sw-focal"></i>焦点几何(舞台 / 英雄区 / 标题轨道)</span>
+      <span><i class="ax1-sw-chrome"></i>页眉 / 页脚(内容定高 <code>auto</code>)</span>
+    </div>
+
+    <!-- 01 四栏 -->
+    <article class="ax1-item" id="t01">
+      <div class="ax1-item-head">
+        <span class="ax1-no">01</span>
+        <h3>四栏<span>4-column</span></h3>
+        <span class="ax1-tag">shipped 默认 · landscape_4col_neutral</span>
+        <span class="ax1-anchors">锚点<code>61119</code><code>63713</code></span>
+      </div>
+      <div class="ax1-item-body">
+        <div class="ax1-demo">
+          <div class="ax1-poster ax1-t-4col">
+            <div class="ax1-r ax1-r--chrome ax1-r--strip ax1-ga-ht"><b>header</b><span class="ax1-fr">auto</span></div>
+            <div class="ax1-r ax1-ga-c1"><b>column</b><span class="ax1-fr">1fr</span></div>
+            <div class="ax1-r ax1-ga-c2"><b>column</b><span class="ax1-fr">1.05fr</span></div>
+            <div class="ax1-r ax1-ga-c3"><b>column</b><span class="ax1-fr">1.05fr</span></div>
+            <div class="ax1-r ax1-ga-c4"><b>column</b><span class="ax1-fr">1fr</span></div>
+            <div class="ax1-r ax1-r--chrome ax1-r--strip ax1-ga-ft"><b>footer</b><span class="ax1-fr">auto</span></div>
+          </div>
+          <p class="ax1-demo-cap">60 : 36 · 真实 grid 线框</p>
+        </div>
+        <div class="ax1-meta">
+<pre class="ax1-code">grid-template-rows:    auto 1fr auto;   <em>/* header | body | footer */</em>
+grid-template-columns: 1fr 1.05fr 1.05fr 1fr;
+                       <em>/* 照抄 shipped 模板:内侧两列微宽 */</em>
+grid-template-areas:   "ht ht ht ht"
+                       "c1 c2 c3 c4"
+                       "ft ft ft ft";</pre>
+          <p class="ax1-scene"><b>适用场景</b>标准 ML 会议横版;每列 3–5 张卡,图表、公式、小表混排的常规内容量。</p>
+          <p class="ax1-extra">shipped 模板中列是 <code>flex-direction: column</code> 的卡片栈,栏轨道即此处的 c1–c4。</p>
+        </div>
+      </div>
+    </article>
+
+    <!-- 02 三栏 -->
+    <article class="ax1-item" id="t02">
+      <div class="ax1-item-head">
+        <span class="ax1-no">02</span>
+        <h3>三栏<span>3-column</span></h3>
+        <span class="ax1-tag">corpus 中最常见的骨架</span>
+        <span class="ax1-anchors">锚点<code>62396</code><code>64164</code><code>66740</code></span>
+      </div>
+      <div class="ax1-item-body">
+        <div class="ax1-demo">
+          <div class="ax1-poster ax1-t-3col">
+            <div class="ax1-r ax1-r--chrome ax1-r--strip ax1-ga-ht"><b>header</b><span class="ax1-fr">auto</span></div>
+            <div class="ax1-r ax1-ga-c1"><b>column</b><span class="ax1-fr">1fr</span></div>
+            <div class="ax1-r ax1-ga-c2"><b>column</b><span class="ax1-fr">1fr</span></div>
+            <div class="ax1-r ax1-ga-c3"><b>column</b><span class="ax1-fr">1fr</span></div>
+            <div class="ax1-r ax1-r--chrome ax1-r--strip ax1-ga-ft"><b>footer</b><span class="ax1-fr">auto</span></div>
+          </div>
+          <p class="ax1-demo-cap">60 : 36 · 真实 grid 线框</p>
+        </div>
+        <div class="ax1-meta">
+<pre class="ax1-code">grid-template-rows:    auto 1fr auto;
+grid-template-columns: repeat(3, 1fr);
+grid-template-areas:   "ht ht ht"
+                       "c1 c2 c3"
+                       "ft ft ft";</pre>
+          <p class="ax1-scene"><b>适用场景</b>需要更宽的公式或大图时的第一选择;栏宽比四栏多约 1/3,长公式不折行。</p>
+        </div>
+      </div>
+    </article>
+
+    <!-- 03 双栏纵流 竖版 -->
+    <article class="ax1-item" id="t03">
+      <div class="ax1-item-head">
+        <span class="ax1-no">03</span>
+        <h3>双栏纵流<span>2-column vertical flow</span></h3>
+        <span class="ax1-tag">shipped · portrait_2col_neutral</span>
+        <span class="ax1-anchors">锚点<code>63574</code><code>66429</code></span>
+      </div>
+      <div class="ax1-item-body">
+        <div class="ax1-demo">
+          <div class="ax1-poster ax1-poster--portrait ax1-t-2col">
+            <div class="ax1-r ax1-r--chrome ax1-r--strip ax1-ga-ht"><b>header</b><span class="ax1-fr">auto</span></div>
+            <div class="ax1-r ax1-ga-c1"><b>column</b><span class="ax1-fr">1fr</span></div>
+            <div class="ax1-r ax1-ga-c2"><b>column</b><span class="ax1-fr">1fr</span></div>
+            <div class="ax1-r ax1-r--chrome ax1-r--strip ax1-ga-ft"><b>footer</b><span class="ax1-fr">auto</span></div>
+          </div>
+          <p class="ax1-demo-cap">24 : 36 竖版 · 真实 grid 线框</p>
+        </div>
+        <div class="ax1-meta">
+<pre class="ax1-code"><em>/* 画布 24:36 竖版 — 朝向 = 会场输入,不是风格选择 */</em>
+grid-template-rows:    auto 1fr auto;
+grid-template-columns: 1fr 1fr;
+grid-template-areas:   "ht ht"
+                       "c1 c2"
+                       "ft ft";</pre>
+          <p class="ax1-scene"><b>适用场景</b>竖版会场(portrait venue)的默认骨架;阅读顺序为先左列到底、再右列。</p>
+        </div>
+      </div>
+    </article>
+
+    <!-- 04 英雄面板 -->
+    <article class="ax1-item" id="t04">
+      <div class="ax1-item-head">
+        <span class="ax1-no">04</span>
+        <h3>英雄面板<span>hero panel 1.5fr + 1fr</span></h3>
+        <span class="ax1-tag">shipped · landscape_hero_neutral</span>
+        <span class="ax1-anchors">锚点<code>—</code></span>
+      </div>
+      <div class="ax1-item-body">
+        <div class="ax1-demo">
+          <div class="ax1-poster ax1-t-hero">
+            <div class="ax1-r ax1-r--chrome ax1-r--strip ax1-ga-ht"><b>header</b><span class="ax1-fr">auto</span></div>
+            <div class="ax1-r ax1-r--focal ax1-ga-hero"><b>hero</b><span class="ax1-fr">1.5fr ≈ 60%</span></div>
+            <div class="ax1-r ax1-ga-side"><b>support column</b><span class="ax1-fr">1fr</span></div>
+            <div class="ax1-r ax1-r--chrome ax1-r--strip ax1-ga-ft"><b>footer</b><span class="ax1-fr">auto</span></div>
+          </div>
+          <p class="ax1-demo-cap">60 : 36 · 真实 grid 线框</p>
+        </div>
+        <div class="ax1-meta">
+<pre class="ax1-code">grid-template-rows:    auto 1fr auto;
+grid-template-columns: 1.5fr 1fr;   <em>/* hero 左 60% | 支撑列 40% */</em>
+grid-template-areas:   "ht ht"
+                       "hero side"
+                       "ft ft";
+<em>/* shipped 模板(landscape_hero_neutral)用嵌套 .hero-grid,
+   摊平后几何相同;镜像变体(hero 在右)同理 */</em></pre>
+          <p class="ax1-scene"><b>适用场景</b>有一张统治级的大图/大表/框架图,其余内容居次;hero 内放什么见下方 focal content 小节。</p>
+        </div>
+      </div>
+    </article>
+
+    <!-- 05 中央舞台 + 两翼 -->
+    <article class="ax1-item" id="t05">
+      <div class="ax1-item-head">
+        <span class="ax1-no">05</span>
+        <h3>中央舞台 + 两翼<span>center stage + wings</span></h3>
+        <span class="ax1-anchors">锚点<code>60655</code><code>64621</code><code>65263</code><code>67229</code></span>
+      </div>
+      <div class="ax1-item-body">
+        <div class="ax1-demo">
+          <div class="ax1-poster ax1-t-stage">
+            <div class="ax1-r ax1-r--chrome ax1-r--strip ax1-ga-ht"><b>header</b><span class="ax1-fr">auto</span></div>
+            <div class="ax1-r ax1-ga-w1"><b>wing</b><span class="ax1-fr">1fr</span></div>
+            <div class="ax1-r ax1-r--focal ax1-ga-stage"><b>stage</b><span class="ax1-fr">1.7fr ≈ 46%</span></div>
+            <div class="ax1-r ax1-ga-w2"><b>wing</b><span class="ax1-fr">1fr</span></div>
+            <div class="ax1-r ax1-r--chrome ax1-r--strip ax1-ga-ft"><b>footer</b><span class="ax1-fr">auto</span></div>
+          </div>
+          <p class="ax1-demo-cap">60 : 36 · 真实 grid 线框</p>
+        </div>
+        <div class="ax1-meta">
+<pre class="ax1-code">grid-template-rows:    auto 1fr auto;
+grid-template-columns: 1fr 1.7fr 1fr;
+  <em>/* stage 1.7fr ≈ 46%;规格 ~45–55% ⇒ 1.64fr–2.44fr 可调 */</em>
+grid-template-areas:   "ht ht ht"
+                       "w1 stage w2"
+                       "ft ft ft";</pre>
+          <p class="ax1-scene"><b>适用场景</b>核心主张/核心图值得戏剧化聚焦时:中轨承载焦点,两翼放支撑内容。</p>
+          <p class="ax1-extra">锚点海报中 stage 是彩色或深色轨道 — 颜色归轴 2/3,此处仅以浅蓝示意"这是焦点几何"。</p>
+        </div>
+      </div>
+    </article>
+
+    <!-- 06 非对称标题列 -->
+    <article class="ax1-item" id="t06">
+      <div class="ax1-item-head">
+        <span class="ax1-no">06</span>
+        <h3>非对称标题列<span>asymmetric display-title column</span></h3>
+        <span class="ax1-anchors">锚点<code>63136</code><code>61403</code></span>
+      </div>
+      <div class="ax1-item-body">
+        <div class="ax1-demo">
+          <div class="ax1-poster ax1-t-title">
+            <div class="ax1-r ax1-r--focal ax1-ga-title"><b>title track</b><span class="ax1-fr">1.2fr · 通高</span></div>
+            <div class="ax1-r ax1-ga-c1"><b>column</b><span class="ax1-fr">1fr</span></div>
+            <div class="ax1-r ax1-ga-c2"><b>column</b><span class="ax1-fr">1fr</span></div>
+            <div class="ax1-r ax1-ga-c3"><b>column</b><span class="ax1-fr">1fr</span></div>
+            <div class="ax1-r ax1-r--chrome ax1-r--strip ax1-ga-ft"><b>footer</b><span class="ax1-fr">auto</span></div>
+          </div>
+          <p class="ax1-demo-cap">60 : 36 · 真实 grid 线框</p>
+        </div>
+        <div class="ax1-meta">
+<pre class="ax1-code">grid-template-rows:    1fr auto;
+grid-template-columns: 1.2fr 1fr 1fr 1fr;   <em>/* 标题独占第一条垂直轨道 */</em>
+grid-template-areas:   "title c1 c2 c3"
+                       "title ft ft ft";    <em>/* title 跨两行 ⇒ 通高 */</em></pre>
+          <p class="ax1-scene"><b>适用场景</b>标题很强、想让"身份"占满一整条垂直轨道的编辑式版式;没有顶部横向刊头。</p>
+          <p class="ax1-extra">硬冲突规则 3:此拓扑要求轴 8 选"标题列刊头"。标题列<em>内部</em>怎么排(竖排、旋转、叠字)归轴 8。</p>
+        </div>
+      </div>
+    </article>
+
+    <!-- 07 横向条带行 -->
+    <article class="ax1-item" id="t07">
+      <div class="ax1-item-head">
+        <span class="ax1-no">07</span>
+        <h3>横向条带行<span>horizontal band-rows</span></h3>
+        <span class="ax1-anchors">锚点<code>65626</code><code>66466</code><code>63290</code></span>
+      </div>
+      <div class="ax1-item-body">
+        <div class="ax1-demo">
+          <div class="ax1-poster ax1-t-bands">
+            <div class="ax1-r ax1-r--chrome ax1-r--strip ax1-ga-ht"><b>header</b><span class="ax1-fr">auto</span></div>
+            <div class="ax1-r ax1-r--focal ax1-r--v ax1-ga-nav"><b>nav</b></div>
+            <div class="ax1-r ax1-r--strip ax1-ga-b1"><b>band 1</b><span class="ax1-fr">1fr</span></div>
+            <div class="ax1-r ax1-r--strip ax1-ga-b2"><b>band 2</b><span class="ax1-fr">1.2fr</span></div>
+            <div class="ax1-r ax1-r--strip ax1-ga-b3"><b>band 3</b><span class="ax1-fr">1fr</span></div>
+            <div class="ax1-r ax1-r--chrome ax1-r--strip ax1-ga-ft"><b>footer</b><span class="ax1-fr">auto</span></div>
+          </div>
+          <p class="ax1-demo-cap">60 : 36 · 真实 grid 线框</p>
+        </div>
+        <div class="ax1-meta">
+<pre class="ax1-code">grid-template-rows:    auto 1fr 1.2fr 1fr auto;  <em>/* 行高随内容,不必等分 */</em>
+grid-template-columns: auto 1fr;                 <em>/* 侧导航轨道由内容定宽 */</em>
+grid-template-areas:   "ht  ht"
+                       "nav b1"
+                       "nav b2"
+                       "nav b3"
+                       "ft  ft";</pre>
+          <p class="ax1-scene"><b>适用场景</b>叙事强、按步骤/阶段逐行推进的内容;整行通宽,适合流程图和时间线。</p>
+          <p class="ax1-extra">硬冲突规则 2:此拓扑<em>必须</em>有侧栏或顶部的导航信号(锚点海报用巨大数字/eyebrow — 那是轴 7 的 marker)。</p>
+        </div>
+      </div>
+    </article>
+
+    <!-- 08 马赛克命名区 -->
+    <article class="ax1-item" id="t08">
+      <div class="ax1-item-head">
+        <span class="ax1-no">08</span>
+        <h3>马赛克 / 命名区网格<span>mosaic · named-area grid</span></h3>
+        <span class="ax1-anchors">锚点<code>63300</code><code>63640</code><code>65372</code></span>
+      </div>
+      <div class="ax1-item-body">
+        <div class="ax1-demo">
+          <div class="ax1-poster ax1-t-mosaic">
+            <div class="ax1-r ax1-r--chrome ax1-r--strip ax1-ga-ht"><b>header</b><span class="ax1-fr">auto</span></div>
+            <div class="ax1-r ax1-ga-ma"><b>module A</b><span class="ax1-fr">1 × 1</span></div>
+            <div class="ax1-r ax1-ga-mb"><b>module B</b><span class="ax1-fr">跨 2 列</span></div>
+            <div class="ax1-r ax1-r--focal ax1-ga-mc"><b>module C</b><span class="ax1-fr">跨 2 行</span></div>
+            <div class="ax1-r ax1-ga-md"><b>module D</b><span class="ax1-fr">跨 2 列</span></div>
+            <div class="ax1-r ax1-ga-me"><b>module E</b><span class="ax1-fr">1 × 1</span></div>
+            <div class="ax1-r ax1-r--chrome ax1-r--strip ax1-ga-ft"><b>footer</b><span class="ax1-fr">auto</span></div>
+          </div>
+          <p class="ax1-demo-cap">60 : 36 · 真实 grid 线框</p>
+        </div>
+        <div class="ax1-meta">
+<pre class="ax1-code">grid-template-rows:    auto 1fr 1fr auto;
+grid-template-columns: repeat(4, 1fr);
+grid-template-areas:   "ht ht ht ht"
+                       "ma mb mb mc"
+                       "md md me mc"
+                       "ft ft ft ft";           <em>/* 模块自由跨行/跨列 */</em></pre>
+          <p class="ax1-scene"><b>适用场景</b>模块体量差异大、多个独立结果块的"仪表盘感";named-area 也便于测量与打包。</p>
+        </div>
+      </div>
+    </article>
+
+    <!-- 09 顶部英雄 + 底部网格 -->
+    <article class="ax1-item" id="t09">
+      <div class="ax1-item-head">
+        <span class="ax1-no">09</span>
+        <h3>顶部英雄 + 底部网格<span>top hero + bottom grid</span></h3>
+        <span class="ax1-anchors">锚点<code>66579</code><code>62378</code></span>
+      </div>
+      <div class="ax1-item-body">
+        <div class="ax1-demo">
+          <div class="ax1-poster ax1-t-tophero">
+            <div class="ax1-r ax1-r--chrome ax1-r--strip ax1-ga-ht"><b>header</b><span class="ax1-fr">auto</span></div>
+            <div class="ax1-r ax1-r--focal ax1-ga-hero"><b>hero(全宽)</b><span class="ax1-fr">1.3fr</span></div>
+            <div class="ax1-r ax1-ga-g1"><b>grid cell</b><span class="ax1-fr">1fr</span></div>
+            <div class="ax1-r ax1-ga-g2"><b>grid cell</b><span class="ax1-fr">1fr</span></div>
+            <div class="ax1-r ax1-ga-g3"><b>grid cell</b><span class="ax1-fr">1fr</span></div>
+            <div class="ax1-r ax1-r--chrome ax1-r--strip ax1-ga-ft"><b>footer</b><span class="ax1-fr">auto</span></div>
+          </div>
+          <p class="ax1-demo-cap">60 : 36 · 真实 grid 线框</p>
+        </div>
+        <div class="ax1-meta">
+<pre class="ax1-code">grid-template-rows:    auto 1.3fr 1fr auto;   <em>/* hero 带占主体 ≈ 57% */</em>
+grid-template-columns: repeat(3, 1fr);
+grid-template-areas:   "ht ht ht"
+                       "hero hero hero"
+                       "g1 g2 g3"
+                       "ft ft ft";</pre>
+          <p class="ax1-scene"><b>适用场景</b>一个全宽主视觉或主结论 + 下方结果矩阵;62378 的 hero 是 metric wall(见 focal content)。</p>
+        </div>
+      </div>
+    </article>
+
+    <!-- 10 放射轮毂 -->
+    <article class="ax1-item" id="t10">
+      <div class="ax1-item-head">
+        <span class="ax1-no">10</span>
+        <h3>放射轮毂<span>radial hub</span></h3>
+        <span class="ax1-tag">罕见 · 难平衡</span>
+        <span class="ax1-anchors">锚点<code>67039</code><code>63682</code></span>
+      </div>
+      <div class="ax1-item-body">
+        <div class="ax1-demo">
+          <div class="ax1-poster ax1-t-radial">
+            <div class="ax1-r ax1-r--chrome ax1-r--strip ax1-ga-ht"><b>header</b><span class="ax1-fr">auto</span></div>
+            <div class="ax1-r ax1-r--faint ax1-ga-s1"><b>satellite</b></div>
+            <div class="ax1-r ax1-r--faint ax1-ga-s2"><b>satellite</b></div>
+            <div class="ax1-r ax1-r--faint ax1-ga-s3"><b>satellite</b></div>
+            <div class="ax1-r ax1-r--faint ax1-ga-s4"><b>satellite</b></div>
+            <div class="ax1-r ax1-hubcell ax1-ga-hub">
+              <div class="ax1-hub-circle"><b>hub</b><span class="ax1-fr">中心轮</span></div>
+            </div>
+            <div class="ax1-r ax1-r--faint ax1-ga-s5"><b>satellite</b></div>
+            <div class="ax1-r ax1-r--faint ax1-ga-s6"><b>satellite</b></div>
+            <div class="ax1-r ax1-r--faint ax1-ga-s7"><b>satellite</b></div>
+            <div class="ax1-r ax1-r--faint ax1-ga-s8"><b>satellite</b></div>
+            <div class="ax1-r ax1-r--chrome ax1-r--strip ax1-ga-ft"><b>footer</b><span class="ax1-fr">auto</span></div>
+          </div>
+          <p class="ax1-demo-cap">60 : 36 · 真实 grid 线框(连线为装饰层,未画)</p>
+        </div>
+        <div class="ax1-meta">
+<pre class="ax1-code">grid-template-rows:    auto 1fr 1.15fr 1fr auto;
+grid-template-columns: 1fr 1.15fr 1fr;   <em>/* 底层轨道就是 3×3 网格 */</em>
+grid-template-areas:   "ht ht ht"
+                       "s1 s2 s3"
+                       "s4 hub s5"
+                       "s6 s7 s8"
+                       "ft ft ft";
+<em>/* 轮辐连线是装饰层(SVG / 伪元素),不参与轨道;hub 用圆形元素居中于中心格 */</em></pre>
+          <p class="ax1-scene"><b>适用场景</b>仅当方法真有"中心—辐射"结构(一个核心组件 + 多个外围模块)时;平衡难度高,慎用。</p>
+        </div>
+      </div>
+    </article>
+  </section>
+
+  <!-- ================= 第二节:span modifier ================= -->
+  <section class="ax1-sec" id="sec-span">
+    <h2>Span modifier 跨列修饰<span>none / top-hero / 全宽中段横带 · 基础拓扑固定为三栏,修饰是唯一变量</span></h2>
+    <p class="ax1-secnote">
+      修饰只是在基础拓扑的行结构里<b>插入一条全宽行</b>,列轨道不变(<code>repeat(3, 1fr)</code>)。
+      任何基础拓扑同理套用。
+    </p>
+    <div class="ax1-mods">
+      <div class="ax1-mod">
+        <h4>none<span>不加修饰</span></h4>
+        <div class="ax1-poster ax1-poster--s ax1-m-none">
+          <div class="ax1-r ax1-r--chrome ax1-r--strip ax1-ga-ht"><b>header</b></div>
+          <div class="ax1-r ax1-ga-c1"><b>column</b></div>
+          <div class="ax1-r ax1-ga-c2"><b>column</b></div>
+          <div class="ax1-r ax1-ga-c3"><b>column</b></div>
+          <div class="ax1-r ax1-r--chrome ax1-r--strip ax1-ga-ft"><b>footer</b></div>
+        </div>
+<pre class="ax1-code">grid-template-rows: auto 1fr auto;
+<em>/* 基线,无插入行 */</em></pre>
+        <p>基线形态;列从页眉直落页脚。</p>
+      </div>
+      <div class="ax1-mod">
+        <h4>top-hero<span>顶部英雄行</span></h4>
+        <div class="ax1-poster ax1-poster--s ax1-m-tophero">
+          <div class="ax1-r ax1-r--chrome ax1-r--strip ax1-ga-ht"><b>header</b></div>
+          <div class="ax1-r ax1-r--focal ax1-r--strip ax1-ga-hero"><b>top-hero 全宽行</b><span class="ax1-fr">0.8fr</span></div>
+          <div class="ax1-r ax1-ga-c1"><b>column</b></div>
+          <div class="ax1-r ax1-ga-c2"><b>column</b></div>
+          <div class="ax1-r ax1-ga-c3"><b>column</b></div>
+          <div class="ax1-r ax1-r--chrome ax1-r--strip ax1-ga-ft"><b>footer</b></div>
+        </div>
+<pre class="ax1-code">grid-template-rows: auto 0.8fr 1.6fr auto;
+grid-template-areas: "ht ht ht"
+                     "hero hero hero"
+                     "c1 c2 c3"  "ft ft ft";</pre>
+        <p>页眉下插入一条全宽英雄行(框架图 / TL;DR 都住这里),列在其下继续。</p>
+      </div>
+      <div class="ax1-mod">
+        <h4>full-width mid band<span>全宽中段横带</span></h4>
+        <div class="ax1-poster ax1-poster--s ax1-m-midband">
+          <div class="ax1-r ax1-r--chrome ax1-r--strip ax1-ga-ht"><b>header</b></div>
+          <div class="ax1-r ax1-ga-u1"><b>column</b></div>
+          <div class="ax1-r ax1-ga-u2"><b>column</b></div>
+          <div class="ax1-r ax1-ga-u3"><b>column</b></div>
+          <div class="ax1-r ax1-r--focal ax1-r--strip ax1-ga-band"><b>mid band 全宽横带</b><span class="ax1-fr">auto</span></div>
+          <div class="ax1-r ax1-ga-l1"><b>column</b></div>
+          <div class="ax1-r ax1-ga-l2"><b>column</b></div>
+          <div class="ax1-r ax1-ga-l3"><b>column</b></div>
+          <div class="ax1-r ax1-r--chrome ax1-r--strip ax1-ga-ft"><b>footer</b></div>
+        </div>
+<pre class="ax1-code">grid-template-rows: auto 1fr auto 1fr auto;
+grid-template-areas: "ht ht ht"  "u1 u2 u3"
+                     "band band band"
+                     "l1 l2 l3"  "ft ft ft";</pre>
+        <p>横带把列拦腰截断;上下两段列<b>各自独立</b>排内容,不跨带续排。</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= 第三节:focal content ================= -->
+  <section class="ax1-sec" id="sec-focal">
+    <h2>Focal content 焦点内容<span>同一舞台几何(1fr 1.7fr 1fr),焦点内容是唯一变量</span></h2>
+    <p class="ax1-secnote">
+      焦点区(stage / hero / title track)里放什么必须在选型时写明。四种焦点同样适用于
+      04 英雄面板、09 顶部英雄等其他焦点几何。
+    </p>
+    <div class="ax1-focals">
+      <div class="ax1-focal">
+        <h4>figure 大图<code>60655</code></h4>
+        <div class="ax1-poster ax1-poster--s ax1-t-stage">
+          <div class="ax1-r ax1-r--chrome ax1-r--strip ax1-ga-ht"><b>header</b></div>
+          <div class="ax1-r ax1-r--faint ax1-ga-w1"><b>wing</b></div>
+          <div class="ax1-stage-body ax1-ga-stage">
+            <div class="ax1-figplate"><b>FIGURE</b></div>
+            <span class="ax1-figcap">caption 图注一行</span>
+          </div>
+          <div class="ax1-r ax1-r--faint ax1-ga-w2"><b>wing</b></div>
+          <div class="ax1-r ax1-r--chrome ax1-r--strip ax1-ga-ft"><b>footer</b></div>
+        </div>
+        <p>核心框架图 / 定性对比图独占舞台;图不加边框,靠留白呼吸。</p>
+      </div>
+      <div class="ax1-focal">
+        <h4>statement 主张<code>64621</code></h4>
+        <div class="ax1-poster ax1-poster--s ax1-t-stage">
+          <div class="ax1-r ax1-r--chrome ax1-r--strip ax1-ga-ht"><b>header</b></div>
+          <div class="ax1-r ax1-r--faint ax1-ga-w1"><b>wing</b></div>
+          <div class="ax1-stage-body ax1-ga-stage">
+            <span class="ax1-statement">"一句话把核心<br>主张放到最大。"</span>
+            <span class="ax1-statement-sub">statement — 全文只此一句显示级文字</span>
+          </div>
+          <div class="ax1-r ax1-r--faint ax1-ga-w2"><b>wing</b></div>
+          <div class="ax1-r ax1-r--chrome ax1-r--strip ax1-ga-ft"><b>footer</b></div>
+        </div>
+        <p>结论本身就是海报的脸;适合"一句话讲得清"的工作。</p>
+      </div>
+      <div class="ax1-focal">
+        <h4>metric wall 指标墙<code>62378</code></h4>
+        <div class="ax1-poster ax1-poster--s ax1-t-stage">
+          <div class="ax1-r ax1-r--chrome ax1-r--strip ax1-ga-ht"><b>header</b></div>
+          <div class="ax1-r ax1-r--faint ax1-ga-w1"><b>wing</b></div>
+          <div class="ax1-stage-body ax1-ga-stage">
+            <div class="ax1-metrics">
+              <div class="ax1-metric"><b>+12.4</b><i>accuracy</i></div>
+              <div class="ax1-metric"><b>×3.1</b><i>speedup</i></div>
+              <div class="ax1-metric"><b>98.2%</b><i>coverage</i></div>
+              <div class="ax1-metric"><b>−41%</b><i>memory</i></div>
+            </div>
+          </div>
+          <div class="ax1-r ax1-r--faint ax1-ga-w2"><b>wing</b></div>
+          <div class="ax1-r ax1-r--chrome ax1-r--strip ax1-ga-ft"><b>footer</b></div>
+        </div>
+        <p>几个大数字并排轰炸;数字必须是论文里站得住的口径。</p>
+      </div>
+      <div class="ax1-focal">
+        <h4>title 标题本体<code>63136</code></h4>
+        <div class="ax1-poster ax1-poster--s ax1-t-stage">
+          <div class="ax1-r ax1-r--chrome ax1-r--strip ax1-ga-ht"><b>header</b></div>
+          <div class="ax1-r ax1-r--faint ax1-ga-w1"><b>wing</b></div>
+          <div class="ax1-stage-body ax1-ga-stage">
+            <span class="ax1-stagetitle">Poster Title<br>Lives on Stage</span>
+            <span class="ax1-stagerule"></span>
+            <span class="ax1-stageauthors">Author A · Author B · Lab</span>
+          </div>
+          <div class="ax1-r ax1-r--faint ax1-ga-w2"><b>wing</b></div>
+          <div class="ax1-r ax1-r--chrome ax1-r--strip ax1-ga-ft"><b>footer</b></div>
+        </div>
+        <p>标题即焦点。硬冲突规则 3:轴 8 必须选"标题入舞台"刊头;舞台内标题怎么排归轴 8。</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= 页脚 ================= -->
+  <footer class="ax1-pagefoot">
+    <p>
+      锚点 ID 来自 80 张 ICML 2026 精选海报;原图见
+      <code>https://icml.cc/media/PosterPDFs/ICML%202026/&lt;id&gt;.png</code>(alpha 合成到白底查看)。
+      本页所有演示使用中性基线配色(白底 / 浅灰块 / slate 蓝 <code>#2D5F8B</code> 标签色),
+      不引入画布、卡面、字型等其他轴的变量 — 拓扑差异是唯一变量。
+      规范全文见 <code>templates/DESIGN-AXES.md</code>。
+    </p>
+  </footer>
+
+</div>
+</body>
+</html>

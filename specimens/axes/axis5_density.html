@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<!-- ============================================================
+  轴 5 选项目录 — 密度节奏 (Density & rhythm)
+  specimens/axes/axis5_density.html · 自包含,无外链
+  令牌基准与 templates/landscape_4col_neutral.html 对齐:
+    --u = 打印 1mm / 屏幕 1.6px;本页迷你列用 --mu 等比缩小。
+    balanced 档 = 出厂默认(fs-4=12u,卡 padding 4u×9u,列 gutter 10u)。
+  控制变量:三列配色/字体/卡样式完全一致,密度令牌是唯一变量。
+  ============================================================ -->
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>轴 5 · 密度节奏 — 选项目录</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  /* ============ 页面基调(说明性 UI,非海报) ============ */
+  html, body { background: #f2f2f3; color: #1d2126; }
+  body {
+    font-family: "Helvetica Neue", "PingFang SC", "Microsoft YaHei", Arial, sans-serif;
+    line-height: 1.6;
+  }
+
+  .ax5-page {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 40px 20px 72px;
+  }
+
+  /* ============ 页头 ============ */
+  .ax5-head { max-width: 900px; margin-bottom: 8px; }
+  .ax5-kicker {
+    font-size: 13px; font-weight: 700; letter-spacing: 2px;
+    color: #6b7280; text-transform: uppercase; margin-bottom: 6px;
+  }
+  .ax5-h1 { font-size: 30px; font-weight: 800; color: #2f3a46; margin-bottom: 12px; }
+  .ax5-h1 small { font-weight: 600; font-size: 17px; color: #6b7280; margin-left: 10px; }
+  .ax5-lead { font-size: 15px; color: #333a42; margin-bottom: 8px; }
+  .ax5-lead strong { color: #2f3a46; }
+  .ax5-gate {
+    display: inline-block; margin-top: 6px;
+    border-left: 4px solid #2f3a46; background: #e8eaee;
+    padding: 8px 14px; font-size: 14px; color: #2f3a46; border-radius: 0 4px 4px 0;
+  }
+  .ax5-note {
+    font-size: 13px; color: #6b7280; margin: 18px 0 26px; max-width: 960px;
+  }
+
+  /* ============ 三档演示行 ============ */
+  .ax5-demo-row {
+    display: flex; flex-wrap: wrap; gap: 32px;
+    justify-content: center; align-items: flex-start;
+  }
+  .ax5-tier { flex: 0 0 auto; }
+
+  .ax5-tier-head { width: calc(366 * var(--mu)); margin-bottom: 10px; }
+  .ax5-tier-name { font-size: 17px; font-weight: 800; color: #2f3a46; }
+  .ax5-tier-name em { font-style: normal; font-weight: 600; font-size: 13px; color: #6b7280; margin-left: 6px; }
+  .ax5-tier-anchors { font-size: 12px; color: #8a919b; font-family: ui-monospace, "SFMono-Regular", Consolas, monospace; }
+  .ax5-tier-depth { font-size: 13px; color: #4b5563; margin-top: 4px; min-height: 60px; }
+
+  /* ---- 迷你海报列:60×36in 海报的单列裁片 ----
+     真实海报:列宽 366u、body 高约 630u(1524×914u,4 列,gutter 10u)。
+     本页 --mu = 0.88px ⇒ 列宽约 322px。
+     每档只改密度令牌(--fs-*、--pad-*、--gap-card、--gut-half),
+     卡样式/配色/字体三列共用同一套规则。 */
+  .ax5-tier { --mu: 0.88px; }
+
+  .ax5-mini {
+    width: calc(366 * var(--mu));
+    height: calc(630 * var(--mu));
+    background: #edeae6;                      /* 中性页底,三列一致 */
+    border: 1px solid #d2cfca;
+    padding: calc(8 * var(--mu)) var(--gut-half);
+    display: flex; flex-direction: column;
+    gap: var(--gap-card);
+    overflow: hidden;
+  }
+
+  /* 每档的密度令牌(与出厂模板对齐;sparse/dense 为档位联动值) */
+  .ax5-tier--sparse {
+    --fs-body: calc(14 * var(--mu));   /* fs-4 上移:12u -> 14u */
+    --fs-cap:  calc(12 * var(--mu));
+    --fs-sec:  calc(20 * var(--mu));   /* fs-7 上移:16u -> 20u */
+    --fs-big:  calc(30 * var(--mu));   /* fs-8 上移:22u -> 30u */
+    --fs-huge: calc(44 * var(--mu));
+    --pad-v: calc(8 * var(--mu));  --pad-h: calc(14 * var(--mu));
+    --gap-card: calc(12 * var(--mu));
+    --gut-half: calc(8 * var(--mu));   /* 列 gutter 16u 的一半 */
+  }
+  .ax5-tier--balanced {
+    --fs-body: calc(12 * var(--mu));   /* fs-4 出厂值 */
+    --fs-cap:  calc(11 * var(--mu));   /* fs-3 */
+    --fs-sec:  calc(16 * var(--mu));   /* fs-7 */
+    --fs-big:  calc(22 * var(--mu));   /* fs-8 */
+    --fs-huge: calc(22 * var(--mu));
+    --pad-v: calc(4 * var(--mu));  --pad-h: calc(9 * var(--mu));
+    --gap-card: calc(6 * var(--mu));
+    --gut-half: calc(5 * var(--mu));   /* gutter 10u / 2 */
+  }
+  .ax5-tier--dense {
+    --fs-body: calc(12 * var(--mu));   /* fs-4 = 12u 底线,不再下降 */
+    --fs-cap:  calc(10 * var(--mu));   /* fs-3 收紧 11u -> 10u */
+    --fs-micro: calc(9 * var(--mu));   /* fs-1 微注启用 */
+    --fs-sec:  calc(14 * var(--mu));   /* fs-7 收紧 16u -> 14u */
+    --fs-big:  calc(18 * var(--mu));
+    --fs-huge: calc(18 * var(--mu));
+    --pad-v: calc(3 * var(--mu));  --pad-h: calc(6 * var(--mu));  /* card--compact */
+    --gap-card: calc(4 * var(--mu));
+    --gut-half: calc(4 * var(--mu));   /* gutter 8u / 2 */
+  }
+
+  /* ---- 卡样式:三列完全一致(唯一变量是密度令牌) ---- */
+  .ax5-card {
+    background: #ffffff;
+    border: 1px solid #d8d8d8;
+    border-radius: calc(3 * var(--mu));
+    padding: var(--pad-v) var(--pad-h);
+    display: flex; flex-direction: column;
+    min-height: 0;
+  }
+  .ax5-sec {
+    font-size: var(--fs-sec);
+    font-weight: 800; color: #2f3a46;
+    line-height: 1.2;
+    padding-bottom: calc(2 * var(--mu));
+    border-bottom: 1px solid #d8d8d8;
+    margin-bottom: calc(3 * var(--mu));
+  }
+  .ax5-p {
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: var(--fs-body);
+    line-height: 1.45;
+    color: #24292e;
+  }
+  .ax5-p + .ax5-p { margin-top: calc(2.5 * var(--mu)); }
+  .ax5-cap {
+    font-size: var(--fs-cap);
+    color: #6b7280; line-height: 1.35;
+    margin-top: calc(2 * var(--mu));
+  }
+  .ax5-micro {
+    font-size: var(--fs-micro, var(--fs-cap));
+    color: #8a919b; line-height: 1.3;
+    margin-top: calc(1.5 * var(--mu));
+  }
+  .ax5-eqn {
+    font-family: Georgia, "Times New Roman", serif;
+    font-style: italic;
+    font-size: calc(var(--fs-body) * 1.08);
+    text-align: center; color: #24292e;
+    background: #f5f6f7; border-radius: calc(2 * var(--mu));
+    padding: calc(2.5 * var(--mu)) calc(4 * var(--mu));
+    margin: calc(3 * var(--mu)) 0;
+  }
+  .ax5-fig {
+    border: 1px dashed #c3c7cc; border-radius: calc(2 * var(--mu));
+    background: #f5f6f7;
+    display: flex; align-items: center; justify-content: center;
+    color: #8a919b; font-size: var(--fs-cap);
+    margin: calc(2.5 * var(--mu)) 0 0;
+  }
+  .ax5-fig--s { height: calc(38 * var(--mu)); }
+  .ax5-fig--m { height: calc(70 * var(--mu)); }
+  .ax5-fig--l { height: calc(76 * var(--mu)); }
+
+  /* 表格(证据卡) */
+  .ax5-tab {
+    width: 100%; border-collapse: collapse;
+    font-size: var(--fs-cap);
+    margin-top: calc(2 * var(--mu));
+  }
+  .ax5-tab th, .ax5-tab td {
+    padding: calc(1.2 * var(--mu)) calc(3 * var(--mu));
+    border-bottom: 1px solid #e3e5e8;
+    text-align: right; color: #24292e;
+  }
+  .ax5-tab th { color: #6b7280; font-weight: 700; border-bottom: 1px solid #c3c7cc; }
+  .ax5-tab th:first-child, .ax5-tab td:first-child { text-align: left; }
+  .ax5-tab .ax5-ours td { background: #eef1f4; font-weight: 700; }
+
+  /* sparse 专用的大元素(样式仍中性,只是字大) */
+  .ax5-card--stage { flex: 3 1 0; justify-content: center; }
+  .ax5-card--metric { flex: 2 1 0; justify-content: center; align-items: center; text-align: center; }
+  .ax5-eyebrow {
+    font-size: var(--fs-cap); font-weight: 700; letter-spacing: 1.5px;
+    color: #6b7280; text-transform: uppercase; margin-bottom: calc(3 * var(--mu));
+  }
+  .ax5-display {
+    font-size: var(--fs-big); font-weight: 800; line-height: 1.15;
+    color: #2f3a46; margin-bottom: calc(4 * var(--mu));
+  }
+  .ax5-metric-num {
+    font-size: var(--fs-huge); font-weight: 800; line-height: 1;
+    color: #2f3a46; letter-spacing: -1px;
+  }
+
+  /* ---- 令牌值表(三列行序一致,可横向对比) ---- */
+  .ax5-tokens {
+    width: calc(366 * var(--mu));
+    border-collapse: collapse;
+    margin-top: 12px;
+    font-size: 12.5px;
+    background: #fff; border: 1px solid #d8d8d8; border-radius: 4px;
+  }
+  .ax5-tokens caption {
+    caption-side: top; text-align: left;
+    font-size: 12px; font-weight: 700; color: #6b7280;
+    padding: 0 2px 4px;
+  }
+  .ax5-tokens th, .ax5-tokens td {
+    border-bottom: 1px solid #e6e7e9;
+    padding: 4px 8px; text-align: left; vertical-align: top;
+  }
+  .ax5-tokens tr:last-child th, .ax5-tokens tr:last-child td { border-bottom: none; }
+  .ax5-tokens th {
+    width: 96px; font-weight: 600; color: #6b7280; white-space: nowrap;
+  }
+  .ax5-tokens td { font-family: ui-monospace, "SFMono-Regular", Consolas, monospace; color: #24292e; }
+  .ax5-tokens td .ax5-tk-note { font-family: inherit; color: #8a919b; }
+  .ax5-up   { color: #2c6e49; font-weight: 700; }
+  .ax5-down { color: #b3541e; font-weight: 700; }
+
+  /* ============ 反面教材 ============ */
+  .ax5-anti-sec { margin-top: 56px; }
+  .ax5-h2 { font-size: 21px; font-weight: 800; color: #2f3a46; margin-bottom: 12px; }
+  .ax5-anti-row {
+    display: flex; flex-wrap: wrap; gap: 32px; align-items: flex-start;
+  }
+  .ax5-anti-frame { position: relative; flex: 0 0 auto; --mu: 0.88px; }
+  /* 反例:沿用 sparse 的版面令牌(大 padding/大 gutter),
+     却塞进 dense 深度的全部内容,并把字号缩到底线以下 —— 被 gate 禁止 */
+  .ax5-anti-frame .ax5-mini {
+    --fs-body: calc(9 * var(--mu));    /* 12u 底线被压到 9u —— 违规 */
+    --fs-cap:  calc(8 * var(--mu));
+    --fs-micro: calc(7 * var(--mu));
+    --fs-sec:  calc(12 * var(--mu));
+    --fs-big:  calc(15 * var(--mu));
+    --fs-huge: calc(15 * var(--mu));
+    --pad-v: calc(8 * var(--mu));  --pad-h: calc(14 * var(--mu));  /* 仍是 sparse 的大 padding */
+    --gap-card: calc(12 * var(--mu));
+    --gut-half: calc(8 * var(--mu));
+    border-color: #c0392b;
+    box-shadow: 0 0 0 2px rgba(192, 57, 43, 0.35);
+  }
+  .ax5-anti-badge {
+    position: absolute; top: -14px; right: -14px;
+    width: 34px; height: 34px; border-radius: 50%;
+    background: #c0392b; color: #fff;
+    font-size: 20px; font-weight: 800; line-height: 34px; text-align: center;
+  }
+  .ax5-anti-label {
+    width: calc(366 * var(--mu));
+    margin-top: 10px; font-size: 13px; font-weight: 700; color: #c0392b;
+  }
+  .ax5-anti-why { flex: 1 1 360px; max-width: 560px; }
+  .ax5-anti-why ul { list-style: none; }
+  .ax5-anti-why li {
+    position: relative; padding-left: 26px; margin-bottom: 12px;
+    font-size: 14px; color: #333a42;
+  }
+  .ax5-anti-why li::before {
+    content: "✕"; position: absolute; left: 0; top: 1px;
+    color: #c0392b; font-weight: 800;
+  }
+  .ax5-anti-fix {
+    border-left: 4px solid #2c6e49; background: #e9efe9;
+    padding: 10px 14px; font-size: 14px; color: #274233;
+    border-radius: 0 4px 4px 0; margin-top: 16px;
+  }
+
+  /* ============ 页脚 ============ */
+  .ax5-foot {
+    margin-top: 48px; padding-top: 14px; border-top: 1px solid #d2cfca;
+    font-size: 12.5px; color: #8a919b;
+  }
+</style>
+</head>
+<body>
+<div class="ax5-page">
+
+  <!-- ==================== 页头:轴名 + 说明 ==================== -->
+  <header class="ax5-head">
+    <div class="ax5-kicker">Design Axes · 选项目录 · 轴 5 / 8</div>
+    <h1 class="ax5-h1">密度节奏<small>Density &amp; rhythm</small></h1>
+    <p class="ax5-lead">
+      密度是一项<strong>容量决策</strong>:选定 <strong>sparse showcase / balanced / dense
+      report</strong> 三档之一后,<strong>字号阶(--fs)、卡 padding、列 gutter</strong>
+      三组令牌联动切换。它决定的是"这一列放多少内容、以什么粒度呈现",
+      而不是"把同样的内容缩放到多大"。
+    </p>
+    <p class="ax5-gate">
+      硬 gate(clash 规则 1):塞不下时,换布局拓扑、升密度档、或裁内容 ——
+      <strong>绝不把正文字号缩到底线以下</strong>。
+    </p>
+  </header>
+
+  <p class="ax5-note">
+    下面三列是同一张 60×36 in 海报的<strong>单列裁片</strong>(列宽 366u,按
+    --mu = 0.88px 缩放,约 322px 宽),讲的是<strong>同一小节内容</strong>(PowerFlow
+    的核心思想 + 证据)在三个密度档下的三种"裁剪深度"。注意:三列的配色、字体、卡样式完全一致,
+    <strong>正文字号几乎不变</strong>(14u / 12u / 12u,dense 档到 12u 底线即停)——
+    变的是内容量、呈现粒度与留白,这正是"密度不是缩放字号"的含义。
+  </p>
+
+  <!-- ==================== 三档并排演示 ==================== -->
+  <div class="ax5-demo-row">
+
+    <!-- ========== sparse showcase ========== -->
+    <section class="ax5-tier ax5-tier--sparse">
+      <div class="ax5-tier-head">
+        <div class="ax5-tier-name">sparse showcase<em>展台式稀疏</em></div>
+        <div class="ax5-tier-anchors">锚点 60655 · 64621 · 67122</div>
+        <p class="ax5-tier-depth">
+          裁剪深度:只留<strong>主张句 + 一个英雄数字</strong>。一两个大元素、大字、大留白;
+          方法细节与次要基准全部裁掉,留给论文。
+        </p>
+      </div>
+
+      <div class="ax5-mini">
+        <div class="ax5-card ax5-card--stage">
+          <div class="ax5-eyebrow">Core Idea</div>
+          <div class="ax5-display">One knob.<br>Two directions.</div>
+          <p class="ax5-p">
+            <strong>PowerFlow</strong> matches a length-aware &alpha;-power target of the
+            base policy: sharpen (&alpha;&gt;1) for reasoning, flatten (&alpha;&lt;1) for
+            creativity &mdash; fully unsupervised.
+          </p>
+          <div class="ax5-eqn">&pi;<sub>&alpha;</sub>(y&thinsp;|&thinsp;x) &prop; &pi;<sub>base</sub>(y&thinsp;|&thinsp;x)<sup>&alpha;</sup></div>
+        </div>
+        <div class="ax5-card ax5-card--metric">
+          <div class="ax5-metric-num">+1.72</div>
+          <p class="ax5-cap">MATH pass@1 vs GRPO<br>(compute-matched)</p>
+        </div>
+      </div>
+
+      <table class="ax5-tokens">
+        <caption>sparse 档令牌</caption>
+        <tr><th>字号档使用</th><td>fs-4 · fs-7 · fs-8 <span class="ax5-tk-note">(小字档基本弃用)</span></td></tr>
+        <tr><th>正文 --fs-4</th><td><span class="ax5-up">14u ↑</span> <span class="ax5-tk-note">(默认 12u)</span></td></tr>
+        <tr><th>图注 --fs-3</th><td>12u <span class="ax5-tk-note">(极少出现)</span></td></tr>
+        <tr><th>节题 --fs-7</th><td><span class="ax5-up">20u ↑</span> / 大数字 fs-8 → 30u</td></tr>
+        <tr><th>卡 padding</th><td><span class="ax5-up">8u × 14u ↑</span></td></tr>
+        <tr><th>卡间 gap</th><td><span class="ax5-up">12u ↑</span></td></tr>
+        <tr><th>列 gutter</th><td><span class="ax5-up">16u ↑</span></td></tr>
+      </table>
+    </section>
+
+    <!-- ========== balanced ========== -->
+    <section class="ax5-tier ax5-tier--balanced">
+      <div class="ax5-tier-head">
+        <div class="ax5-tier-name">balanced<em>均衡 · 出厂默认</em></div>
+        <div class="ax5-tier-anchors">锚点 64736 · 66653</div>
+        <p class="ax5-tier-depth">
+          裁剪深度:<strong>主张 + 方法 + 一张 3 行证据表</strong>。三张标准卡,
+          每张一件事;图注档(fs-3)开始工作。
+        </p>
+      </div>
+
+      <div class="ax5-mini">
+        <div class="ax5-card">
+          <div class="ax5-sec">Core Idea: &alpha;-Power</div>
+          <p class="ax5-p">
+            <strong>PowerFlow</strong> matches a length-aware &alpha;-power target of the
+            base policy. A single knob &alpha; directionally elicits reasoning
+            (&alpha;&gt;1, sharpen) or creativity (&alpha;&lt;1, flatten) &mdash; fully
+            unsupervised, standard decoding.
+          </p>
+          <div class="ax5-eqn">&pi;<sub>&alpha;</sub>(y&thinsp;|&thinsp;x) &prop; &pi;<sub>base</sub>(y&thinsp;|&thinsp;x)<sup>&alpha;</sup></div>
+          <p class="ax5-cap">Length-aware &alpha; keeps outputs length-stable while re-shaping the distribution.</p>
+        </div>
+        <div class="ax5-card">
+          <div class="ax5-sec">Length-Aware TB</div>
+          <p class="ax5-p">
+            A GFlowNet serves as amortized sampler; trajectory balance fits the tilted
+            target without reward labels.
+          </p>
+          <div class="ax5-eqn">&#8466;<sub>TB</sub> = w&thinsp;(log Z<sub>&phi;</sub> + log &pi;<sub>&theta;</sub> &minus; &alpha; log &pi;<sub>base</sub> &minus; &psi;)<sup>2</sup></div>
+          <div class="ax5-fig ax5-fig--l">Fig. 2 &middot; amortized sampler (placeholder)</div>
+          <p class="ax5-cap">w: clipped importance weight; &psi;: format penalty.</p>
+        </div>
+        <div class="ax5-card">
+          <div class="ax5-sec">Evidence</div>
+          <table class="ax5-tab">
+            <tr><th>Method</th><th>MATH</th><th>&Delta;</th></tr>
+            <tr><td>GRPO</td><td>18.13</td><td>&mdash;</td></tr>
+            <tr><td>DPO</td><td>17.42</td><td>&minus;0.71</td></tr>
+            <tr class="ax5-ours"><td>PowerFlow</td><td>19.85</td><td>+1.72</td></tr>
+          </table>
+          <div class="ax5-fig ax5-fig--l">Fig. 3 &middot; pass@n coverage (placeholder)</div>
+          <p class="ax5-cap">Compute-matched vs GRPO; reasoning diversity preserved (pass@256 flat).</p>
+        </div>
+      </div>
+
+      <table class="ax5-tokens">
+        <caption>balanced 档令牌(= 出厂模板)</caption>
+        <tr><th>字号档使用</th><td>fs-3 · fs-4 · fs-5 · fs-7</td></tr>
+        <tr><th>正文 --fs-4</th><td>12u</td></tr>
+        <tr><th>图注 --fs-3</th><td>11u</td></tr>
+        <tr><th>节题 --fs-7</th><td>16u / 大数字 fs-8 = 22u</td></tr>
+        <tr><th>卡 padding</th><td>4u × 9u</td></tr>
+        <tr><th>卡间 gap</th><td>6u</td></tr>
+        <tr><th>列 gutter</th><td>10u</td></tr>
+      </table>
+    </section>
+
+    <!-- ========== dense report ========== -->
+    <section class="ax5-tier ax5-tier--dense">
+      <div class="ax5-tier-head">
+        <div class="ax5-tier-name">dense report<em>报告式致密</em></div>
+        <div class="ax5-tier-anchors">锚点 60839 · 62396 · 65221</div>
+        <p class="ax5-tier-depth">
+          裁剪深度:<strong>外加动机、第 2 基准、脚注与 pass@n</strong>,粒度最细。
+          4–5 张紧凑卡 + 小图注;正文停在 12u 底线,缩的是间距与注释档。
+        </p>
+      </div>
+
+      <div class="ax5-mini">
+        <div class="ax5-card">
+          <div class="ax5-sec">Motivation</div>
+          <p class="ax5-p">
+            RL sharpening (GRPO) buys pass@1 by collapsing diversity; prompted
+            creativity has no strength knob.
+          </p>
+          <div class="ax5-fig ax5-fig--m">Fig. 1 &middot; diversity&ndash;accuracy trade-off (placeholder)</div>
+          <p class="ax5-micro">Sampled at T=1.0; 8B base; details in paper &sect;3.</p>
+        </div>
+        <div class="ax5-card">
+          <div class="ax5-sec">Core Idea: &alpha;-Power</div>
+          <p class="ax5-p">
+            Match a length-aware &alpha;-power target of the base policy: one knob,
+            two directions, no labels.
+          </p>
+          <div class="ax5-eqn">&pi;<sub>&alpha;</sub>(y&thinsp;|&thinsp;x) &prop; &pi;<sub>base</sub>(y&thinsp;|&thinsp;x)<sup>&alpha;</sup></div>
+        </div>
+        <div class="ax5-card">
+          <div class="ax5-sec">Length-Aware TB Loss</div>
+          <div class="ax5-eqn">&#8466;<sub>TB</sub> = w&thinsp;(log Z<sub>&phi;</sub> + log &pi;<sub>&theta;</sub> &minus; &alpha; log &pi;<sub>base</sub> &minus; &psi;)<sup>2</sup></div>
+          <p class="ax5-micro">w: clipped IS weight; &psi;: format penalty; Z<sub>&phi;</sub> amortized per-length.</p>
+        </div>
+        <div class="ax5-card">
+          <div class="ax5-sec">Results</div>
+          <table class="ax5-tab">
+            <tr><th>Method</th><th>MATH</th><th>OB</th></tr>
+            <tr><td>Base</td><td>15.20</td><td>30.12</td></tr>
+            <tr><td>SFT</td><td>16.05</td><td>31.24</td></tr>
+            <tr><td>GRPO</td><td>18.13</td><td>32.75</td></tr>
+            <tr><td>DPO</td><td>17.42</td><td>31.90</td></tr>
+            <tr class="ax5-ours"><td>PowerFlow</td><td>19.85</td><td>34.30</td></tr>
+          </table>
+          <p class="ax5-micro">pass@1, 3 seeds, compute-matched vs GRPO; OB = OlympiadBench.</p>
+        </div>
+        <div class="ax5-card">
+          <div class="ax5-sec">Pass@n Coverage</div>
+          <p class="ax5-p">
+            pass@1&rarr;256 tracks GRPO on OB &mdash; sharpening lifts pass@1
+            <em>without</em> losing coverage.
+          </p>
+          <p class="ax5-micro">Creativity side (&alpha;&lt;1): Pareto-dominant on quality&ndash;diversity.</p>
+          <p class="ax5-micro">Ablation: length-aware &alpha; beats fixed &alpha; by +0.4 MATH.</p>
+        </div>
+      </div>
+
+      <table class="ax5-tokens">
+        <caption>dense 档令牌</caption>
+        <tr><th>字号档使用</th><td>fs-1 · fs-2 · fs-3 · fs-4 · fs-7 <span class="ax5-tk-note">(小字档全开)</span></td></tr>
+        <tr><th>正文 --fs-4</th><td>12u <span class="ax5-tk-note">(= 底线,不再下降)</span></td></tr>
+        <tr><th>图注 --fs-3</th><td><span class="ax5-down">10u ↓</span> + 微注 fs-1 = 9u</td></tr>
+        <tr><th>节题 --fs-7</th><td><span class="ax5-down">14u ↓</span></td></tr>
+        <tr><th>卡 padding</th><td><span class="ax5-down">3u × 6u ↓</span> <span class="ax5-tk-note">(card--compact)</span></td></tr>
+        <tr><th>卡间 gap</th><td><span class="ax5-down">4u ↓</span></td></tr>
+        <tr><th>列 gutter</th><td><span class="ax5-down">8u ↓</span></td></tr>
+      </table>
+    </section>
+  </div>
+
+  <!-- ==================== 反面教材 ==================== -->
+  <section class="ax5-anti-sec">
+    <h2 class="ax5-h2">反面教材:硬塞 + 缩字(被硬 gate 禁止)</h2>
+    <div class="ax5-anti-row">
+
+      <div class="ax5-anti-frame">
+        <div class="ax5-anti-badge">✕</div>
+        <div class="ax5-mini">
+          <div class="ax5-card">
+            <div class="ax5-sec">Motivation</div>
+            <p class="ax5-p">
+              RL sharpening (GRPO) buys pass@1 by collapsing diversity; prompted
+              creativity has no strength knob.
+            </p>
+            <div class="ax5-fig ax5-fig--m">Fig. 1 &middot; diversity&ndash;accuracy trade-off (placeholder)</div>
+            <p class="ax5-micro">Sampled at T=1.0; 8B base; details in paper &sect;3.</p>
+          </div>
+          <div class="ax5-card">
+            <div class="ax5-sec">Core Idea: &alpha;-Power</div>
+            <p class="ax5-p">
+              Match a length-aware &alpha;-power target of the base policy: one knob,
+              two directions, no labels.
+            </p>
+            <div class="ax5-eqn">&pi;<sub>&alpha;</sub>(y&thinsp;|&thinsp;x) &prop; &pi;<sub>base</sub>(y&thinsp;|&thinsp;x)<sup>&alpha;</sup></div>
+          </div>
+          <div class="ax5-card">
+            <div class="ax5-sec">Length-Aware TB Loss</div>
+            <div class="ax5-eqn">&#8466;<sub>TB</sub> = w&thinsp;(log Z<sub>&phi;</sub> + log &pi;<sub>&theta;</sub> &minus; &alpha; log &pi;<sub>base</sub> &minus; &psi;)<sup>2</sup></div>
+            <p class="ax5-micro">w: clipped IS weight; &psi;: format penalty; Z<sub>&phi;</sub> amortized per-length.</p>
+          </div>
+          <div class="ax5-card">
+            <div class="ax5-sec">Results</div>
+            <table class="ax5-tab">
+              <tr><th>Method</th><th>MATH</th><th>OB</th></tr>
+              <tr><td>Base</td><td>15.20</td><td>30.12</td></tr>
+              <tr><td>SFT</td><td>16.05</td><td>31.24</td></tr>
+              <tr><td>GRPO</td><td>18.13</td><td>32.75</td></tr>
+              <tr><td>DPO</td><td>17.42</td><td>31.90</td></tr>
+              <tr class="ax5-ours"><td>PowerFlow</td><td>19.85</td><td>34.30</td></tr>
+            </table>
+            <p class="ax5-micro">pass@1, 3 seeds, compute-matched vs GRPO; OB = OlympiadBench.</p>
+          </div>
+          <div class="ax5-card">
+            <div class="ax5-sec">Pass@n Coverage</div>
+            <p class="ax5-p">
+              pass@1&rarr;256 tracks GRPO on OB &mdash; sharpening lifts pass@1
+              <em>without</em> losing coverage.
+            </p>
+            <p class="ax5-micro">Creativity side (&alpha;&lt;1): Pareto-dominant on quality&ndash;diversity.</p>
+            <p class="ax5-micro">Ablation: length-aware &alpha; beats fixed &alpha; by +0.4 MATH.</p>
+          </div>
+        </div>
+        <div class="ax5-anti-label">✕ dense 深度的内容 × sparse 的版面 × 正文缩到 9u</div>
+      </div>
+
+      <div class="ax5-anti-why">
+        <ul>
+          <li>
+            <strong>正文 9u &lt; 12u 底线。</strong>--u 打印时是 1mm:12u 正文约 12mm 高,
+            1.5–2 米外可读;压到 9u 后隔一条走道就读不清 —— 这不是"紧凑",是不可读。
+          </li>
+          <li>
+            <strong>版面还是 sparse 的大 padding / 大 gutter。</strong>档位没换,只缩了字:
+            间距按 showcase 的尺度吃掉容量,全靠把字压小来还 —— 版式与字号两头都输。
+          </li>
+          <li>
+            <strong>节奏崩了。</strong>图注、微注跟着正文一起塌,fs 阶之间的层级差被压平,
+            扫读时找不到入口。
+          </li>
+          <li>
+            <strong>gate 会直接拦下。</strong>这就是硬 clash 规则 1 存在的原因:
+            字号底线不可交易,measure/style 阶段过不去。
+          </li>
+        </ul>
+        <p class="ax5-anti-fix">
+          <strong>正确出路(三选一):</strong>① 换密度档 —— 切到 dense report,
+          拿到紧 padding / 紧 gutter / 小字注释档,正文仍是 12u(即左侧第三列);
+          ② 换拓扑 —— 4 列改 3 列、或改横带行,给内容更宽的行长;
+          ③ 裁内容 —— 次要基准与脚注回论文里去。
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== 页脚 ==================== -->
+  <footer class="ax5-foot">
+    specimens/axes · 轴 5 选项目录 · 令牌基准对齐 templates/landscape_4col_neutral.html
+    (--u = 打印 1mm / 屏幕 1.6px;本页迷你列 --mu = 0.88px)·
+    控制变量:三列配色 / 字体 / 卡样式一致,密度令牌与裁剪深度是唯一变量。
+  </footer>
+</div>
+</body>
+</html>

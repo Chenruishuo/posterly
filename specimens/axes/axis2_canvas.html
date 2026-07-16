@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+<!-- ============================================================
+  posterly · 设计轴选项目录
+  轴 2 — 底色 Canvas(base + treatment + coverage)
+  来源:templates/DESIGN-AXES.md Axis 2;锚点 ID 来自 80 张
+  ICML 2026 精选海报(icml.cc/media/PosterPDFs/ICML%202026/<id>.png)。
+  自包含:无 CDN、无外链、无 JS。所有 class 以 ax2- 前缀。
+  搬运说明:画布构造集中在 `.ax2-mini--*` 修饰类(下方 CSS 有
+  [搬运] 标记);占位卡(.ax2-card 等)仅为演示语境,不是交付组件。
+  ============================================================ -->
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>轴 2 · 底色 Canvas — 选项目录</title>
+<style>
+  * { box-sizing: border-box; }
+
+  :root {
+    /* ---- 目录页 UI 令牌(仅本页使用) ---- */
+    --ax2-page-bg:   #F2F3F5;
+    --ax2-ink:       #1F2430;
+    --ax2-ink-soft:  #4B5563;
+    --ax2-ink-muted: #6B7280;
+    --ax2-chip-bg:   #E8EAEE;
+    --ax2-rule:      #D8DBE0;
+
+    /* ---- 画布 base 取值([搬运] 底色令牌) ---- */
+    --ax2-white:     #FFFFFF;   /* base: white                    */
+    --ax2-cream:     #F5EEDF;   /* base: cream       64736/66466  */
+    --ax2-tint:      #E8F0F7;   /* base: light tint  63507/65748  */
+    --ax2-sage:      #A3B998;   /* base: brand hue   67218/60839  */
+    --ax2-dark:      #16191F;   /* base: near-black  65626/66072  */
+    --ax2-crimson:   #7C1F2D;   /* split 中列色      64621        */
+    --ax2-slate:     #3A424B;   /* gutter 深灰缝     65423        */
+    --ax2-sage-pale: #DCE5D4;   /* gutter 浅 sage 缝 67218        */
+    --ax2-gold:      #B9953F;   /* 整页饰框金线      66372        */
+
+    /* ---- 演示用中性卡与占位条(全页统一) ---- */
+    --ax2-paper:      #FFFFFF;
+    --ax2-line:       #D9DDE3;
+    --ax2-bar-strong: #2B3240;
+    --ax2-bar-soft:   #CBD0D8;
+    --ax2-bar-sub:    #8B94A3;
+    --ax2-fig-fill:   #F0F2F5;
+  }
+
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--ax2-page-bg);
+    color: var(--ax2-ink);
+    font-family: "PingFang SC", "Noto Sans CJK SC", "Microsoft YaHei",
+                 system-ui, -apple-system, sans-serif;
+    line-height: 1.6;
+    overflow-x: hidden; /* 页面禁止横向滚动 */
+  }
+  .ax2-page { max-width: 1060px; margin: 0 auto; padding: 40px 24px 72px; }
+
+  /* =========================================================
+     页头:轴名 + 结构说明 + 小目录
+     ========================================================= */
+  .ax2-head h1 { font-size: 26px; margin: 0 0 4px; letter-spacing: .01em; }
+  .ax2-head .ax2-head-en {
+    font-size: 14px; color: var(--ax2-ink-muted);
+    font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
+  }
+  .ax2-intro { max-width: 74ch; font-size: 14px; color: var(--ax2-ink-soft); }
+  .ax2-intro p { margin: 10px 0; }
+  .ax2-intro code {
+    font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
+    font-size: 12.5px; background: var(--ax2-chip-bg);
+    padding: 1px 5px; border-radius: 3px;
+  }
+  .ax2-toc { display: flex; flex-wrap: wrap; gap: 10px; margin: 18px 0 8px; }
+  .ax2-toc a {
+    display: inline-block; text-decoration: none;
+    font-size: 13px; color: var(--ax2-ink);
+    background: #FFFFFF; border: 1px solid var(--ax2-rule);
+    border-radius: 999px; padding: 5px 14px;
+  }
+  .ax2-toc a:hover { border-color: var(--ax2-ink-muted); }
+
+  /* =========================================================
+     章节与目录网格
+     ========================================================= */
+  .ax2-section { margin-top: 44px; }
+  .ax2-section > h2 {
+    font-size: 19px; margin: 0 0 4px;
+    padding-top: 14px; border-top: 2px solid var(--ax2-ink);
+  }
+  .ax2-section > h2 .ax2-h2-en {
+    font-size: 13px; color: var(--ax2-ink-muted); font-weight: 400;
+    font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
+    margin-left: 8px;
+  }
+  .ax2-secnote { max-width: 78ch; font-size: 13px; color: var(--ax2-ink-soft); margin: 4px 0 20px; }
+  .ax2-grid { display: flex; flex-wrap: wrap; gap: 30px 34px; }
+
+  /* 演示块:迷你海报 + 说明 */
+  .ax2-demo { width: 452px; max-width: 100%; margin: 0; display: flex; flex-direction: column; gap: 10px; }
+  .ax2-cap { display: flex; flex-direction: column; gap: 3px; }
+  .ax2-cap-name { font-size: 15px; font-weight: 600; display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px; }
+  .ax2-cap-en { font-weight: 400; font-size: 12.5px; color: var(--ax2-ink-muted);
+    font-family: ui-monospace, "SFMono-Regular", Consolas, monospace; }
+  .ax2-anchors {
+    font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
+    font-size: 11px; font-weight: 400; color: #5A6270;
+    background: var(--ax2-chip-bg); border-radius: 3px; padding: 1px 7px;
+  }
+  .ax2-cap-use { margin: 0; font-size: 13px; color: var(--ax2-ink-soft); }
+
+  /* =========================================================
+     迷你海报画布(60:36,宽 440px)
+     ========================================================= */
+  .ax2-mini {
+    position: relative;
+    width: 440px; max-width: 100%;
+    aspect-ratio: 60 / 36;
+    border-radius: 6px;
+    overflow: hidden;
+    box-shadow: 0 1px 4px rgba(20,25,35,.16), 0 0 0 1px rgba(20,25,35,.08);
+    padding: 13px 15px;
+    display: flex; flex-direction: column; gap: 9px;
+  }
+  /* 装饰伪元素(饰框/分区带)一律 z-index:0,内容抬到其上 */
+  .ax2-mini > * { position: relative; z-index: 1; }
+
+  /* ---- 迷你刊头:直书于画布上的标题/作者占位条 ---- */
+  .ax2-mast { display: flex; flex-direction: column; gap: 5px; flex: none; }
+  .ax2-mast-title { height: 9px; width: 58%; border-radius: 2px; background: var(--ax2-bar-strong); }
+  .ax2-mast-sub   { height: 5px; width: 36%; border-radius: 2px; background: var(--ax2-bar-sub); }
+
+  /* ---- 中性演示卡(全页统一;非交付组件) ---- */
+  .ax2-cardgrid { flex: 1; min-height: 0; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 9px; }
+  .ax2-col { display: flex; flex-direction: column; gap: 9px; min-height: 0; }
+  .ax2-col > .ax2-card { flex: 1; min-height: 0; }
+  .ax2-card {
+    background: var(--ax2-paper);
+    border: 1px solid var(--ax2-line);
+    border-radius: 5px;
+    padding: 9px;
+    display: flex; flex-direction: column; gap: 6px;
+    box-shadow: 0 1px 2px rgba(20,25,35,.05);
+    min-height: 0;
+  }
+  .ax2-card-h { height: 7px; width: 62%; border-radius: 2px; background: var(--ax2-bar-strong); opacity: .88; flex: none; }
+  .ax2-bar { height: 4px; border-radius: 2px; background: var(--ax2-bar-soft); flex: none; }
+  .ax2-bar--w95 { width: 95%; } .ax2-bar--w88 { width: 88%; }
+  .ax2-bar--w80 { width: 80%; } .ax2-bar--w70 { width: 70%; }
+  .ax2-bar--w62 { width: 62%; } .ax2-bar--w55 { width: 55%; }
+  .ax2-bar--w45 { width: 45%; }
+  .ax2-fig {
+    flex: 1; min-height: 14px;
+    background: var(--ax2-fig-fill);
+    border: 1px dashed var(--ax2-line);
+    border-radius: 3px;
+  }
+
+  /* =========================================================
+     [搬运] base — 底色本体(treatment=flat、coverage=full)
+     ========================================================= */
+  .ax2-mini--white { background: var(--ax2-white); }
+  .ax2-mini--cream { background: var(--ax2-cream); }
+  .ax2-mini--tint  { background: var(--ax2-tint);  }
+  .ax2-mini--sage  { background: var(--ax2-sage);  }
+  .ax2-mini--dark  { background: var(--ax2-dark);  }
+  /* 暗底处理:直书画布的文字换亮墨;正文一律进白卡(硬性规则 6:
+     导入图表在暗底上需白衬底,占位图块即演示该衬底)。 */
+  .ax2-mini--dark .ax2-mast-title { background: #F1F3F6; }
+  .ax2-mini--dark .ax2-mast-sub   { background: #9AA4B2; }
+
+  /* =========================================================
+     [搬运] treatment — 处理方式(本节 base 固定 cream)
+     ========================================================= */
+  /* gradient:同一色相的柔和明度渐变;文字对比按最差点计算(规则 9) */
+  .ax2-mini--grad {
+    background: linear-gradient(150deg, #FBF6EA 0%, #F3E9D2 55%, #EADCBB 100%);
+  }
+  /* textured a:星点纹理 —— 三层 radial-gradient 低透明度散点,
+     错开 background-size/position 避免明显平铺感 */
+  .ax2-mini--stars {
+    background-color: var(--ax2-cream);
+    background-image:
+      radial-gradient(circle, rgba(107,82,33,.34) 1.1px, transparent 1.8px),
+      radial-gradient(circle, rgba(107,82,33,.22) 1.5px, transparent 2.3px),
+      radial-gradient(circle, rgba(107,82,33,.14) .8px,  transparent 1.4px);
+    background-size: 92px 76px, 148px 118px, 56px 64px;
+    background-position: 12px 18px, 60px 44px, 30px 8px;
+  }
+  /* textured b:整页饰框 —— border + outline 组成沿画布内缘的双线金框;
+     内容内边距放大以避让框线 */
+  .ax2-mini--gilt { background: var(--ax2-cream); padding: 20px 22px; }
+  .ax2-mini--gilt::before {
+    content: ""; position: absolute; inset: 8px; z-index: 0;
+    border: 1.5px solid var(--ax2-gold);
+    outline: 1px solid rgba(185,149,63,.55);
+    outline-offset: 2px;
+    border-radius: 2px;
+    pointer-events: none;
+  }
+
+  /* =========================================================
+     [搬运] coverage — 覆盖方式(本节 treatment 固定 flat)
+     ========================================================= */
+  /* split:分区双色 —— 中列为独立色轨,贯穿全高;色只换轨,不碰卡 */
+  .ax2-mini--split {
+    background: var(--ax2-white);
+    padding: 0; gap: 0;
+    display: grid; grid-template-columns: 1fr .95fr 1fr;
+  }
+  .ax2-splitcol { padding: 12px 10px; display: flex; flex-direction: column; gap: 8px; min-height: 0; }
+  .ax2-splitcol > .ax2-card { flex: 1; min-height: 0; }
+  .ax2-splitcol--stage { background: var(--ax2-crimson); }
+  .ax2-statement { flex: none; display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 5px 4px 3px; }
+  .ax2-stbar { height: 7px; border-radius: 2px; background: #F5E6E1; }
+  .ax2-stbar--w85 { width: 85%; } .ax2-stbar--w65 { width: 65%; }
+  .ax2-stbar--sub { height: 4px; width: 72%; background: rgba(245,230,225,.6); }
+
+  /* gutter-as-frame:卡片贴边铺满,底色只在缝里露出,读作画框;
+     缝宽 = 外边距 = 卡间距,缝色就是 base 的取值 */
+  .ax2-mini--gutter { padding: 7px; gap: 7px; }
+  .ax2-mini--gutter .ax2-cardgrid,
+  .ax2-mini--gutter .ax2-col { gap: 7px; }
+  .ax2-mini--gutter-slate { background: var(--ax2-slate); }
+  .ax2-mini--gutter-sage  { background: var(--ax2-sage-pale); }
+  /* 刊头也是一个块:画布只以缝的形态存在 */
+  .ax2-mastcard {
+    flex: none;
+    background: var(--ax2-paper);
+    border: 1px solid var(--ax2-line);
+    border-radius: 5px;
+    padding: 8px 12px;
+    display: flex; flex-direction: column; gap: 5px;
+  }
+
+  /* 页脚小注 */
+  .ax2-foot {
+    margin-top: 52px; padding-top: 14px;
+    border-top: 1px solid var(--ax2-rule);
+    font-size: 12.5px; color: var(--ax2-ink-muted); max-width: 80ch;
+  }
+</style>
+</head>
+<body>
+<div class="ax2-page">
+
+  <!-- ================= 页头 ================= -->
+  <header class="ax2-head">
+    <h1>轴 2 — 底色 Canvas <span class="ax2-head-en">base + treatment + coverage</span></h1>
+    <div class="ax2-intro">
+      <p>一个画布配置由三个子选择<strong>自由组合</strong>而成,不是互斥枚举:
+        <strong>base</strong>(铺什么颜色)× <strong>treatment</strong>(颜色怎么处理:平涂 / 渐变 / 纹理装饰)×
+        <strong>coverage</strong>(铺到哪里:全幅 / 分区双色 / 只露缝作框)。</p>
+      <p><strong>归属边界:</strong>整页级装饰(星图点缀、整页饰框)属于本轴的
+        treatment=textured-decorated;<strong>单个模块</strong>的装饰边框属于轴 6
+        (frame-line: ornamental)。分区色与缝色仍取自 base —— coverage 只决定几何,不引入新的颜色角色。</p>
+      <p>锚点 ID 指 80 张 ICML 2026 精选海报,可按
+        <code>icml.cc/media/PosterPDFs/ICML%202026/&lt;id&gt;.png</code> 重看原构造。
+        每个选项演示为一张 60:36 迷你海报;占位卡为全页统一的中性白卡,便于横向比较底色本身的效果。</p>
+    </div>
+    <nav class="ax2-toc">
+      <a href="#ax2-base">base · 底色本体(5)</a>
+      <a href="#ax2-treatment">treatment · 处理方式(3)</a>
+      <a href="#ax2-coverage">coverage · 覆盖方式(3)</a>
+    </nav>
+  </header>
+
+  <!-- ================= 第一节:base ================= -->
+  <section class="ax2-section" id="ax2-base">
+    <h2>base · 底色本体<span class="ax2-h2-en">5 options</span></h2>
+    <p class="ax2-secnote">本节控制变量:treatment=flat、coverage=full,只换底色。</p>
+    <div class="ax2-grid">
+
+      <!-- base 1: white -->
+      <figure class="ax2-demo">
+        <div class="ax2-mini ax2-mini--white">
+          <div class="ax2-mast"><div class="ax2-mast-title"></div><div class="ax2-mast-sub"></div></div>
+          <div class="ax2-cardgrid">
+            <div class="ax2-card">
+              <div class="ax2-card-h"></div>
+              <div class="ax2-bar ax2-bar--w95"></div><div class="ax2-bar ax2-bar--w88"></div><div class="ax2-bar ax2-bar--w70"></div>
+              <div class="ax2-fig"></div>
+              <div class="ax2-bar ax2-bar--w80"></div><div class="ax2-bar ax2-bar--w55"></div>
+            </div>
+            <div class="ax2-col">
+              <div class="ax2-card">
+                <div class="ax2-card-h"></div>
+                <div class="ax2-bar ax2-bar--w88"></div>
+                <div class="ax2-fig"></div>
+              </div>
+              <div class="ax2-card">
+                <div class="ax2-card-h"></div>
+                <div class="ax2-bar ax2-bar--w95"></div><div class="ax2-bar ax2-bar--w80"></div><div class="ax2-bar ax2-bar--w62"></div>
+                <div class="ax2-fig"></div>
+              </div>
+            </div>
+            <div class="ax2-card">
+              <div class="ax2-card-h"></div>
+              <div class="ax2-fig"></div>
+              <div class="ax2-bar ax2-bar--w95"></div><div class="ax2-bar ax2-bar--w88"></div><div class="ax2-bar ax2-bar--w45"></div>
+            </div>
+          </div>
+        </div>
+        <figcaption class="ax2-cap">
+          <div class="ax2-cap-name">白 <span class="ax2-cap-en">white</span><span class="ax2-anchors">语料库默认 · 无专属锚点</span></div>
+          <p class="ax2-cap-use">安全默认:内容密、图表自带色彩时最稳;白卡需靠细边线 / 轻阴影才能从底上分出来。</p>
+        </figcaption>
+      </figure>
+
+      <!-- base 2: cream -->
+      <figure class="ax2-demo">
+        <div class="ax2-mini ax2-mini--cream">
+          <div class="ax2-mast"><div class="ax2-mast-title"></div><div class="ax2-mast-sub"></div></div>
+          <div class="ax2-cardgrid">
+            <div class="ax2-card">
+              <div class="ax2-card-h"></div>
+              <div class="ax2-bar ax2-bar--w95"></div><div class="ax2-bar ax2-bar--w88"></div><div class="ax2-bar ax2-bar--w70"></div>
+              <div class="ax2-fig"></div>
+              <div class="ax2-bar ax2-bar--w80"></div><div class="ax2-bar ax2-bar--w55"></div>
+            </div>
+            <div class="ax2-col">
+              <div class="ax2-card">
+                <div class="ax2-card-h"></div>
+                <div class="ax2-bar ax2-bar--w88"></div>
+                <div class="ax2-fig"></div>
+              </div>
+              <div class="ax2-card">
+                <div class="ax2-card-h"></div>
+                <div class="ax2-bar ax2-bar--w95"></div><div class="ax2-bar ax2-bar--w80"></div><div class="ax2-bar ax2-bar--w62"></div>
+                <div class="ax2-fig"></div>
+              </div>
+            </div>
+            <div class="ax2-card">
+              <div class="ax2-card-h"></div>
+              <div class="ax2-fig"></div>
+              <div class="ax2-bar ax2-bar--w95"></div><div class="ax2-bar ax2-bar--w88"></div><div class="ax2-bar ax2-bar--w45"></div>
+            </div>
+          </div>
+        </div>
+        <figcaption class="ax2-cap">
+          <div class="ax2-cap-name">奶油 <span class="ax2-cap-en">cream</span><span class="ax2-anchors">64736 · 66466 · 65205</span></div>
+          <p class="ax2-cap-use">纸感学术:比白更暖、降低大面积白的刺眼感,与衬线排印(轴 4)天然合拍。</p>
+        </figcaption>
+      </figure>
+
+      <!-- base 3: light tint -->
+      <figure class="ax2-demo">
+        <div class="ax2-mini ax2-mini--tint">
+          <div class="ax2-mast"><div class="ax2-mast-title"></div><div class="ax2-mast-sub"></div></div>
+          <div class="ax2-cardgrid">
+            <div class="ax2-card">
+              <div class="ax2-card-h"></div>
+              <div class="ax2-bar ax2-bar--w95"></div><div class="ax2-bar ax2-bar--w88"></div><div class="ax2-bar ax2-bar--w70"></div>
+              <div class="ax2-fig"></div>
+              <div class="ax2-bar ax2-bar--w80"></div><div class="ax2-bar ax2-bar--w55"></div>
+            </div>
+            <div class="ax2-col">
+              <div class="ax2-card">
+                <div class="ax2-card-h"></div>
+                <div class="ax2-bar ax2-bar--w88"></div>
+                <div class="ax2-fig"></div>
+              </div>
+              <div class="ax2-card">
+                <div class="ax2-card-h"></div>
+                <div class="ax2-bar ax2-bar--w95"></div><div class="ax2-bar ax2-bar--w80"></div><div class="ax2-bar ax2-bar--w62"></div>
+                <div class="ax2-fig"></div>
+              </div>
+            </div>
+            <div class="ax2-card">
+              <div class="ax2-card-h"></div>
+              <div class="ax2-fig"></div>
+              <div class="ax2-bar ax2-bar--w95"></div><div class="ax2-bar ax2-bar--w88"></div><div class="ax2-bar ax2-bar--w45"></div>
+            </div>
+          </div>
+        </div>
+        <figcaption class="ax2-cap">
+          <div class="ax2-cap-name">浅色调 <span class="ax2-cap-en">light tint</span><span class="ax2-anchors">63507 · 65748</span></div>
+          <p class="ax2-cap-use">主色的极浅衍生:让白卡"浮起来"又不抢戏,与品牌主色(轴 3)天然协调。</p>
+        </figcaption>
+      </figure>
+
+      <!-- base 4: brand hue -->
+      <figure class="ax2-demo">
+        <div class="ax2-mini ax2-mini--sage">
+          <div class="ax2-mast"><div class="ax2-mast-title"></div><div class="ax2-mast-sub"></div></div>
+          <div class="ax2-cardgrid">
+            <div class="ax2-card">
+              <div class="ax2-card-h"></div>
+              <div class="ax2-bar ax2-bar--w95"></div><div class="ax2-bar ax2-bar--w88"></div><div class="ax2-bar ax2-bar--w70"></div>
+              <div class="ax2-fig"></div>
+              <div class="ax2-bar ax2-bar--w80"></div><div class="ax2-bar ax2-bar--w55"></div>
+            </div>
+            <div class="ax2-col">
+              <div class="ax2-card">
+                <div class="ax2-card-h"></div>
+                <div class="ax2-bar ax2-bar--w88"></div>
+                <div class="ax2-fig"></div>
+              </div>
+              <div class="ax2-card">
+                <div class="ax2-card-h"></div>
+                <div class="ax2-bar ax2-bar--w95"></div><div class="ax2-bar ax2-bar--w80"></div><div class="ax2-bar ax2-bar--w62"></div>
+                <div class="ax2-fig"></div>
+              </div>
+            </div>
+            <div class="ax2-card">
+              <div class="ax2-card-h"></div>
+              <div class="ax2-fig"></div>
+              <div class="ax2-bar ax2-bar--w95"></div><div class="ax2-bar ax2-bar--w88"></div><div class="ax2-bar ax2-bar--w45"></div>
+            </div>
+          </div>
+        </div>
+        <figcaption class="ax2-cap">
+          <div class="ax2-cap-name">品牌色 <span class="ax2-cap-en">brand hue</span><span class="ax2-anchors">67218 (sage) · 60839</span></div>
+          <p class="ax2-cap-use">底色即身份:机构 / 项目识别最强;大面积铺色要压低饱和度,白卡对比自然清晰。</p>
+        </figcaption>
+      </figure>
+
+      <!-- base 5: near-black -->
+      <figure class="ax2-demo">
+        <div class="ax2-mini ax2-mini--dark">
+          <div class="ax2-mast"><div class="ax2-mast-title"></div><div class="ax2-mast-sub"></div></div>
+          <div class="ax2-cardgrid">
+            <div class="ax2-card">
+              <div class="ax2-card-h"></div>
+              <div class="ax2-bar ax2-bar--w95"></div><div class="ax2-bar ax2-bar--w88"></div><div class="ax2-bar ax2-bar--w70"></div>
+              <div class="ax2-fig"></div>
+              <div class="ax2-bar ax2-bar--w80"></div><div class="ax2-bar ax2-bar--w55"></div>
+            </div>
+            <div class="ax2-col">
+              <div class="ax2-card">
+                <div class="ax2-card-h"></div>
+                <div class="ax2-bar ax2-bar--w88"></div>
+                <div class="ax2-fig"></div>
+              </div>
+              <div class="ax2-card">
+                <div class="ax2-card-h"></div>
+                <div class="ax2-bar ax2-bar--w95"></div><div class="ax2-bar ax2-bar--w80"></div><div class="ax2-bar ax2-bar--w62"></div>
+                <div class="ax2-fig"></div>
+              </div>
+            </div>
+            <div class="ax2-card">
+              <div class="ax2-card-h"></div>
+              <div class="ax2-fig"></div>
+              <div class="ax2-bar ax2-bar--w95"></div><div class="ax2-bar ax2-bar--w88"></div><div class="ax2-bar ax2-bar--w45"></div>
+            </div>
+          </div>
+        </div>
+        <figcaption class="ax2-cap">
+          <div class="ax2-cap-name">近黑 <span class="ax2-cap-en">near-black</span><span class="ax2-anchors">65626 · 66072</span></div>
+          <p class="ax2-cap-use">暗夜编辑风:直书画布的文字换亮墨、正文进白卡;导入图表需白衬底或反色渲染(硬性规则 6)。</p>
+        </figcaption>
+      </figure>
+
+    </div>
+  </section>
+
+  <!-- ================= 第二节:treatment ================= -->
+  <section class="ax2-section" id="ax2-treatment">
+    <h2>treatment · 处理方式<span class="ax2-h2-en">3 options</span></h2>
+    <p class="ax2-secnote">本节控制变量:base 固定为奶油(cream)、coverage=full,只换处理方式。
+      注:60839 原作的星图铺在品牌色底上,此处按单一变量原则移到奶油底,演示的是"低调整页纹理"这一手法本身。</p>
+    <div class="ax2-grid">
+
+      <!-- treatment 1: flat -->
+      <figure class="ax2-demo">
+        <div class="ax2-mini ax2-mini--cream">
+          <div class="ax2-mast"><div class="ax2-mast-title"></div><div class="ax2-mast-sub"></div></div>
+          <div class="ax2-cardgrid">
+            <div class="ax2-card">
+              <div class="ax2-card-h"></div>
+              <div class="ax2-bar ax2-bar--w95"></div><div class="ax2-bar ax2-bar--w88"></div><div class="ax2-bar ax2-bar--w70"></div>
+              <div class="ax2-fig"></div>
+              <div class="ax2-bar ax2-bar--w80"></div><div class="ax2-bar ax2-bar--w55"></div>
+            </div>
+            <div class="ax2-col">
+              <div class="ax2-card">
+                <div class="ax2-card-h"></div>
+                <div class="ax2-bar ax2-bar--w88"></div>
+                <div class="ax2-fig"></div>
+              </div>
+              <div class="ax2-card">
+                <div class="ax2-card-h"></div>
+                <div class="ax2-bar ax2-bar--w95"></div><div class="ax2-bar ax2-bar--w80"></div><div class="ax2-bar ax2-bar--w62"></div>
+                <div class="ax2-fig"></div>
+              </div>
+            </div>
+            <div class="ax2-card">
+              <div class="ax2-card-h"></div>
+              <div class="ax2-fig"></div>
+              <div class="ax2-bar ax2-bar--w95"></div><div class="ax2-bar ax2-bar--w88"></div><div class="ax2-bar ax2-bar--w45"></div>
+            </div>
+          </div>
+        </div>
+        <figcaption class="ax2-cap">
+          <div class="ax2-cap-name">平涂 <span class="ax2-cap-en">flat</span><span class="ax2-anchors">默认 · 对照组</span></div>
+          <p class="ax2-cap-use">绝大多数海报的选择:底色不参与叙事,只提供一张安静的"纸面"。</p>
+        </figcaption>
+      </figure>
+
+      <!-- treatment 2: gradient -->
+      <figure class="ax2-demo">
+        <div class="ax2-mini ax2-mini--grad">
+          <div class="ax2-mast"><div class="ax2-mast-title"></div><div class="ax2-mast-sub"></div></div>
+          <div class="ax2-cardgrid">
+            <div class="ax2-card">
+              <div class="ax2-card-h"></div>
+              <div class="ax2-bar ax2-bar--w95"></div><div class="ax2-bar ax2-bar--w88"></div><div class="ax2-bar ax2-bar--w70"></div>
+              <div class="ax2-fig"></div>
+              <div class="ax2-bar ax2-bar--w80"></div><div class="ax2-bar ax2-bar--w55"></div>
+            </div>
+            <div class="ax2-col">
+              <div class="ax2-card">
+                <div class="ax2-card-h"></div>
+                <div class="ax2-bar ax2-bar--w88"></div>
+                <div class="ax2-fig"></div>
+              </div>
+              <div class="ax2-card">
+                <div class="ax2-card-h"></div>
+                <div class="ax2-bar ax2-bar--w95"></div><div class="ax2-bar ax2-bar--w80"></div><div class="ax2-bar ax2-bar--w62"></div>
+                <div class="ax2-fig"></div>
+              </div>
+            </div>
+            <div class="ax2-card">
+              <div class="ax2-card-h"></div>
+              <div class="ax2-fig"></div>
+              <div class="ax2-bar ax2-bar--w95"></div><div class="ax2-bar ax2-bar--w88"></div><div class="ax2-bar ax2-bar--w45"></div>
+            </div>
+          </div>
+        </div>
+        <figcaption class="ax2-cap">
+          <div class="ax2-cap-name">渐变 <span class="ax2-cap-en">gradient</span><span class="ax2-anchors">63507 · 66383</span></div>
+          <p class="ax2-cap-use">同一色相的柔和明度渐变,给版面一个方向感;画布直书文字的对比按最差点计算(硬性规则 9)。</p>
+        </figcaption>
+      </figure>
+
+      <!-- treatment 3a: textured-decorated / 星点纹理 -->
+      <figure class="ax2-demo">
+        <div class="ax2-mini ax2-mini--stars">
+          <div class="ax2-mast"><div class="ax2-mast-title"></div><div class="ax2-mast-sub"></div></div>
+          <div class="ax2-cardgrid">
+            <div class="ax2-card">
+              <div class="ax2-card-h"></div>
+              <div class="ax2-bar ax2-bar--w95"></div><div class="ax2-bar ax2-bar--w88"></div><div class="ax2-bar ax2-bar--w70"></div>
+              <div class="ax2-fig"></div>
+              <div class="ax2-bar ax2-bar--w80"></div><div class="ax2-bar ax2-bar--w55"></div>
+            </div>
+            <div class="ax2-col">
+              <div class="ax2-card">
+                <div class="ax2-card-h"></div>
+                <div class="ax2-bar ax2-bar--w88"></div>
+                <div class="ax2-fig"></div>
+              </div>
+              <div class="ax2-card">
+                <div class="ax2-card-h"></div>
+                <div class="ax2-bar ax2-bar--w95"></div><div class="ax2-bar ax2-bar--w80"></div><div class="ax2-bar ax2-bar--w62"></div>
+                <div class="ax2-fig"></div>
+              </div>
+            </div>
+            <div class="ax2-card">
+              <div class="ax2-card-h"></div>
+              <div class="ax2-fig"></div>
+              <div class="ax2-bar ax2-bar--w95"></div><div class="ax2-bar ax2-bar--w88"></div><div class="ax2-bar ax2-bar--w45"></div>
+            </div>
+          </div>
+        </div>
+        <figcaption class="ax2-cap">
+          <div class="ax2-cap-name">纹理装饰(罕见)· 变体 a 星点
+            <span class="ax2-cap-en">textured-decorated / constellation</span><span class="ax2-anchors">60839</span></div>
+          <p class="ax2-cap-use">主题呼应式的整页点缀(星座 / 星图):透明度压到极低,只在留白与缝隙处隐约可见,不与内容争注意力。</p>
+        </figcaption>
+      </figure>
+
+      <!-- treatment 3b: textured-decorated / 整页饰框 -->
+      <figure class="ax2-demo">
+        <div class="ax2-mini ax2-mini--gilt">
+          <div class="ax2-mast"><div class="ax2-mast-title"></div><div class="ax2-mast-sub"></div></div>
+          <div class="ax2-cardgrid">
+            <div class="ax2-card">
+              <div class="ax2-card-h"></div>
+              <div class="ax2-bar ax2-bar--w95"></div><div class="ax2-bar ax2-bar--w88"></div><div class="ax2-bar ax2-bar--w70"></div>
+              <div class="ax2-fig"></div>
+              <div class="ax2-bar ax2-bar--w80"></div><div class="ax2-bar ax2-bar--w55"></div>
+            </div>
+            <div class="ax2-col">
+              <div class="ax2-card">
+                <div class="ax2-card-h"></div>
+                <div class="ax2-bar ax2-bar--w88"></div>
+                <div class="ax2-fig"></div>
+              </div>
+              <div class="ax2-card">
+                <div class="ax2-card-h"></div>
+                <div class="ax2-bar ax2-bar--w95"></div><div class="ax2-bar ax2-bar--w80"></div><div class="ax2-bar ax2-bar--w62"></div>
+                <div class="ax2-fig"></div>
+              </div>
+            </div>
+            <div class="ax2-card">
+              <div class="ax2-card-h"></div>
+              <div class="ax2-fig"></div>
+              <div class="ax2-bar ax2-bar--w95"></div><div class="ax2-bar ax2-bar--w88"></div><div class="ax2-bar ax2-bar--w45"></div>
+            </div>
+          </div>
+        </div>
+        <figcaption class="ax2-cap">
+          <div class="ax2-cap-name">纹理装饰(罕见)· 变体 b 整页饰框
+            <span class="ax2-cap-en">textured-decorated / gilt page frame</span><span class="ax2-anchors">66372</span></div>
+          <p class="ax2-cap-use">典雅 / 庆典气质:双线细框沿画布内缘一周。整页饰框属本轴;单卡装饰边框属轴 6(ornamental frame-line)。</p>
+        </figcaption>
+      </figure>
+
+    </div>
+  </section>
+
+  <!-- ================= 第三节:coverage ================= -->
+  <section class="ax2-section" id="ax2-coverage">
+    <h2>coverage · 覆盖方式<span class="ax2-h2-en">3 options</span></h2>
+    <p class="ax2-secnote">本节控制变量:treatment=flat。full 与 split 以白为基;
+      gutter-as-frame 的缝色必须可见(白底会让"框"消失),故直接使用锚点原色 ——
+      缝色本身就是 base 的取值,coverage 只改变几何。</p>
+    <div class="ax2-grid">
+
+      <!-- coverage 1: full -->
+      <figure class="ax2-demo">
+        <div class="ax2-mini ax2-mini--white">
+          <div class="ax2-mast"><div class="ax2-mast-title"></div><div class="ax2-mast-sub"></div></div>
+          <div class="ax2-cardgrid">
+            <div class="ax2-card">
+              <div class="ax2-card-h"></div>
+              <div class="ax2-bar ax2-bar--w95"></div><div class="ax2-bar ax2-bar--w88"></div><div class="ax2-bar ax2-bar--w70"></div>
+              <div class="ax2-fig"></div>
+              <div class="ax2-bar ax2-bar--w80"></div><div class="ax2-bar ax2-bar--w55"></div>
+            </div>
+            <div class="ax2-col">
+              <div class="ax2-card">
+                <div class="ax2-card-h"></div>
+                <div class="ax2-bar ax2-bar--w88"></div>
+                <div class="ax2-fig"></div>
+              </div>
+              <div class="ax2-card">
+                <div class="ax2-card-h"></div>
+                <div class="ax2-bar ax2-bar--w95"></div><div class="ax2-bar ax2-bar--w80"></div><div class="ax2-bar ax2-bar--w62"></div>
+                <div class="ax2-fig"></div>
+              </div>
+            </div>
+            <div class="ax2-card">
+              <div class="ax2-card-h"></div>
+              <div class="ax2-fig"></div>
+              <div class="ax2-bar ax2-bar--w95"></div><div class="ax2-bar ax2-bar--w88"></div><div class="ax2-bar ax2-bar--w45"></div>
+            </div>
+          </div>
+        </div>
+        <figcaption class="ax2-cap">
+          <div class="ax2-cap-name">全幅 <span class="ax2-cap-en">full</span><span class="ax2-anchors">默认 · 对照组</span></div>
+          <p class="ax2-cap-use">一种底色铺满整页,所有 base 选项的默认覆盖方式;画布以外边距 + 卡间距的形态露出。</p>
+        </figcaption>
+      </figure>
+
+      <!-- coverage 2: split two-tone -->
+      <figure class="ax2-demo">
+        <div class="ax2-mini ax2-mini--split">
+          <div class="ax2-splitcol">
+            <div class="ax2-card">
+              <div class="ax2-card-h"></div>
+              <div class="ax2-bar ax2-bar--w95"></div><div class="ax2-bar ax2-bar--w88"></div><div class="ax2-bar ax2-bar--w70"></div>
+              <div class="ax2-fig"></div>
+              <div class="ax2-bar ax2-bar--w80"></div><div class="ax2-bar ax2-bar--w55"></div>
+            </div>
+          </div>
+          <div class="ax2-splitcol ax2-splitcol--stage">
+            <div class="ax2-statement">
+              <div class="ax2-stbar ax2-stbar--w85"></div>
+              <div class="ax2-stbar ax2-stbar--w65"></div>
+              <div class="ax2-stbar ax2-stbar--sub"></div>
+            </div>
+            <div class="ax2-card">
+              <div class="ax2-card-h"></div>
+              <div class="ax2-bar ax2-bar--w95"></div><div class="ax2-bar ax2-bar--w80"></div>
+              <div class="ax2-fig"></div>
+            </div>
+          </div>
+          <div class="ax2-splitcol">
+            <div class="ax2-card">
+              <div class="ax2-card-h"></div>
+              <div class="ax2-fig"></div>
+              <div class="ax2-bar ax2-bar--w95"></div><div class="ax2-bar ax2-bar--w88"></div><div class="ax2-bar ax2-bar--w45"></div>
+            </div>
+          </div>
+        </div>
+        <figcaption class="ax2-cap">
+          <div class="ax2-cap-name">分区双色 <span class="ax2-cap-en">split two-tone</span><span class="ax2-anchors">64621 (白+深绯红中列) · 65263 · 65469 · 67229</span></div>
+          <p class="ax2-cap-use">中央叙事轨换色、贯穿全高,成为视觉主轴;常与轴 1 的 center-stage 骨架配对,舞台上的直书文字换亮墨。</p>
+        </figcaption>
+      </figure>
+
+      <!-- coverage 3a: gutter-as-frame / 深灰缝 -->
+      <figure class="ax2-demo">
+        <div class="ax2-mini ax2-mini--gutter ax2-mini--gutter-slate">
+          <div class="ax2-mastcard"><div class="ax2-mast-title"></div><div class="ax2-mast-sub"></div></div>
+          <div class="ax2-cardgrid">
+            <div class="ax2-card">
+              <div class="ax2-card-h"></div>
+              <div class="ax2-bar ax2-bar--w95"></div><div class="ax2-bar ax2-bar--w88"></div><div class="ax2-bar ax2-bar--w70"></div>
+              <div class="ax2-fig"></div>
+              <div class="ax2-bar ax2-bar--w80"></div>
+            </div>
+            <div class="ax2-col">
+              <div class="ax2-card">
+                <div class="ax2-card-h"></div>
+                <div class="ax2-bar ax2-bar--w88"></div>
+                <div class="ax2-fig"></div>
+              </div>
+              <div class="ax2-card">
+                <div class="ax2-card-h"></div>
+                <div class="ax2-bar ax2-bar--w95"></div><div class="ax2-bar ax2-bar--w62"></div>
+                <div class="ax2-fig"></div>
+              </div>
+            </div>
+            <div class="ax2-card">
+              <div class="ax2-card-h"></div>
+              <div class="ax2-fig"></div>
+              <div class="ax2-bar ax2-bar--w95"></div><div class="ax2-bar ax2-bar--w88"></div><div class="ax2-bar ax2-bar--w45"></div>
+            </div>
+          </div>
+        </div>
+        <figcaption class="ax2-cap">
+          <div class="ax2-cap-name">色缝作框 · 变体 a 深灰缝
+            <span class="ax2-cap-en">gutter-as-frame / dark slate</span><span class="ax2-anchors">65423</span></div>
+          <p class="ax2-cap-use">卡片贴边铺满、刊头也成块,底色只在缝里露出,读作一圈深色画框;信息密度高时仍显克制。</p>
+        </figcaption>
+      </figure>
+
+      <!-- coverage 3b: gutter-as-frame / 浅 sage 缝 -->
+      <figure class="ax2-demo">
+        <div class="ax2-mini ax2-mini--gutter ax2-mini--gutter-sage">
+          <div class="ax2-mastcard"><div class="ax2-mast-title"></div><div class="ax2-mast-sub"></div></div>
+          <div class="ax2-cardgrid">
+            <div class="ax2-card">
+              <div class="ax2-card-h"></div>
+              <div class="ax2-bar ax2-bar--w95"></div><div class="ax2-bar ax2-bar--w88"></div><div class="ax2-bar ax2-bar--w70"></div>
+              <div class="ax2-fig"></div>
+              <div class="ax2-bar ax2-bar--w80"></div>
+            </div>
+            <div class="ax2-col">
+              <div class="ax2-card">
+                <div class="ax2-card-h"></div>
+                <div class="ax2-bar ax2-bar--w88"></div>
+                <div class="ax2-fig"></div>
+              </div>
+              <div class="ax2-card">
+                <div class="ax2-card-h"></div>
+                <div class="ax2-bar ax2-bar--w95"></div><div class="ax2-bar ax2-bar--w62"></div>
+                <div class="ax2-fig"></div>
+              </div>
+            </div>
+            <div class="ax2-card">
+              <div class="ax2-card-h"></div>
+              <div class="ax2-fig"></div>
+              <div class="ax2-bar ax2-bar--w95"></div><div class="ax2-bar ax2-bar--w88"></div><div class="ax2-bar ax2-bar--w45"></div>
+            </div>
+          </div>
+        </div>
+        <figcaption class="ax2-cap">
+          <div class="ax2-cap-name">色缝作框 · 变体 b 浅 sage 缝
+            <span class="ax2-cap-en">gutter-as-frame / pale sage</span><span class="ax2-anchors">67218</span></div>
+          <p class="ax2-cap-use">同一构造的浅色版,框感更轻。67218 同时是 brand-hue base 的锚点 —— 缝色就是 base,coverage 只改几何的直接证据。</p>
+        </figcaption>
+      </figure>
+
+    </div>
+  </section>
+
+  <!-- ================= 页脚小注 ================= -->
+  <footer class="ax2-foot">
+    <p>控制变量说明:base 节固定 treatment=flat / coverage=full;treatment 节固定 base=cream / coverage=full;
+      coverage 节固定 treatment=flat。占位卡为全页统一的中性白卡(标题条 + 文本条 + 图占位),只提供"有内容"的语境。</p>
+    <p>搬运指引:画布构造集中在 <code>.ax2-mini--*</code> 修饰类与 <code>:root</code> 底色令牌
+      (CSS 内有 [搬运] 标记),不依赖占位卡结构,可直接移入组件库。</p>
+  </footer>
+
+</div>
+</body>
+</html>
