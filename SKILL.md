@@ -28,7 +28,7 @@ A poster is **one HTML file** styled for an exact print canvas, rendered to PDF 
      └──→ tools/poster_check.py verify-final  (PDF page count / dims / size)
 ```
 
-The skill is venue- and lab-neutral by default. Pick a template from `templates/README.md`, edit `:root` design tokens for your colors, fill TODO placeholders with your paper's content.
+The skill is venue- and lab-neutral by default. Compose a design direction from `templates/DESIGN-AXES.md` (Step 2.5), scaffold from the nearest template in `templates/README.md`, edit `:root` design tokens to match the locked direction, fill TODO placeholders with your paper's content.
 
 ## Canvas constants
 
@@ -56,10 +56,10 @@ Procedure:
 
 ### Step 0.5 — Design discovery (one round of AskUserQuestion)
 
-Don't pick a template, colors, logos, a QR target, the text density, or the block count silently. Ask the user in one round. AskUserQuestion takes at most 4 questions per call, so if more than four of the topics below need input for this poster, send the four most decision-relevant first and ask the rest (usually QR and block count) in a brief second call:
+Don't pick colors, logos, a QR target, the text density, or the block count silently. Ask the user in one round. (The template and the overall look are deliberately NOT asked here as a text question — they are decided in **Step 2.5**, where composed candidate directions are shown as rendered thumbnails; this round gathers that step's inputs.) AskUserQuestion takes at most 4 questions per call, so if more than four of the topics below need input for this poster, send the four most decision-relevant first and ask the rest (usually QR and block count) in a brief second call:
 
-- **Layout**: "Which gallery template fits best? (a) 4-column landscape, (b) hero + supporting column landscape, (c) 2-column portrait." Show them `templates/README.md`'s table.
-- **Palette**: "Lab/venue colors? E.g. `#XXX` accent + `#YYY` highlight — or say 'you pick'." When the user gives colors, use them. When they don't, do **not** silently fall back to the one house style: derive a poster-specific palette from the materials at hand (**§Palette derivation** below) and propose it in this same round — "suggest `#660874` from the Tsinghua brand — OK?" — so the user can veto cheaply. The shipped neutral (steel-blue accent + warm-gold register) is the *last-resort* fallback, not the default.
+- **Style leanings**: "Any look-and-feel must-haves or vetoes? E.g. 'keep it light', 'a dark editorial look is welcome', 'no mascots' — or 'no preference'." Do NOT ask the user to pick a template or a style from a text list here: the layout skeleton and the whole visual direction are composed in **Step 2.5** and chosen there by eye from rendered thumbnails. This bullet only collects constraints for that composition.
+- **Palette**: "Lab/venue colors? E.g. `#XXX` accent + `#YYY` highlight — or say 'you pick'." When the user gives colors, use them as the palette seed. When they don't, do **not** silently fall back to the one house style: derive a poster-specific palette from the materials at hand (**§Palette derivation** below). Either way the palette is then *shown, not just named* — it lands in the Step 2.5 thumbnail candidates, where the user can veto it cheaply. The shipped neutral (steel-blue accent + warm-gold register) is the *last-resort* fallback, not the default.
 - **Logos & venue mark**: "Any logos to place? Affiliation / lab logo, and the conference / journal logo — give paths or URLs, or say 'none'." Don't assume a venue logo is wanted; cross-check the logo policy from Step 0 (some venues forbid them). When logo files are provided, inspect each one (aspect ratio, transparency, background — Step 2 item 5) and pick a size class + chip treatment per **Gate E — Header logos** below; don't just drop them in at the default size.
 - **QR code**: "Want a QR code? If so, pointing at which link — paper / arXiv / code repo / project page — or none?" Generate it **offline** as a local image (see Customizing in README / `qrencode`); never leave a remote QR-service URL in the poster — it hangs `measure`'s networkidle wait and link-rots in print/archive.
 - **Text density**: "How much text should the poster carry? (a) **Normal** (default) — posterly's usual concise balance of prose and paper figures; (b) **Light** — fewer words, with the saved space reassigned to paper-sourced figures/diagrams across the poster." For **Light**: trim secondary prose and merge or drop low-value text cards *only* when the freed area becomes visual real estate — larger AR-appropriate figures, figure-dominant cards, or additional useful paper visuals. Keep multiple figures while each stays legible; do **not** concentrate the budget into one enlarged centerpiece or switch layouts for that reason. "More room" means larger, clearer visual regions — never blank columns / cards / gaps: the Step 4 `measure` gate and the Step 6 anti-whitespace / figure gates all still apply.
@@ -121,20 +121,20 @@ print(f"white-on-accent contrast: {contrast(accent, (255, 255, 255)):.1f}:1")
 # --accent-ink stays #FFFFFF -- the AA loop above just guaranteed it.
 # 3) Emphasis register: pick --emph per the rule below, then derive
 #    --emph-soft = mix(emph, white, 0.90) and check --emph-ink (the ink
-#    used ON the emph fill; template default var(--accent-deep)) still
+#    used ON the emph fill; template default #14314A) still
 #    clears 4.5:1 against the register you chose -- swap it if not.
 ```
 
 Rules that hold regardless of seed source:
 
 - **Print-safe accent**: muted-to-medium saturation, medium-dark value. The AA loop above enforces the dark end; if a brand color is neon-bright, mute it toward the template's tone rather than shipping fluorescent ink.
-- **Emphasis register (`--emph`) is a per-poster choice, not a fixture**: it is the single "ours / best" cue (the `.ours` row, `★` callouts, `.keyword-emph`), and defaulting it to the same color on every poster is a recognizable fingerprint. Pick ONE register per poster from a shortlist that suits the accent — warm gold `#C9A24A` (classic against cool accents), deep cool slate `#3D4A5C` (safe on any accent), rust `#A2521C`, forest `#2D5F3E`, burgundy `#8F2437` (see `templates/THEMES.md` for the calibrated pool) — and vary the choice across posters. Constraints: (a) hue-distinct from the accent (rule 4 allows exactly these two hue families); (b) if the accent is warm (red/orange/yellow), the register must be cool; (c) re-derive `--emph-soft` as the register's ~90% white tint and keep `--emph-ink` at 4.5:1 on the register fill.
-- **Backgrounds stay near-white** (`--bg-page`/`--bg-card` untouched, or at most a faint seed-hued tint). Print legibility and every downstream check assume a light poster.
-- **Echo the choice**: state the seed source and final tokens to the user (Step 0.5 round) and record them in your build notes — "accent #660874 from Tsinghua brand; register slate #3D4A5C" — so a later edit doesn't "correct" a deliberate derivation back to neutral.
+- **Emphasis register (`--emph`) is a per-poster choice, not a fixture**: it is the single "ours / best" cue (the `.ours` row, `★` callouts, `.keyword-emph`), and defaulting it to the same color on every poster is a recognizable fingerprint. Pick ONE register per poster from a shortlist that suits the accent — warm gold `#C9A24A` (classic against cool accents), deep cool slate `#3D4A5C` (safe on any accent), rust `#A2521C`, forest `#2D5F3E`, burgundy `#8F2437` (see `templates/THEMES.md` for the calibrated pool) — and vary the choice across posters. Constraints: (a) hue-distinct from the accent (rule 4 allows exactly these two hue families); (b) if the accent is warm (red/orange/yellow), the register must be cool; (c) re-derive `--emph-soft` as the register's ~90% white tint and keep `--emph-ink` at 4.5:1 on the register fill. (These constraints govern the default accent+emph role topology — a deliberately different Axis 3 choice made in Step 2.5, e.g. same-center tonal or categorical roles, follows `templates/DESIGN-AXES.md` instead.)
+- **Backgrounds default to near-white** (`--bg-page`/`--bg-card` untouched, or at most a faint seed-hued tint) — this recipe derives the *accent* tokens, not the ground. A non-white canvas (cream / light tint / brand hue / near-black) is a legitimate **Axis 2** choice made in Step 2.5, with its own contrast obligations (`templates/DESIGN-AXES.md` clash rules 6 and 9) and, for dark grounds, the `"dark_ground": true` declaration in the `--tokens` JSON (Step 2.5 item 4).
+- **Echo the choice**: state the seed source and final tokens to the user (they surface visually in the Step 2.5 thumbnails) and record them in the Step 2.5 `DESIGN DIRECTION` comment block — "accent #660874 from Tsinghua brand; register slate #3D4A5C" — so a later edit doesn't "correct" a deliberate derivation back to neutral.
 
 ### Step 1 — Confirm content & figures
 
-Once layout is picked, ask once:
+With the venue spec and design-discovery answers in hand, ask once:
 - **Source paper** path (`paper-overleaf/.../main.tex` ideal). Read the abstract, intro, headline results. Don't draft from memory — pull actual numbers, dataset names, equations.
 - **Figures**: match `images/` filenames to paper figures.
 - **Corresponding-author marker**: which author gets `✉`? Any starred (`★`) co-authors?
@@ -208,10 +208,46 @@ For each paper figure you'll use:
 
    Reading the output: `AR` drives the size class (Gate E table 1). `white_edge >= ~70%` on an image **without** alpha means a bare white background (Gate E table 2's "stray white rectangle" case). The mark's luminance **percentiles** — not the mean — say whether the marks are dark (`p90 < ~120`) or light (`p10 > ~200`); a white-filled logo with a thin dark outline fools a mean. An **SVG** logo can't be opened by PIL — parse its `viewBox` for the AR and judge the chip from the rendered header crop in Step 5 instead.
 
+### Step 2.5 — Design direction (compose → thumbnails → lock)
+
+Layout skeleton, canvas, palette, typography — every look-and-feel choice — is made **here**, as one composed direction, before any template is copied. The menu is `templates/DESIGN-AXES.md` (8 orthogonal axes, a devices pool, clash rules); the rendered option catalog is `specimens/axes/index.html` (one page per axis). This step sits after Steps 1–2 because two axes depend on knowing the content: density (Axis 5) is a capacity decision, and an Axis-1 focal choice needs to know the headline figure.
+
+1. **Compose per axis.** For each of the 8 axes pick a *primary option + modifiers* (an axis choice is a structured object, never a bare enum pick), plus 0–2 devices from the pool. Feed in the Step 0.5 answers: user/derived colors → the Axis 3 seed (**§Palette derivation**); text density and block count → Axis 5; style vetoes → hard constraints. Then walk the clash rules at the bottom of `DESIGN-AXES.md`: check all 9 **hard** rules one by one against the composed set (check, don't debate); a **soft** rule you trip stays legal, but write the tradeoff down in one line — e.g. "cream canvas + grotesque type: accepted, the letterspaced eyebrows carry the editorial tone".
+
+2. **Compose 2–3 candidates, far apart.** One direction is a proposal, not a choice — compose 2–3 so the user actually chooses. Candidates must be distinguishable at thumbnail size: **every pair must differ on at least two of the four fingerprint axes** — canvas base (Axis 2), frame-line (Axis 6), section-heading joint (Axis 7), masthead (Axis 8). Two candidates that differ only in accent hue are the same candidate twice. Tag every candidate with its build cost before showing it: (a) current templates/components realize it directly; (b) it needs a construction ported from the `specimens/axes/` catalog (the token-native CSS exists but must be adapted to the poster's tokens and units, not pasted — normal); (c) it needs a brand-new system component — offer it only with that caveat, and a user pick of a (c) candidate is a direction *preference*, not yet the lock: raise the Step 6 escape-hatch system-extension proposal first, and lock/scaffold only once it's approved. Never show the user a thumbnail you can't build.
+
+3. **Thumbnail pre-selection.** For each candidate build a quick *style specimen* — NOT a full poster: one small HTML file with a masthead bar plus one column of 2 cards, applying that direction's canvas, palette, typography, frame-line, and section-heading joint (placeholder copy is fine; no figures, no `@page`, no `data-measure-role`). Render each to a small PNG with Playwright — same file-URI → screenshot pattern as `tools/render_preview.py`, only simpler: a fixed viewport (~800×1000 px) and `page.screenshot()`, no print emulation, no PDF. Specimens are throwaway working files (`direction_a.html` / `direction_a.png` in the work dir — never in `templates/`) and run **no gates**: no `run_gates.py`, no `measure`, no `polish` — they exist only to be looked at.
+   - **Interactive session**: show the PNGs, then ONE AskUserQuestion — one option per candidate (short label + one-line character sketch) plus "none of these — recompose". For an (a)/(b) candidate the pick is the lock; a (c) pick is a direction preference — run the Step 6 escape-hatch system-extension proposal first and lock only on approval.
+   - **Non-interactive session**: lock the recommended candidate yourself and state why (fit to content volume, venue tone, wave-level anti-convergence) in your report.
+
+4. **Lock and record.** Record the locked direction as an HTML comment block that goes at the top of `poster.html` the moment Step 3 scaffolds it (and stays there through every later edit) — axis by axis, with modifiers, devices, and the anchor poster IDs you leaned on:
+
+   ```html
+   <!-- DESIGN DIRECTION (Step 2.5, locked)
+     axis1 layout:   3-column, top-hero (focal: pipeline figure)     [62396, 66579]
+     axis2 canvas:   cream, flat, full                               [64736]
+     axis3 palette:  accent+emph; accent #0F6070 (lab-logo seed), emph rust #A2521C
+     axis4 type:     serif display + sans body; small-caps eyebrows  [64736]
+     axis5 density:  balanced
+     axis6 card:     white surface, thin colored frame, shadow       [65714]
+     axis7 heading:  underline rule + number chip                    [65287, 63757]
+     axis8 masthead: brand band; footer: contact strip               [63030]
+     devices:        metric scoreboard, QR CTA
+     soft-clash notes: none tripped
+   -->
+   ```
+
+   Then write the tokens pack — **always**, named `design_tokens.json`, next to `poster.html`, holding at minimum the accent/emph hue centers — and pass it on every gate run as `run_gates.py … --tokens design_tokens.json` (forwarded to `style_check.py`):
+   - **hue centers** (`"hue_centers": {"accent": <deg>, "emph": <deg>}`) — rule 4 reads exactly these two slots and allows at most two non-neutral hue clusters. Dual-semantic: map the two semantic hues onto the accent/emph slots and a re-enabled rule 4 checks clean. Categorical (3+ hue roles): rule 4 *cannot* pass and must stay disabled (it is off by posterly default, `--style-disable 4,5`) — record the full palette in the `DESIGN DIRECTION` block instead;
+   - **vendored font families** (`"fonts": {"serif": […], "sans": […], "mono": […]}`) when the Axis 4 voice is off the built-in whitelist (vendor the files locally, never a CDN);
+   - **`"dark_ground": true`** iff the Axis 2 base is near-black or a dark brand hue: it switches off style rule 12's large-dark-area warning, which is calibrated for light posters and would otherwise fight a deliberate dark ground. Never set it on a light poster to silence a rule-12 warning about an oversized dark slab — there the warning is reporting a real problem.
+
+**Anti-convergence.** The shipped default (white canvas · soft card · plain headings · centered masthead) is one combo among many, not the home position: landing there after a fresh composition is fine; landing there every time is a fingerprint. In a **wave** (several posters in one batch), consecutive posters must differ on at least two of the four fingerprint axes (canvas / frame-line / section-heading joint / masthead) — read the previous poster's `DESIGN DIRECTION` block before composing the next, and hold the `--emph` register decision at wave level per `templates/THEMES.md` Mechanism 1.
+
 ### Step 3 — Scaffold from the gallery
 
-1. `cp templates/<chosen>.html <work-dir>/poster.html`.
-2. Edit the `:root` design tokens (single block; affects everything).
+1. `cp templates/<chosen>.html <work-dir>/poster.html` — `<chosen>` is the template whose skeleton is nearest the locked direction's Axis 1 topology (`templates/README.md` table); the remaining axes are applied on top as token edits and component swaps.
+2. Paste the `DESIGN DIRECTION` comment block (Step 2.5) at the top, then edit the `:root` design tokens (single block; affects everything) to realize the locked direction — palette (Axis 3), typography (Axis 4), density scale (Axis 5), frame/radius tokens such as `--rs` (Axis 6).
 3. Replace `<title>`, header (title/subtitle/authors/affiliation), banner (if any), column cards, takeaways strip (if any), footer.
 4. Match the template's `data-measure-role` scheme — DO NOT remove these attributes. The measurement script depends on them.
 5. **No logo / QR provided:** keep the venue as its **text** badge — don't fabricate a venue logo. With no affiliation logo, **delete the empty `.logo-slot`** rather than leave a hollow box; the text affiliation line and the corner `.ornament` carry attribution. With no QR, delete `.qr-block`. Never fetch or invent an asset the user didn't give, and never leave a remote QR-service URL in the poster (offline local image only).
@@ -229,8 +265,10 @@ Tools live in `tools/` and read `@page` from the HTML, so they're canvas-agnosti
 **Default driver: `run_gates.py`.** After every layout change, run the whole sequence in one shot — `preflight` → `style` → `measure` → `polish` in load-bearing order (plus the `asset` gate only when you pass `--manifest`; otherwise it's reported `NOT_RUN` and excluded from `overall`), into one `GATE_REPORT.json` (see **§Enhanced gates & fix discipline**):
 
 ```bash
-# After every layout change (the default loop driver):
-python <skill>/tools/run_gates.py poster.html --report GATE_REPORT.json
+# After every layout change (the default loop driver). The Step 2.5 pack
+# (design_tokens.json, always written at lock time) rides on EVERY call —
+# dropping it silently un-declares your fonts / hue centers / dark_ground:
+python <skill>/tools/run_gates.py poster.html --tokens design_tokens.json --report GATE_REPORT.json
 ```
 
 **Before the first loop iteration — run `pack` once (advisory).** A column whose figures *at their Gate A floors* still overflow the footer-gap window — or *at their ceilings* still can't reach it — cannot be fixed by figure sizing at all, and discovering that inside the loop costs many wasted rounds. `python <skill>/tools/poster_check.py pack poster.html` probes both endpoints in the browser and names the column: `REPACK_RECOMMENDED` (move a card out / trim text before looping) or `FIGURE_ONLY_UNDERFILL` (the residual needs content, not figure growth). It is advisory (exit 0; floors are polish's WARN thresholds, not physical minima; hero panels aren't modelled) — treat it as the "should I re-pack cards across columns first?" answer, then enter the loop.
@@ -563,10 +601,11 @@ These tools and the fix discipline below are vendored from ARIS's `paper-poster-
 Instead of calling `measure` / `preflight` / `polish` by hand each iteration, run all gates in their load-bearing order and get the whole fix surface in one report:
 
 ```bash
-# core gates (preflight + style + measure + polish):
-python tools/run_gates.py poster.html --report GATE_REPORT.json
+# core gates (preflight + style + measure + polish); --tokens carries the
+# Step 2.5 pack (design_tokens.json, always written at lock time):
+python tools/run_gates.py poster.html --tokens design_tokens.json --report GATE_REPORT.json
 # add --manifest to also run the real-figure asset gate (see below):
-python tools/run_gates.py poster.html --manifest FIGURE_MANIFEST.json --report GATE_REPORT.json
+python tools/run_gates.py poster.html --tokens design_tokens.json --manifest FIGURE_MANIFEST.json --report GATE_REPORT.json
 ```
 
 Order is fixed: `preflight → style → asset → measure → polish`. The cheap static gates (preflight/style/asset) run before the expensive renders (measure/polish), so a structural or style bug fails fast instead of burning a render. `GATE_REPORT.json` holds every gate's pass/fail + findings — one read tells you the whole fix surface. Child processes run with `sys.executable`, so it uses the same interpreter/venv as posterly. By default `run_gates.py` forwards `--style-disable 4,5` to the style gate (posterly's default — see **§Style HARD gate** below for what that drops and how to re-enable). Plain `poster_check.py measure` still works if you don't adopt the style/asset gates.
@@ -578,7 +617,7 @@ Without `--manifest`, the asset gate is **opt-in** — it is reported `NOT_RUN` 
 The Step 6 `polish` gate is *soft* (aesthetics). `style_check.py` is a **hard** gate for the design-system discipline the templates assume:
 
 ```bash
-python tools/style_check.py poster.html --disable 4,5   # posterly default; add --tokens <pack.json> if you use one
+python tools/style_check.py poster.html --disable 4,5 --tokens design_tokens.json   # posterly default; the pack is always written at lock time (Step 2.5)
 ```
 
 13 rules: colors only via `var(--…)` from the `:root` token block (no stray hex), no inline `style=`, no gradients, font-family against a whitelist, font-size only from the `--fs-*` scale, bounded token count, the `data-*` / inline-SVG contracts, and (rule 13) every `block--modifier` variant class used in the markup must have a matching CSS rule — a dropped rule leaves the class inert and the layout silently wrong (e.g. a `keybox--4` with no `.keybox.keybox--4` rule falls back to the 3-col base grid, orphaning a 4th tile into an empty second row). Pure static analysis plus a small Playwright render gate for computed-style rules, so it's cheap — run it right after the Step 3 scaffold and on every layout change.

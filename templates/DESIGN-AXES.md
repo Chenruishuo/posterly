@@ -56,8 +56,9 @@ menu of *what to compose*.
   (shipped default; pool & derivation in SKILL.md + THEMES.md) /
   dual-semantic — two hues carry two fixed meanings poster-wide (64834
   green=language vs orange=translation) / categorical multi-role (63640,
-  65372, 66057; declare every hue center in the `--tokens` JSON or style
-  rule 4 will flag them).
+  65372, 66057; style rule 4 caps at two declared hue slots (accent/emph),
+  so categorical palettes keep rule 4 disabled — posterly's default — and
+  record the full palette in the poster's `DESIGN DIRECTION` block).
 - **hue relationship**: distinct centers / **same-center tonal** — emphasis by
   lightness/saturation only, one hue family (63819). This is a legitimate
   choice; the emphasis register does NOT have to be hue-distinct.

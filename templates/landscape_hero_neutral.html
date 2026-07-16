@@ -35,12 +35,13 @@
             per column with no single dominant figure.
   HOW TO USE:
     1. Copy this file to your working directory as `poster.html`.
-    2. Edit the DESIGN TOKENS in `:root` (or swap a tokens/*.json palette) —
+    2. Edit the DESIGN TOKENS in `:root` (re-theming mechanics: templates/THEMES.md) —
        the token block is the ONLY place color/font-size literals may live.
     3. Replace TODO content placeholders (search for "TODO"). The hero is the
        only "big" element — put your headline figure / table / diagram there.
-    4. Run `python3 tools/run_gates.py poster.html` (the default driver:
-       preflight -> style -> measure -> polish) to verify the
+    4. Run `python3 tools/run_gates.py poster.html --tokens design_tokens.json` (the default driver:
+       preflight -> style -> measure -> polish; design_tokens.json is the
+       design-direction pack written at lock time -- SKILL.md Step 2.5) to verify the
        hero panel's bottom edge aligns with the supporting column's last card,
        then `python3 tools/render_preview.py poster.html` to produce the PDF.
   STYLE CONTRACT (ARIS source gate, tools/style_check.py):
@@ -96,7 +97,7 @@
     /* The ONLY place color / font-size literals are allowed (style_check
        rule 1 + 8 locate this block by the comment pair). Override token
        VALUES here only — never restyle component rules with new literals.
-       To rebrand, edit these or load a tokens/*.json palette. */
+       To rebrand, edit these (re-theming mechanics: templates/THEMES.md). */
 
     /* Primary accent (header underline, card-highlight bar, section nums, .keyword) */
     --accent:        #2D5F8B;
@@ -110,7 +111,9 @@
        keeps 4.5:1 with --emph-ink (see templates/THEMES.md Mechanism 1). */
     --emph:          #C9A24A;
     --emph-soft:     #FFF7E0;
-    --emph-ink:    var(--accent-deep);  /* ink ON the emphasis fill */
+    --emph-ink:    #14314A;  /* ink ON the emphasis fill. NOT var(--accent-deep):
+                                #1F4566 on the default gold measures 4.16:1 (< AA);
+                                #14314A measures 5.58:1 (>= 4.5:1). */
 
     /* Text */
     --text-primary:   #1A1A1A;
@@ -193,7 +196,7 @@
     padding: calc(10 * var(--u)) calc(14 * var(--u));
     display: grid;
     /* NO banner row — the hero IS the banner. */
-    grid-template-rows: auto 1fr auto auto;   /* header | hero-grid | takeaways | footer */
+    grid-template-rows: auto minmax(0, 1fr) auto auto;   /* header | hero-grid | takeaways | footer. minmax(0,1fr) (not bare 1fr): an over-tall body compresses instead of pushing takeaways/footer off-canvas */
     gap: calc(6 * var(--u));
     box-shadow: var(--shadow-screen);
     position: relative;
@@ -592,7 +595,7 @@
   .callout strong { color: var(--emph); }
   .callout.emph {
     background: var(--emph);
-    color: var(--accent-deep);
+    color: var(--emph-ink);   /* route through the token — accent-deep here would dodge the register swap AND fail AA on the default gold */
   }
   .callout.emph strong { color: var(--emph-ink); }
 
@@ -898,7 +901,7 @@
      wide equation can never widen its track and squeeze siblings;
      (2) over-wide display math scales down to fit its box instead of
      blowing out the card (SVG keeps aspect via height:auto). */
-  .body-grid > .column { min-width: 0; }
+  .hero-grid > .column { min-width: 0; }  /* this template's body is .hero-grid (no .body-grid) — a .body-grid selector here would never match and the guard would be dead */
   .card { min-width: 0; }
   .eqn mjx-container > svg { max-width: 100%; height: auto; }
 

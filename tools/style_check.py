@@ -25,7 +25,15 @@ refinement on rule 8) split across two gates:
     the vendored ``_posterly`` canvas+render helpers so the viewport basis
     matches ``measure``/``polish`` exactly), reads every element's
     computed colors, and runs the non-neutral hue-clustering check (rule
-    4) and the large-dark-area check (rule 12).
+    4) and the large-dark-area check (rule 12). A ``--tokens`` pack may
+    declare ``"dark_ground": true`` (a deliberate dark-ground theme): rule
+    12's whole-page dark-area WARN is then waived — the summed coverage
+    ratio is still measured and reported with a "dark_ground declared"
+    note, so a reader
+    sees the rule was deliberately switched off, not skipped. The
+    declaration governs ONLY that aggregate check; it loosens nothing else
+    (rule 4's hue policy, or any docs-level requirement that certain
+    effects sit on a local dark ground, are unaffected).
 
 WHY two gates: the source gate is cheap, deterministic, and runnable with
 no browser — it is what Phase 3 scaffolding relies on. The render gate
@@ -1089,10 +1097,16 @@ def run_render_gate(
     nonneutral_alpha: float = 0.10,
     nonneutral_sat: float = 0.18,
     dark_area_frac: float = 0.08,
+    dark_ground: bool = False,
     mathjax_timeout_ms: int = 15000,
     settle_ms: int = 500,
 ) -> tuple[list[RuleResult], int | None]:
     """Run rules 4 and 12 via Playwright print-emulation.
+
+    ``dark_ground=True`` (from the tokens pack's ``"dark_ground": true``,
+    see ``resolve_dark_ground``) waives rule 12's whole-page dark-area
+    WARN: the summed coverage ratio is still measured, but the rule reports a
+    "dark_ground declared" PASS instead of warning.
 
     Returns ``(results, env_exit)``. ``env_exit`` is non-None (==2) only
     when the environment is unusable (no playwright, no @page canvas, nav
@@ -1220,9 +1234,19 @@ def run_render_gate(
     results.append(r4)
 
     # --- Rule 12 (WARN): large dark area ---------------------------------
+    # The whole rule IS the whole-page aggregate check (darkArea is not
+    # consumed anywhere else), so a declared dark ground waives it wholly;
+    # nothing beyond this one threshold is loosened by the declaration.
     r12 = RuleResult(12, "warn", "large dark area (kitsch warning)")
     frac = data["darkArea"] / data["posterArea"] if data["posterArea"] else 0.0
-    if frac > dark_area_frac:
+    if dark_ground:
+        r12.detail = (
+            f"dark_ground declared in --tokens: deliberate dark-ground "
+            f"theme, whole-page dark-area warning waived (summed "
+            f"dark-element coverage = {frac * 100:.1f}% of poster area; "
+            f"nested dark blocks double-count, so this can exceed 100%)"
+        )
+    elif frac > dark_area_frac:
         r12.warn(
             f"dark (L<0.18) backgrounds cover {frac * 100:.1f}% of the "
             f"poster (> {dark_area_frac * 100:.0f}% threshold); large dark "
@@ -1318,6 +1342,44 @@ def _hue_from_hex(hex_str: str | None) -> float | None:
 
 
 # ---------------------------------------------------------------------------
+# Dark-ground declaration (--tokens JSON, rule 12).
+# ---------------------------------------------------------------------------
+
+
+def resolve_dark_ground(tokens_path: Path | None) -> bool:
+    """Whether the tokens pack declares a deliberate dark ground.
+
+    A ``--tokens`` pack may carry ``"dark_ground": true`` (JSON boolean,
+    default false): the poster is a deliberate dark-ground theme, so rule
+    12's whole-page dark-area kitsch WARN is waived (the area is still
+    measured and the report carries a "dark_ground declared" note).
+
+    Strict boolean: a non-boolean value (e.g. ``"yes"``) gets a stderr
+    warning and is treated as false (undeclared). WHY not truthiness:
+    ``"false"`` is truthy in Python, so a mistyped string could silently
+    disarm the warning — rejecting loudly is safer, and ignoring a
+    malformed field matches how hue_centers/fonts parsing degrades.
+    """
+    if tokens_path is None:
+        return False
+    try:
+        doc = json.loads(tokens_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        # An unreadable pack already draws a WARNING from
+        # resolve_font_whitelists / resolve_hue_centers; stay quiet here
+        # rather than print a third copy.
+        return False
+    val = doc.get("dark_ground", False)
+    if isinstance(val, bool):
+        return val
+    _eprint(
+        f"WARNING: --tokens key 'dark_ground' must be a JSON boolean, got "
+        f"{ascii_safe(repr(val))}; treating as false (not declared)."
+    )
+    return False
+
+
+# ---------------------------------------------------------------------------
 # Orchestration + CLI.
 # ---------------------------------------------------------------------------
 
@@ -1384,7 +1446,10 @@ def cmd_style_check(args: argparse.Namespace) -> int:
               "Overall status reflects the source gate only.")
     else:
         hue_centers = resolve_hue_centers(tokens_path, token_block_text)
-        render_results, env_exit = run_render_gate(html_path, hue_centers)
+        render_results, env_exit = run_render_gate(
+            html_path, hue_centers,
+            dark_ground=resolve_dark_ground(tokens_path),
+        )
         if env_exit is not None:
             # Environment unusable for the render gate. Per the CLI
             # contract an env error is exit 2 — don't masquerade as a PASS.
@@ -1444,9 +1509,11 @@ def build_parser() -> argparse.ArgumentParser:
         "--tokens", default=None,
         help="tokens JSON (IMPLEMENTATION_CONVENTIONS §F); its "
              "hue_centers/accent/emph drive rule 4 ('gold' accepted as a "
-             "legacy alias for emph), and its fonts.serif/sans/mono lists "
-             "EXTEND the rule-7 whitelists. Default: derive accent/emph "
-             "hue from the :root token block.",
+             "legacy alias for emph), its fonts.serif/sans/mono lists "
+             "EXTEND the rule-7 whitelists, and \"dark_ground\": true "
+             "waives rule 12's whole-page dark-area warning (deliberate "
+             "dark-ground theme). Default: derive accent/emph hue from "
+             "the :root token block.",
     )
     p.add_argument(
         "--json", default=None,

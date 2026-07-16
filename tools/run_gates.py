@@ -394,6 +394,12 @@ def _summarize_gate(
         if obj is None:
             obj = _parse_json_gate(stdout)
         if obj is not None:
+            # Keep resolver diagnostics (malformed --tokens fields, font/hue
+            # fallbacks) visible: they go to the gate's stderr, which would
+            # otherwise be dropped once a JSON report exists.
+            warns = [ln for ln in stderr.splitlines() if "WARNING" in ln]
+            if warns:
+                obj["gate_stderr_warnings"] = warns[-8:]
             return obj, artifacts
         # No JSON at all -> the gate likely failed to start; fall back to
         # the stderr/stdout tail so the report still says something useful.
@@ -565,6 +571,10 @@ def _print_human_summary(report: dict[str, Any]) -> None:
         print(f"  canvas: UNRESOLVED (source: {canvas['source']})")
     for g in report["gates"]:
         print(f"  {g['name']:9s} [{g['severity']:4s}] -> {g['status']}")
+        s = g.get("summary")
+        if isinstance(s, dict) and s.get("gate_stderr_warnings"):
+            for ln in s["gate_stderr_warnings"]:
+                print(f"            ! {ascii_safe(ln)}")
     print(
         f"  overall: {report['overall']}   "
         f"hard_failures: {report['hard_failures']}   "

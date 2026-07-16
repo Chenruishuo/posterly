@@ -41,12 +41,14 @@ The templates pair the two families in BOTH directions:
 (register as ground) and `.callout strong { color: var(--emph) }` on an
 accent-colored band (register as ink on accent ground). The Phase-1
 decoupling routed the first direction through **`--emph-ink`** (default
-`var(--accent-deep)`), so a register swap is now: set `--emph`, re-derive
-`--emph-soft` (~90% white tint), and re-check `--emph-ink` at 4.5:1 on the
-new fill (a deep cool register usually wants a light ink instead of
-accent-deep — dark-on-dark reads ~1.0–1.6:1). The second direction has no
-token of its own: after any swap, eyeball `--emph`-as-ink on the accent
-band once (Mechanism 3's `ink()` math applies).
+`#14314A` — 5.58:1 on the default gold `#C9A24A`; the earlier default
+`var(--accent-deep)` = `#1F4566` measured only 4.16:1, below this
+mechanism's own 4.5:1 bar), so a register swap is now: set `--emph`,
+re-derive `--emph-soft` (~90% white tint), and re-check `--emph-ink` at
+4.5:1 on the new fill (a deep cool register usually wants a light ink
+instead of a dark one — dark-on-dark reads ~1.0–1.6:1). The second
+direction has no token of its own: after any swap, eyeball `--emph`-as-ink
+on the accent band once (Mechanism 3's `ink()` math applies).
 
 ## Mechanism 2 — deterministic seed pick, never "model picks a color"
 

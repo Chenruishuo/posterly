@@ -31,10 +31,10 @@
             reader scans top-to-bottom in column 1, then jumps to column 2.
   HOW TO USE:
     1. Copy this file to your working directory as `poster.html`.
-    2. Edit the DESIGN TOKENS in `:root` (or swap a tokens/*.json palette) —
+    2. Edit the DESIGN TOKENS in `:root` (re-theming mechanics: templates/THEMES.md) —
        the token block is the ONLY place color/font-size literals may live.
     3. Replace TODO content placeholders (search for "TODO").
-    4. Run `python3 tools/run_gates.py poster.html` (the default driver: preflight -> style -> measure -> polish) to align columns and check style/structure.
+    4. Run `python3 tools/run_gates.py poster.html --tokens design_tokens.json` (the default driver: preflight -> style -> measure -> polish; design_tokens.json is the design-direction pack written at lock time -- SKILL.md Step 2.5) to align columns and check style/structure.
     5. Run `python3 tools/render_preview.py poster.html` to produce the PDF.
   STYLE CONTRACT (ARIS source gate, tools/style_check.py):
     - NO inline `style=` attributes anywhere in the markup. Use the utility
@@ -90,7 +90,7 @@
     /* The ONLY place color / font-size literals are allowed (style_check
        rule 1 + 8 locate this block by the comment pair). Override token
        VALUES here only — never restyle component rules with new literals.
-       To rebrand, edit these or load a tokens/*.json palette. */
+       To rebrand, edit these (re-theming mechanics: templates/THEMES.md). */
 
     /* Primary accent (header underline, card-highlight bar, section nums, .keyword) */
     --accent:        #2D5F8B;
@@ -104,7 +104,9 @@
        keeps 4.5:1 with --emph-ink (see templates/THEMES.md Mechanism 1). */
     --emph:          #C9A24A;
     --emph-soft:     #FFF7E0;
-    --emph-ink:    var(--accent-deep);  /* ink ON the emphasis fill */
+    --emph-ink:    #14314A;  /* ink ON the emphasis fill. NOT var(--accent-deep):
+                                #1F4566 on the default gold measures 4.16:1 (< AA);
+                                #14314A measures 5.58:1 (>= 4.5:1). */
 
     /* Text */
     --text-primary:   #1A1A1A;
@@ -190,8 +192,10 @@
     margin: 20px auto;
     padding: calc(10 * var(--u)) calc(12 * var(--u));
     display: grid;
-    /* header | body | footer — no banner row, no takeaways row */
-    grid-template-rows: auto 1fr auto;
+    /* header | body | footer — no banner row, no takeaways row.
+       minmax(0,1fr) (not bare 1fr): an over-tall body compresses instead of
+       pushing the footer off-canvas */
+    grid-template-rows: auto minmax(0, 1fr) auto;
     gap: calc(6 * var(--u));
     box-shadow: var(--shadow-screen);
     position: relative;
@@ -503,7 +507,7 @@
   .callout strong { color: var(--emph); }
   .callout.emph {
     background: var(--emph);
-    color: var(--accent-deep);
+    color: var(--emph-ink);   /* route through the token — accent-deep here would dodge the register swap AND fail AA on the default gold */
   }
   .callout.emph strong { color: var(--emph-ink); }
 
