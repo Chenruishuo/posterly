@@ -103,6 +103,10 @@ the floor (clash rule 1).
 - Corner radius: `--rs` scales every element class proportionally (1 = shipped
   soft look, 0 = square). Per-class overrides only when a design needs
   cross-class divergence (square cards + pill chips).
+- Figure mount: paper figures follow the frame decision through `--fig-bg` /
+  `--fig-frame` (ground + keyline on `.figure img` / `.ff-fig img`). Restyle
+  the mount together with the cards so figures sit *in* the design rather than
+  pasted on it; `--fig-frame: transparent` gives a frameless mount.
 
 ## Axis 7 — Section-heading joint (`joint shape + marker + content form`)
 
@@ -135,7 +139,9 @@ The richest axis in the corpus, and invisible until you look for it.
   plus a few metrics (65205 "Front-load your dropout.", 61797, 60839) /
   sandwich — footer echoes the masthead band (63627, 64834, 64160).
 - **identity accessory**: logo wall / QR-CTA component with labeled tags
-  (65372 "SCAN ME", 65748) / logo+QR side rail (65626, 66579).
+  (65372 "SCAN ME", 65748) / logo+QR side rail (65626, 66579) / faint corner
+  watermark (`.ornament`, shipped commented-out in the templates — the same
+  corner mark on every poster is a fingerprint, so enable it deliberately).
 - All three sub-choices are independent (63030 = brand band + footer strip).
 
 ## Devices pool (pick 0–2, all local & pluggable)
@@ -190,13 +196,19 @@ scoreboard.
 ## Recipes
 
 The seven named recipes (宣言色板 / 纸感学术 / 暗夜编辑 / 奶油刊头 / 工程报告 /
-机构单色 / 粉彩圆角) are **per-axis default bundles with compatibility
-notes** — starting points, not packages. Swapping any single axis out of a
-recipe is normal; re-check the clash rules and nothing else.
+机构单色 / 粉彩圆角) are intended as **per-axis default bundles with
+compatibility notes** — starting points, not packages. The full per-axis
+write-ups are not yet in this file; until they land, each name works as a
+ready-made **concept statement** (SKILL.md Step 2.5) naming the world the
+poster lives in — adopt the name as the concept and compose the eight axes
+yourself. Once the write-ups land, swapping any single axis out of a recipe
+stays normal; re-check that the new pick still serves the concept, plus the
+clash rules — nothing more.
 
 ## Anti-convergence
 
 Consecutive posters in a wave must differ on at least two of: canvas,
-frame-line, section-heading joint, masthead. The shipped default (white ·
-soft card · plain headings · centered masthead) counts as one combo — do not
-let every poster collapse back to it.
+frame-line, section-heading joint, masthead — and must not reuse the previous
+poster's concept statement. The shipped default (white · soft card · plain
+headings · centered masthead) counts as one combo — do not let every poster
+collapse back to it.

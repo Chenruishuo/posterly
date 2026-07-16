@@ -129,7 +129,8 @@ Gate name shorthand (DESIGN_FINAL §3–§7):
   - Sanctioned inline style: `data-source="paper"` `<img>` may carry **only**
     `style="width: NN%"` for aspect-ratio width tuning (B-contract exception); prefer the
     `.w-NN` utility class when the value lands on a 5% step.
-- **Token usage**: `.figure img` border → `--border-soft`; `.caption` → `--text-secondary`,
+- **Token usage**: `.figure img` mount → `--fig-frame` keyline + `--fig-bg` ground (defaults:
+  `--border-soft` / white — retheme with the Axis 6 frame decision); `.caption` → `--text-secondary`,
   `--accent-deep` (caption `<strong>`); caption font-size `--fs-3`/`--fs-2`.
 - **Inspected by**: `asset` (≥2 paper figures, per-figure area **≥1.5% of poster** floor / **≤13% of body** cap, total **12–28%**
   body [warn >24%, target ~14–22%; `--hero` raises the per-figure cap to 42%], natural_px ≥1.5×
@@ -191,7 +192,8 @@ Gate name shorthand (DESIGN_FINAL §3–§7):
   `data-source="paper"` **and** `data-asset-id="<manifest id>"` when the asset gate runs — a pair
   (rule 10 hard-fails one without the other); add neither if the gate is off.
 - **Token usage**: caption → `--font-sans`, `--fs-2`, `--text-secondary`, `--accent-deep` (caption
-  `<strong>`). No color literals; any image framing references `--border-soft` / `--bg-card`.
+  `<strong>`). No color literals; any image framing references the figure-mount tokens
+  `--fig-frame` / `--fig-bg`.
 - **Inspected by**: `style` (no inline style, tokenized caption font/color, the
   data-source/data-asset-id pair), `asset` (counts as a paper figure when manifest-backed),
   `polish` (**BANNER/IMAGE-SLOT** — fires when the figure slot is much wider than the image: a
@@ -312,8 +314,10 @@ Gate name shorthand (DESIGN_FINAL §3–§7):
 
 ## takeaways-strip (`.takeaways-strip`, landscape templates)
 
-- **Purpose**: A full-width bottom strip of 3–4 one-line takeaways ("Idea / Method / Result /
-  Practical") — the 60-second narrative exit. Portrait templates drop it (final card carries
+- **Purpose**: A full-width bottom strip of 3–4 one-line takeaways — the 60-second narrative
+  exit. Title and slot labels are per-poster microcopy: the classic "Takeaways" + Idea / Method /
+  Result / Practical set is one example, not the default (SKILL.md Step 3 microcopy rule).
+  Portrait templates drop it (final card carries
   the conclusion instead). **Optional — use judgment, don't default it on.** Keep it only when
   it earns its place as a genuine exit; if the final column cards already land the conclusion,
   or the strip would just restate the body, **drop the whole block** — a redundant strip is

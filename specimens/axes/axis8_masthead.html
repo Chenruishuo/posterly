@@ -136,6 +136,13 @@
     background: var(--ax8-ghost); border: 1px solid var(--ax8-ghost-line);
     border-radius: calc(5 * var(--ax8-pu)); position: relative; overflow: hidden;
   }
+  /* A4 角落水印:淡 accent 角标,绝对定位在 strip 右下角 */
+  .ax8-wm {
+    position: absolute; right: calc(14 * var(--ax8-pu)); bottom: calc(6 * var(--ax8-pu));
+    font-size: calc(13 * var(--ax8-pu)); font-weight: 700;
+    letter-spacing: .16em; text-transform: uppercase;
+    color: rgba(29, 58, 135, .20); pointer-events: none;
+  }
   .ax8-gcard::before {
     content: ""; position: absolute; top: calc(6 * var(--ax8-pu));
     left: calc(8 * var(--ax8-pu)); right: 34%;
@@ -539,11 +546,12 @@
       </ol>
     </div>
     <div class="ax8-toc-col">
-      <h3>三、identity accessory 身份件(3)</h3>
+      <h3>三、identity accessory 身份件(4)</h3>
       <ol>
         <li><a href="#ax8-a1">A1 logo 墙</a></li>
         <li><a href="#ax8-a2">A2 QR-CTA 带标签</a></li>
         <li><a href="#ax8-a3">A3 logo+QR 侧轨</a></li>
+        <li><a href="#ax8-a4">A4 角落水印</a></li>
       </ol>
     </div>
   </nav>
@@ -846,7 +854,7 @@
   </section>
 
   <!-- ==================== 三、identity accessory ==================== -->
-  <h2 class="ax8-sec" id="ax8-sec-a">三、identity accessory 身份件 <span class="ax8-en">3 选 0–1,可与任意页头页脚组合</span></h2>
+  <h2 class="ax8-sec" id="ax8-sec-a">三、identity accessory 身份件 <span class="ax8-en">4 选 0–1,可与任意页头页脚组合</span></h2>
   <p class="ax8-sec-intro">身份件解决“logo 和 QR 放哪、怎么做”。演示均挂在中性页头上;换成 M3/M6 等页头同样成立。</p>
 
   <!-- A1 -->
@@ -937,6 +945,30 @@
       </div>
     </div>
     <p class="ax8-note">注:65626 原作是暗底带状页头 + 右侧竖轨;此处按控制变量以浅色 tint 演示同一收纳结构。轨宽计入页头几何,若轴 1 已给标题留整条竖轨,则侧轨并入该轨而非再开一条。</p>
+  </section>
+
+  <!-- A4 -->
+  <section class="ax8-block" id="ax8-a4">
+    <div class="ax8-block-head">
+      <h3 class="ax8-opt-name">A4 角落水印 <span class="ax8-en">Faint corner watermark</span></h3>
+      <span class="ax8-anchors"><span class="ax8-chip">—</span></span>
+    </div>
+    <p class="ax8-scene"><span class="ax8-lab">适用:</span>机构身份想以最低声量在版面上留一枚“馆藏印记”—— 极淡的 accent 色角标(模板默认 <code>--ornament-ink</code> = 6% 不透明度的 accent),不与任何内容争夺注意力。模板已内置为 <code>.ornament</code>,<strong>默认注释关闭</strong>:每张海报都盖同一枚角标就是指纹,只在锁定方向确实需要时启用并改写文字。</p>
+    <div class="ax8-scroll">
+      <div class="ax8-strip ax8-cropb">
+        <div class="ax8-h-left">
+          <div>
+            <div class="ax8-title">Scaling Power-Flow Learning to Continent-Sized Grids</div>
+            <div class="ax8-tag">One graph model, twelve national grids, zero retraining at the boundary.</div>
+            <div class="ax8-authors">L. Fontaine &middot; R. Okafor &middot; S. Marchetti &middot; Y. Nakamura</div>
+            <div class="ax8-aff">Grid Learning Lab &middot; Institute of Energy Systems</div>
+          </div>
+        </div>
+        <div class="ax8-ghost"><div class="ax8-gcard"></div><div class="ax8-gcard"></div><div class="ax8-gcard"></div><div class="ax8-gcard"></div></div>
+        <span class="ax8-wm">Grid Learning Lab &middot; IES</span>
+      </div>
+    </div>
+    <p class="ax8-note">注:成品中水印位于整版角落(通常右下),不只在页头区;演示为在缩略尺度可见把不透明度提到 ~20%,移植时从模板默认 6% 起步。文字用机构缩写或实验室名,不重复已有的 affiliation 行全文。</p>
   </section>
 
   <!-- ==================== 页尾 ==================== -->

@@ -165,6 +165,13 @@
     /* Corner-radius scale. Every border-radius calc() multiplies by this;
        1 = the shipped soft look, 0 = square/flat (see templates/THEMES.md). */
     --rs: 1;
+    /* Figure mount: the ground behind paper figures (transparent PNGs sit on
+       it) and the keyline around them (.figure img / .ff-fig img). Re-theme
+       with the Axis 6 frame decision so figures sit mounted in the design
+       instead of pasted on it; --fig-frame: transparent = frameless mount.
+       QR backgrounds stay literal white -- that's scannability, not styling. */
+    --fig-bg: white;
+    --fig-frame: var(--border-soft);
     /* ===== END DESIGN TOKENS ===== */
   }
 
@@ -612,8 +619,8 @@
        inline width) to size it; the only inline-style exception the gate
        allows is `style="width: NN%"` on a data-source="paper" <img>. */
     border-radius: calc(4 * var(--u) * var(--rs));
-    border: calc(1 * var(--u)) solid var(--border-soft);
-    background: white;
+    border: calc(1 * var(--u)) solid var(--fig-frame);
+    background: var(--fig-bg);
   }
   .figure .caption {
     font-family: var(--font-sans);
@@ -647,8 +654,8 @@
     display: block;
     width: 100%;
     border-radius: calc(4 * var(--u) * var(--rs));
-    border: calc(1 * var(--u)) solid var(--border-soft);
-    background: white;
+    border: calc(1 * var(--u)) solid var(--fig-frame);
+    background: var(--fig-bg);
   }
   .ff-fig .caption {
     font-family: var(--font-sans);
@@ -991,7 +998,7 @@
                <img src="assets/logos/lab.png" alt="Lab" data-color-exempt="logo">
              No logo? Delete this entire <div class="logo-slot"> instead of
              leaving it empty (an empty slot just adds a stray gap). The .aff
-             text line and the corner .ornament still carry attribution. -->
+             text line still carries attribution. -->
       </div>
       <div class="qr-block">
         <!-- TODO: replace with your real QR code. The default below is an inline
@@ -1002,7 +1009,7 @@
                $ python -c "import qrcode; qrcode.make('https://your-url').save('qr.png')"
              then change src to "assets/qr/qr.png" (export at >= 2x rendered size). -->
         <img data-color-exempt="logo" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%23fff'/><g fill='%23222'><rect x='4' y='4' width='26' height='26'/><rect x='70' y='4' width='26' height='26'/><rect x='4' y='70' width='26' height='26'/></g><g fill='%23fff'><rect x='10' y='10' width='14' height='14'/><rect x='76' y='10' width='14' height='14'/><rect x='10' y='76' width='14' height='14'/></g><g fill='%23222'><rect x='14' y='14' width='6' height='6'/><rect x='80' y='14' width='6' height='6'/><rect x='14' y='80' width='6' height='6'/><rect x='38' y='10' width='4' height='4'/><rect x='48' y='10' width='4' height='4'/><rect x='58' y='10' width='4' height='4'/><rect x='34' y='34' width='4' height='4'/><rect x='44' y='38' width='4' height='4'/><rect x='54' y='34' width='4' height='4'/><rect x='62' y='40' width='4' height='4'/><rect x='38' y='46' width='4' height='4'/><rect x='50' y='52' width='4' height='4'/><rect x='62' y='56' width='4' height='4'/><rect x='34' y='60' width='4' height='4'/><rect x='44' y='66' width='4' height='4'/><rect x='56' y='62' width='4' height='4'/><rect x='80' y='80' width='4' height='4'/><rect x='88' y='86' width='4' height='4'/></g><text x='50' y='54' text-anchor='middle' font-family='sans-serif' font-size='6' font-weight='bold' fill='%23888'>QR</text></svg>" alt="QR placeholder — replace with your real QR before printing">
-        <div class="qr-label">Paper &amp; Code</div>
+        <div class="qr-label">TODO: QR label</div>
       </div>
     </div>
   </header>
@@ -1118,14 +1125,21 @@
 
   <!-- ============================ OPTIONAL TAKEAWAYS STRIP ============================ -->
   <section class="takeaways-strip" data-measure-role="footer-strip">
-    <div class="ts-title"><span class="num">6</span> Takeaways</div>
-    <div class="ts-item"><span class="ts-key">Idea.</span><span class="ts-text">TODO: 1-line.</span></div>
-    <div class="ts-item"><span class="ts-key">Method.</span><span class="ts-text">TODO: 1-line.</span></div>
-    <div class="ts-item"><span class="ts-key">Result.</span><span class="ts-text">TODO: 1-line.</span></div>
-    <div class="ts-item"><span class="ts-key">Practical.</span><span class="ts-text">TODO: 1-line.</span></div>
+    <!-- Strip title + slot labels are microcopy, not canon (SKILL.md Step 3):
+         reword both to the poster's voice; 3-4 slots, any labels. The old fixed
+         default ("Takeaways" + Idea/Method/Result/Practical) shipped on every
+         poster is a fingerprint -- treat it as one example set, not the answer. -->
+    <div class="ts-title"><span class="num">6</span> TODO: strip title</div>
+    <div class="ts-item"><span class="ts-key">TODO.</span><span class="ts-text">TODO: 1-line.</span></div>
+    <div class="ts-item"><span class="ts-key">TODO.</span><span class="ts-text">TODO: 1-line.</span></div>
+    <div class="ts-item"><span class="ts-key">TODO.</span><span class="ts-text">TODO: 1-line.</span></div>
+    <div class="ts-item"><span class="ts-key">TODO.</span><span class="ts-text">TODO: 1-line.</span></div>
   </section>
 
   <!-- ============================ FOOTER ============================ -->
+  <!-- Footer labels ("Code:" / "Contact:" / "Acknowledgements:") are microcopy --
+       reword or reorder to the poster's voice rather than shipping this exact
+       skeleton every time (SKILL.md Step 3). -->
   <div class="footer" data-measure-role="footer">
     <div>
       <strong class="method-name">METHOD NAME</strong> &middot; Venue Year &middot;
@@ -1137,8 +1151,11 @@
     </div>
   </div>
 
-  <!-- Optional watermark — delete if you don't want it. -->
+  <!-- OPTIONAL identity accessory (Axis 8): faint corner watermark. OFF by
+       default -- the same corner mark on every poster is a fingerprint.
+       Enable (uncomment + reword) only when the locked direction calls for it:
   <div class="ornament">LAB &middot; INSTITUTION</div>
+  -->
 
 </div>
 
