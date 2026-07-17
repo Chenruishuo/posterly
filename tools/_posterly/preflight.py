@@ -36,7 +36,7 @@ from urllib.parse import unquote, urlsplit
 # set in a ``data-measure-role`` attribute is almost certainly a typo
 # and would silently be ignored by the geometry pass.
 KNOWN_ROLES: set[str] = {
-    "poster", "header", "banner", "body",
+    "poster", "header", "banner", "body", "band",
     "column", "card", "hero", "footer-strip", "footer",
 }
 
@@ -58,6 +58,11 @@ KNOWN_ROLES: set[str] = {
 ROLE_PARENTS: dict[str, tuple[str, ...]] = {
     "header":       ("poster",),
     "banner":       ("poster",),
+    # ``band`` is the full-width CONTENT band of the portrait skeletons
+    # (DESIGN-AXES.md, Axis 1 portrait translations): like ``banner`` its
+    # bottom never feeds the column-alignment spread, but unlike banner
+    # its content IS scanned by the clip / broken-image / letterbox gates.
+    "band":         ("poster",),
     "body":         ("poster",),
     # ``body`` is allowed for footer-strip/footer for the same reason
     # ``poster`` is allowed for column/hero below: a hand-rolled layout

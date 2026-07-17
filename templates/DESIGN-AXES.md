@@ -80,30 +80,31 @@ technique; there is no portrait corpus yet.
   than on 60×36 (landscape-balanced ≈ portrait-dense) — budget content down
   before type size (clash rule 1).
 - The narrow-header masthead rules (logo stacking above the QR, one-line
-  footer blocks) live in SKILL.md and apply to every skeleton here. One
-  exception to re-judge by hand: on the **title-spine** form the `header`
-  role is a vertical rail, and Gate E's horizontal-masthead calibrations
-  (logo ≤ 22% of header *width*, right-block ≤ 32%, TITLE-SQUEEZED, and the
-  logo↔QR height match) mis-fire there — re-judge exactly that calibration
-  class visually and record the accepted deviations; stack rail logos/QR with
-  `.logo-row.logo-stack` (exempt from the height match) re-capped to the rail
-  width. Never waive LOGO/BROKEN or genuine overflow. A rail-aware Gate E is
-  queued alongside the `band` role below.
+  footer blocks) live in SKILL.md and apply to every skeleton here. On the
+  **title-spine** form the `header` role is a vertical rail; polish's Gate E
+  detects it automatically (header taller than 1.5× its width) and swaps the
+  horizontal-masthead calibrations (logo ≤ 22% of header *width*,
+  right-block ≤ 32%, TITLE-SQUEEZED/-OFFCENTER, the logo↔QR height match)
+  for rail checks: logos are capped by the rail's content width and blocks
+  are checked against all four rail edges. LOGO/BROKEN stays unconditional.
+  The polish summary prints a `vertical rail` line when the mode is active —
+  if that line is missing on a title-spine poster, the header role landed on
+  the wrong element. Stack rail logos/QR with `.logo-row.logo-stack`.
 - Measure roles: `column` is only for **card stacks that end at the shared
   bottom line** (a band stack is ONE full-width column, each band a `card`;
   the measure gate computes bottom-spread across all column/hero bottoms). A
-  full-width hero/stage band is `banner` (excluded from spread — the wave-3
-  orrery-band precedent), **not** `hero` (`hero` means a terminal panel that
-  bottom-aligns with the columns). Support blocks *above* a mid band must not
-  be `column`s either — wrap that whole upper region in a `banner`. `card`
-  only nests under `column`/`hero` (preflight), so banner-internal modules
-  carry no role. Two caveats: `banner` must hang directly under `poster`,
-  never inside a `body`-role region (preflight); and banner content escapes
-  the clipping / broken-image / letterboxing gates that cover
-  `card`/`column`/`hero` — eyeball the band in the print-emulated render
-  (the `render_preview` PDF/PNG, not a screen view; a first-class
-  non-terminal `band` role that keeps those checks is the queued tool
-  extension).
+  full-width hero/stage band is `band` (excluded from spread like `banner`,
+  but its content keeps the clipping / broken-image / letterbox
+  checks), **not** `hero` (`hero` means a terminal panel that bottom-aligns
+  with the columns) and not `banner` (reserve that for the thin framework
+  banner; wave-3 posters predate the `band` role and still carry `banner`
+  stage bands). Support blocks *above* a mid band must not be `column`s
+  either — wrap that whole upper region in a `band`. `card` only nests under
+  `column`/`hero` (preflight), so band-internal modules carry no role. Two
+  caveats: `band` must hang directly under `poster`, never inside a
+  `body`-role region (preflight); and the gates scan only the band container
+  itself, not author-built inner clip boxes — still eyeball the band in the
+  print-emulated render (the `render_preview` PDF/PNG, not a screen view).
 - Rendered wireframes with copy-ready grid definitions:
   `specimens/axes/axis1_layout.html` §竖版翻译.
 

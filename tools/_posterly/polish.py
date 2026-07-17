@@ -136,6 +136,20 @@ DEFAULT_LOGO_QR_TOL = 0.15
 LOGO_WIDE_QR_BAND = (0.55, 0.85)
 DEFAULT_RIGHTBLOCK_MAX_RATIO = 0.32
 DEFAULT_TITLE_MIN_RATIO = 0.45
+# Vertical-rail masthead detection (Gate E). Every Gate E calibration
+# above is written for a HORIZONTAL masthead strip (logo width as % of
+# header width, QR-height-matched logo row, side blocks squeezing a
+# centred title). A portrait title-spine masthead (DESIGN-AXES Axis 1,
+# P5) is a tall narrow RAIL -- those ratios are meaningless there and
+# every one of them mis-fires. A rail is unmistakable in practice
+# (P5's ~3.8in x ~33in rail is ~9:1; a portrait strip masthead is
+# ~1:7 the other way), so a modest 1.5:1 height-over-width threshold
+# separates them with a wide margin. In rail mode the horizontal
+# calibrations are SKIPPED and replaced by rail checks: logos capped by
+# the rail's content width, and blocks checked against all four content
+# edges. LOGO/BROKEN is unconditional in both modes.
+RAIL_MIN_ASPECT = 1.5
+
 # Title-centring gate (Gate E). The shipped header centres the title with
 # `1fr minmax(50%, auto) 1fr`; a side block (logo / venue badge / QR) heavier
 # than the other still pulls the centred track aside. Soft WARN when the
@@ -262,6 +276,38 @@ _POLISH_JS = r"""
           rendered_w: r.width,
           rendered_h: r.height,
           card_w: hw,
+          stage_w: sr.width,
+          stage_h: sr.height,
+          natural_w: img.naturalWidth || 0,
+          natural_h: img.naturalHeight || 0,
+        });
+      });
+    });
+  // Band images (full-width portrait content band, DESIGN-AXES Axis 1
+  // portrait translations) take the same hero path: broken-image check
+  // plus the wide-short-stage letterbox test, measured against the
+  // nearest stage box (`.band-stage`, or `.hero-stage` when a hero
+  // construction was re-used inside the band) falling back to the band.
+  document.querySelectorAll('[data-measure-role="band"]')
+    .forEach(band => {
+      const bw = band.getBoundingClientRect().width;
+      band.querySelectorAll('img').forEach(img => {
+        const r = img.getBoundingClientRect();
+        if (r.width < 50) return;  // skip venue badges / inline icons
+        const stage = img.closest('.band-stage, .hero-stage') || band;
+        const sr = stage.getBoundingClientRect();
+        figures.push({
+          card_index: -1,
+          role: 'band',
+          src: img.getAttribute('src') || '',
+          alt: img.getAttribute('alt') || '',
+          fig_layout: img.getAttribute('data-fig-layout') || '',
+          obj_fit: window.getComputedStyle(img).objectFit || '',
+          off_left: r.left - sr.left,
+          off_right: sr.right - r.right,
+          rendered_w: r.width,
+          rendered_h: r.height,
+          card_w: bw,
           stage_w: sr.width,
           stage_h: sr.height,
           natural_w: img.naturalWidth || 0,
@@ -465,16 +511,27 @@ _POLISH_JS = r"""
   const header = document.querySelector('[data-measure-role="header"]');
   const headerRect = header ? header.getBoundingClientRect() : null;
   const headerW = headerRect ? headerRect.width : 0;
+  // height too: a vertical-rail masthead (portrait P5 title spine) is
+  // detected Python-side from the aspect ratio and swaps the horizontal
+  // calibrations for rail checks.
+  const headerH = headerRect ? headerRect.height : 0;
   // poster-centre x of the header box, for the title-centring gate below
   const headerCx = headerRect ? headerRect.left + headerRect.width / 2 : 0;
-  // content-box edges (inside border + padding), for the overflow gate
+  // content-box edges (inside border + padding), for the overflow gate;
+  // top/bottom feed the rail-mode vertical overflow check only.
   let headerContentLeft = 0, headerContentRight = 0;
+  let headerContentTop = 0, headerContentBottom = 0;
   if (header && headerRect) {
     const cs = getComputedStyle(header);
     headerContentLeft = headerRect.left
       + (parseFloat(cs.borderLeftWidth) || 0) + (parseFloat(cs.paddingLeft) || 0);
     headerContentRight = headerRect.right
       - (parseFloat(cs.borderRightWidth) || 0) - (parseFloat(cs.paddingRight) || 0);
+    headerContentTop = headerRect.top
+      + (parseFloat(cs.borderTopWidth) || 0) + (parseFloat(cs.paddingTop) || 0);
+    headerContentBottom = headerRect.bottom
+      - (parseFloat(cs.borderBottomWidth) || 0)
+      - (parseFloat(cs.paddingBottom) || 0);
   }
   const logos = [];
   const qrs = [];
@@ -524,6 +581,8 @@ _POLISH_JS = r"""
           cx: r.left + r.width / 2,
           left: r.left,
           right: r.right,
+          top: r.top,
+          bottom: r.bottom,
         });
       });
   }
@@ -1001,7 +1060,12 @@ _POLISH_JS = r"""
   // A captioned method figure in the optional framework banner whose flex
   // ITEM ("slot") is much wider than the image wastes banner width and steals
   // room from the body. Anchored on the IMG (not <figure>), so any wrapper
-  // element the agent picks is covered. The "slot" is the banner's DIRECT
+  // element the agent picks is covered. Deliberately NOT extended to the
+  // `band` role: the shipped banner-figure contract makes "slot = banner's
+  // direct child" meaningful, but a custom band usually wraps its whole
+  // content in one inner element -- the walk-up would call the full band
+  // the "slot" and flag a legitimate image-beside-text layout. Bands get
+  // the hero-style letterbox + broken checks instead (section 1). The "slot" is the banner's DIRECT
   // child that contains the image -- the box that competes with the body for
   // banner width; a bare <img> child IS its own slot, so slack==0 and it can
   // never trip. `caption_like_w` is the widest non-image descendant of the
@@ -1499,9 +1563,12 @@ _POLISH_JS = r"""
 
   return {figures, orphans, cols, cards, innerVoids, trackVoids, flexbr,
           besideVoids, widows, glueChains, wrapCensus, contrasts,
-          logos, qrs, header_w: headerW, header_cx: headerCx,
+          logos, qrs, header_w: headerW, header_h: headerH,
+          header_cx: headerCx,
           header_content_left: headerContentLeft,
-          header_content_right: headerContentRight, headerBlocks,
+          header_content_right: headerContentRight,
+          header_content_top: headerContentTop,
+          header_content_bottom: headerContentBottom, headerBlocks,
           bannerImgs};
 }
 """
@@ -1737,11 +1804,12 @@ def report_polish(data: dict, args: argparse.Namespace,
             content_w = min(rw, float(nw))
         else:
             content_w = rw
-        # Hero branch: stop blanket-exempting hero images. The %-of-card AR
-        # gates don't fit a hero panel, but a narrow-aspect picture dropped
-        # into a wide-but-SHORT `.hero-stage` is height-constrained and
-        # leaves big symmetric side voids. Flag exactly that shape.
-        if role == "hero":
+        # Hero/band branch: stop blanket-exempting hero images. The
+        # %-of-card AR gates don't fit a hero panel or a full-width band,
+        # but a narrow-aspect picture dropped into a wide-but-SHORT stage
+        # is height-constrained and leaves big symmetric side voids. Flag
+        # exactly that shape (same geometry for both roles).
+        if role in ("hero", "band"):
             sw = float(f.get("stage_w", 0) or 0)
             sh = float(f.get("stage_h", 0) or 0)
             ol = f.get("off_left")
@@ -1764,13 +1832,15 @@ def report_polish(data: dict, args: argparse.Namespace,
                 if (fill < hero_fill and ar_mult > hero_ar_mult
                         and symmetric):
                     warns.append(
-                        f"HERO/STAGE-LETTERBOX: '{ascii_safe(f['src'])}' "
+                        f"{role.upper()}/STAGE-LETTERBOX: "
+                        f"'{ascii_safe(f['src'])}' "
                         f"(AR={ar:.2f}) fills only {fill * 100:.0f}% of its "
-                        f"hero-stage width -- the stage is {stage_ar:.1f}:1, "
+                        f"{role}-stage width -- the stage is "
+                        f"{stage_ar:.1f}:1, "
                         f"much wider than the image, so a height-constrained "
                         f"picture leaves big symmetric side voids. Give the "
                         f"figure real vertical room (move a secondary diagram "
-                        f"out of the hero into a card), or constrain the "
+                        f"out of the {role} into a card), or constrain the "
                         f"stage width toward the image's aspect ratio."
                     )
             continue
@@ -2173,7 +2243,19 @@ def report_polish(data: dict, args: argparse.Namespace,
     title_offset_max = getattr(
         args, "title_offset_max", DEFAULT_TITLE_OFFSET_MAX)
     header_w = float(data.get("header_w", 0) or 0)
+    header_h = float(data.get("header_h", 0) or 0)
     header_cx = float(data.get("header_cx", 0) or 0)
+    # Vertical-rail masthead (portrait title spine, DESIGN-AXES Axis 1
+    # P5): the horizontal-strip calibrations below (LOGO/WIDE %, the QR
+    # height match, TITLE-SQUEEZED/-OFFCENTER) mis-fire on a tall narrow
+    # rail and are swapped for rail checks; see RAIL_MIN_ASPECT.
+    rail_header = header_w > 0 and header_h / header_w > RAIL_MIN_ASPECT
+    # content-box edges (used by the overflow checks; left/right also cap
+    # the logo width in rail mode).
+    content_l = float(data.get("header_content_left", 0) or 0)
+    content_r = float(data.get("header_content_right", 0) or 0)
+    content_t = float(data.get("header_content_top", 0) or 0)
+    content_b = float(data.get("header_content_bottom", 0) or 0)
     qr_h = max((float(q.get("rendered_h", 0)) for q in data.get("qrs", [])),
                default=0.0)
     wide_lo, wide_hi = LOGO_WIDE_QR_BAND
@@ -2198,7 +2280,21 @@ def report_polish(data: dict, args: argparse.Namespace,
                 f"blank in print."
             )
             continue
-        if header_w > 0 and lw / header_w > logo_max_w:
+        if rail_header:
+            # In a rail the logo does not compete with the title for
+            # horizontal room -- the %-of-header-width cap is meaningless.
+            # The real rail defect is a logo wider than the rail itself.
+            rail_w = content_r - content_l
+            if rail_w > 0 and lw > rail_w + 2.0:
+                warns.append(
+                    f"LOGO/WIDE: '{ascii_safe(lg['src'])}' renders "
+                    f"{lw:.0f}px wide but the vertical-rail masthead's "
+                    f"content box is only {rail_w:.0f}px -- it spills past "
+                    f"the rail. Shrink the logo (size class on the "
+                    f".logo-slot, or width:100% inside the rail); see Logo "
+                    f"handling in SKILL.md."
+                )
+        elif header_w > 0 and lw / header_w > logo_max_w:
             warns.append(
                 f"LOGO/WIDE: '{ascii_safe(lg['src'])}' renders at "
                 f"{lw / header_w * 100:.0f}% of header width (limit "
@@ -2209,8 +2305,11 @@ def report_polish(data: dict, args: argparse.Namespace,
         # The venue badge sits left of the title at its own scale, and a
         # logo-stack is normalized by WIDTH (intentionally NOT QR-height-
         # matched) -- for both, only the broken/width checks above apply;
-        # the QR height match is a height-matched-row rule.
-        if lg.get("venue") or lg.get("stacked") or qr_h <= 0 or lh <= 0:
+        # the QR height match is a height-matched-row rule. A rail
+        # masthead stacks logos ABOVE the QR, so no height-matched row
+        # exists there at all.
+        if (rail_header or lg.get("venue") or lg.get("stacked")
+                or qr_h <= 0 or lh <= 0):
             continue
         if "logo-wide" in str(lg.get("slot_classes", "")):
             ratio = lh / qr_h
@@ -2231,7 +2330,9 @@ def report_polish(data: dict, args: argparse.Namespace,
                 f".logo-slot size class so the header strip reads level. "
                 f"See Logo handling in SKILL.md."
             )
-    if header_w > 0:
+    if header_w > 0 and not rail_header:
+        # Title-squeeze / centring ratios only describe a horizontal
+        # strip; a rail's title runs vertically and has no side blocks.
         for hb in data.get("headerBlocks", []):
             w = float(hb.get("w", 0))
             if w <= 0:
@@ -2275,31 +2376,48 @@ def report_polish(data: dict, args: argparse.Namespace,
                             f"trade-off. See Logo handling in SKILL.md."
                         )
 
-        # Header overflow -- the case the ratio + offset gates miss: both side
-        # blocks large but balanced keeps the title centred and each side under
-        # its ratio, yet the row overflows the header content box (the centre
-        # track is floored at 50%, so it cannot give way). measure's clipping
-        # gate does not watch the header, so this is the only signal. We test
-        # the BOX edges against the header content box -- not block-vs-title
-        # overlap, since a title-block box floored at 50% is intentionally wide
-        # (text centred inside whitespace) and would overlap a neighbour's box
-        # without the visible text colliding.
-        content_l = float(data.get("header_content_left", 0) or 0)
-        content_r = float(data.get("header_content_right", 0) or 0)
-        if content_r > content_l:
-            for hb in data.get("headerBlocks", []):
-                if (float(hb.get("right", 0)) > content_r + 2.0
-                        or float(hb.get("left", 0)) < content_l - 2.0):
-                    warns.append(
-                        f"HEADER/OVERFLOW: the header block "
-                        f"'{ascii_safe(hb.get('cls', ''))}' spills past the "
-                        f"header edge -- the side blocks (logo / venue badge / "
-                        f"QR) are too wide to sit beside the title at its 50% "
-                        f"floor, so the row overflows instead of shrinking the "
-                        f"title. Shrink or stack the side blocks, or drop one; "
-                        f"see Logo handling in SKILL.md."
-                    )
-                    break
+    # Header overflow -- the case the ratio + offset gates miss: both side
+    # blocks large but balanced keeps the title centred and each side under
+    # its ratio, yet the row overflows the header content box (the centre
+    # track is floored at 50%, so it cannot give way). measure's clipping
+    # gate does not watch the header, so this is the only signal. We test
+    # the BOX edges against the header content box -- not block-vs-title
+    # overlap, since a title-block box floored at 50% is intentionally wide
+    # (text centred inside whitespace) and would overlap a neighbour's box
+    # without the visible text colliding. Runs in BOTH modes: a rail's
+    # blocks can spill sideways (too wide for the rail) just as a strip's
+    # can, and in rail mode the vertical edges are checked too (the rail
+    # stacks its blocks, so the overflow axis is vertical there).
+    if header_w > 0 and content_r > content_l:
+        for hb in data.get("headerBlocks", []):
+            spills_x = (float(hb.get("right", 0)) > content_r + 2.0
+                        or float(hb.get("left", 0)) < content_l - 2.0)
+            spills_y = (rail_header and content_b > content_t
+                        and (float(hb.get("bottom", 0)) > content_b + 2.0
+                             or float(hb.get("top", 0)) < content_t - 2.0))
+            if not (spills_x or spills_y):
+                continue
+            if rail_header:
+                warns.append(
+                    f"HEADER/OVERFLOW: the masthead block "
+                    f"'{ascii_safe(hb.get('cls', ''))}' spills past the "
+                    f"vertical rail's "
+                    f"{'side' if spills_x else 'top/bottom'} edge -- the "
+                    f"rail stacks its blocks, so shrink the block or give "
+                    f"the stack less content; see Logo handling in "
+                    f"SKILL.md."
+                )
+            else:
+                warns.append(
+                    f"HEADER/OVERFLOW: the header block "
+                    f"'{ascii_safe(hb.get('cls', ''))}' spills past the "
+                    f"header edge -- the side blocks (logo / venue badge / "
+                    f"QR) are too wide to sit beside the title at its 50% "
+                    f"floor, so the row overflows instead of shrinking the "
+                    f"title. Shrink or stack the side blocks, or drop one; "
+                    f"see Logo handling in SKILL.md."
+                )
+            break
 
     # ---- Gate F: framework-banner image slot ----
     # A captioned method figure in the framework banner whose flex-item slot is
@@ -2401,6 +2519,11 @@ def report_polish(data: dict, args: argparse.Namespace,
     print(f"  beside-text floats  : {len(data.get('besideVoids', []))}")
     print(f"  flex/<br> parents   : {len(data.get('flexbr', []))}")
     print(f"  header logos        : {len(data.get('logos', []))}")
+    if rail_header:
+        print(f"  header masthead     : vertical rail "
+              f"({header_w:.0f}x{header_h:.0f}px) -- horizontal "
+              f"calibrations (LOGO/WIDE %, LOGO/QR-MISMATCH, TITLE-*) "
+              f"swapped for rail checks")
     print(f"  banner images       : {len(data.get('bannerImgs', []))}")
     print(f"  warnings            : {len(warns)}")
     for w in warns:

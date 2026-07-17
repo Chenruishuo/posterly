@@ -604,23 +604,26 @@ def _measure_once(
     # over-full item back inside its track and clips the overflow -- turning
     # a too-full poster into a false PASS. (A fixed-/max-height box with any
     # non-visible overflow clips the same way, without the flex step.) Catch
-    # it directly by comparing scroll-size to client-size on the alignment
-    # containers -- the exact roles whose bottoms feed spread/gap below.
+    # it directly by comparing scroll-size to client-size on the role
+    # containers themselves.
     #
-    # Scope is deliberately those role containers (card, column, hero), NOT
-    # a full-descendant sweep: the latter trips over MathJax's off-screen
-    # `<mjx-assistive-mml>` a11y nodes (overflow:hidden, a few px of
-    # intrinsic overflow) and would false-fail every math poster. Known
-    # limitation: an author-built inner panel that clips via its own
-    # `max-height; overflow:hidden` (e.g. a scroll-box around a wide table)
-    # is NOT scanned -- only the role container itself. `overflow: visible`
-    # is never flagged: that content spills VISIBLY and the existing
-    # gap/spread gate already sees the displaced box -- only the *hidden*
-    # clip is invisible to it.
+    # Scope is deliberately those role containers (card, column, hero,
+    # band), NOT a full-descendant sweep: the latter trips over MathJax's
+    # off-screen `<mjx-assistive-mml>` a11y nodes (overflow:hidden, a few
+    # px of intrinsic overflow) and would false-fail every math poster.
+    # card/column/hero are the roles whose bottoms feed spread/gap below;
+    # `band` (the full-width portrait content band) never enters the
+    # spread, but a hidden clip inside it loses print content just the
+    # same, so it is scanned here too. Known limitation: an author-built
+    # inner panel that clips via its own `max-height; overflow:hidden`
+    # (e.g. a scroll-box around a wide table) is NOT scanned -- only the
+    # role container itself. `overflow: visible` is never flagged: that
+    # content spills VISIBLY and the existing gap/spread gate already sees
+    # the displaced box -- only the *hidden* clip is invisible to it.
     clip_overflows = {"hidden", "clip", "scroll", "auto"}
     clip_problems: list[str] = []
     for el in data:
-        if el["role"] not in ("card", "column", "hero"):
+        if el["role"] not in ("card", "column", "hero", "band"):
             continue
         oy = str(el.get("overflow_y") or "").lower()
         ox = str(el.get("overflow_x") or "").lower()

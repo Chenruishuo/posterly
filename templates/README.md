@@ -34,6 +34,9 @@ A new template **MUST**:
      venue-badge / QR blocks) — `polish`'s logo & QR gates only look *under* this role, so it
      must wrap those blocks, not just the title text
    - `banner` on a horizontal banner row (optional)
+   - `band` on a full-width **content** band (portrait stage/hero bands, DESIGN-AXES Axis 1
+     portrait translations) — excluded from the alignment spread like `banner`, but its content
+     keeps the clip / broken-image / letterbox checks; direct child of `poster`
    - `body` on the body grid container
    - `column` on each vertical content column
    - `card` on each content card inside columns
