@@ -639,7 +639,7 @@ def build_parser() -> argparse.ArgumentParser:
              "style_check.py --disable. posterly default '4,5' drops the "
              "<=2-hue-cluster (R4) and no-gradient (R5) design-opinion rules "
              "while keeping the operational discipline; pass '' to enforce "
-             "all 13.",
+             "all 14.",
     )
     p.add_argument(
         "--measure-budget", type=int, default=None,

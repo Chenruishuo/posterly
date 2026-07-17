@@ -48,6 +48,13 @@
     --font-serif: "Charter","Source Serif Pro","Georgia",serif;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  /* BASE DEFENSES (see templates/*_neutral.html for the annotated
+     version): orphan/widow wrap protection on prose, balance on the
+     centered title. Keep this block in any skeleton, incl. custom. */
+  p, li, dd, figcaption,
+  .body-text, .caption, .callout, .section-title { text-wrap: pretty; }
+  .title { text-wrap: balance; }
   html, body { background: #2b2b2b; font-family: var(--font-serif); color: var(--text-primary); }
 
   .poster {

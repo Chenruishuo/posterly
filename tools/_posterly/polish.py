@@ -1,6 +1,6 @@
 """Soft visual-polish gate — runs at Step 6.
 
-Three gates the hard alignment gate cannot see:
+Gates the hard alignment gate cannot see:
 
   - **Gate A: figure sizing by aspect ratio.** A wide figure (AR > 1.3)
     rendered at 38% of card width wastes 60% of the column even when
@@ -19,10 +19,19 @@ Three gates the hard alignment gate cannot see:
     ~80% bar: it must read as a filled rectangle, not merely avoid a runt).
     Judged by the last
     line's WIDTH as a fraction of the measure (not word count), so a short
-    two-word tail flags and a single long word filling the line does not;
-    an ``&nbsp;``-glued tail widens the last line above the threshold. A
-    trailing figure/icon/table keeps the last line unjudgeable, but a short
+    two-word tail flags and a single long word filling the line does not.
+    A trailing figure/icon/table keeps the last line unjudgeable, but a short
     text tail ending in inline math (``by $\\lambda$.``) is caught.
+    Long running prose (> the char cap) and GENERIC blocks -- any block-ish
+    element holding worded text, discovered by geometry so custom-skeleton
+    class names are covered -- are judged by the conservative bar only: a
+    stranded SINGLE word under the runt width. (3) ``GLUE-CHAIN``: >= 3
+    words fused with ``&nbsp;`` (the lazy widow "fix") -- the unbreakable
+    unit wraps early as a whole and tears a hole in the line above; stat /
+    math / list idioms are exempt (< 3 prose words, or a pure separator
+    token in the chain). (4) ``TEXT-WRAP`` census: when >= 3 wrapped blocks
+    carry neither ``text-wrap: pretty`` nor ``balance``, the templates'
+    protective defaults were dropped (the custom-skeleton failure mode).
   - **Gate C: space-between fill.** ``justify-content: space-between``
     on a column with one short card produces a giant whitespace gap
     that reads as "this column ran out of things to say". Detected
@@ -34,6 +43,18 @@ Three gates the hard alignment gate cannot see:
     pinned to the bottom by ``margin-top: auto`` / ``justify-content:
     space-*`` -- the equal-height-row-with-unequal-content case, which
     ``CARD/TRAILING`` misses because the pinned tail makes trailing ~0).
+    ``TRACK/INNER-VOID`` extends the same geometry to header/footer tracks
+    (a vertical masthead spine / side rail), which are neither measure
+    columns nor ``.card`` -- the wave-2 spine stretched by
+    ``space-between`` shipped two ~500 px voids with every gate green.
+  - **Gate G: composed text/ground contrast.** ``style_check`` verifies
+    DECLARED token pairs; Gate G samples what actually RENDERED: each text
+    run's foreground against the alpha-composited ground beneath it, WCAG
+    ratio floored at ``--min-contrast`` (default 3.0 -- flags only
+    unambiguous defects; deliberate muted inks sit ~3.5+). Text over
+    images/gradients is skipped (verify those on the rendered crop). The
+    recurring incident class: an inline emphasis/highlight class that sets
+    a background but inherits text color from a different ground.
 
 Warns by default; ``--strict`` to exit non-zero. Hard-fails if the
 poster has no ``[data-measure-role]`` markup at all — a polish PASS on
@@ -148,6 +169,25 @@ DEFAULT_TALL_MAX_RATIO = 0.70
 DEFAULT_SQUARE_MIN_RATIO = 0.55
 DEFAULT_MAX_SPACE_BETWEEN_FILL = 0.05
 DEFAULT_MAX_CARD_TRAILING = 0.10
+
+# Composed-contrast gate (Gate G). style_check verifies DECLARED token pairs;
+# this verifies the COMPOSED result at render time -- the recurring incident
+# class is an inline emphasis/highlight class whose background lands under
+# text whose color was designed for a DIFFERENT ground (wave-1: rust lead-ins
+# on a steel-blue callout fill, 1.2:1; wave-2: inherited white '4.05' on a
+# pale .mark highlight, 1.4:1). 3.0 is deliberately below WCAG-AA body (4.5):
+# poster text is large-format and deliberate muted-ink designs sit ~3.5-4.5,
+# so the gate flags only unambiguous defects. Raise via --min-contrast for a
+# stricter pass.
+DEFAULT_MIN_CONTRAST = 3.0
+
+# text-wrap census (Gate B advisory). Warn only when at least this many
+# WRAPPED text blocks carry neither `text-wrap: pretty` nor `balance` -- one
+# or two unprotected blocks is normal (a deliberate tight lockup); a poster
+# full of them has dropped the templates' protective defaults (the usual
+# custom-skeleton failure: wave-2's band-rows poster shipped ZERO text-wrap
+# declarations and stranded both a body-text widow and a title 'Matching').
+DEFAULT_MIN_UNPROTECTED_WRAPS = 3
 
 
 from .textutil import ascii_safe
@@ -573,11 +613,87 @@ _POLISH_JS = r"""
   const BANNER_FILL_FRAC = 0.80;
   const WIDOW_SEL = '.callout, .body-text, .caption, .section-title,'
                   + ' .card p, .card li, .fb-text';
+  // Glue chains: >=3 words fused with &nbsp; form one unbreakable unit that
+  // wraps EARLY as a whole, tearing a hole in the line above -- the lazy
+  // widow "fix" the wave-2 posters shipped. Collected during the same walk.
+  const glueChains = [];
+  // text-wrap census: wrapped prose with neither `pretty` nor `balance` --
+  // custom skeletons routinely drop the templates' protective declarations
+  // (one wave-2 poster shipped ZERO text-wrap rules). Aggregated, not
+  // per-element, so it nudges instead of flooding.
+  const wrapCensus = [];
+
+  // Candidates come from TWO pools:
+  //   (1) the whitelisted prose classes above -- full RUNT_FRAC bar;
+  //   (2) every OTHER block-ish element that directly holds worded text,
+  //       discovered by GEOMETRY, not class name -- the 8-axis custom
+  //       skeletons author their own classes (.band-lede, .mh-sub, ...), so a
+  //       class whitelist goes blind exactly where wave-2's widows happened
+  //       (a stranded 'Matching' in a custom masthead subtitle). Generic
+  //       blocks are judged by the CONSERVATIVE bar only (single stranded
+  //       word), so unknown block types can't flood the report.
+  const candidates = [];
+  const wlSet = new Set();
   document.querySelectorAll(WIDOW_SEL).forEach(el => {
     // Scan only the most specific prose leaf: if this element CONTAINS another
     // candidate (a .callout wrapping a <p class="body-text">), skip it -- the
     // descendant is scanned on its own, so we never double-report one widow.
     if (el.querySelector(WIDOW_SEL)) return;
+    wlSet.add(el);
+    candidates.push({el, generic: false});
+  });
+  {
+    const root = document.querySelector('[data-measure-role="poster"]')
+              || document.body;
+    // "Blocky" = element that establishes its own line box flow; inline
+    // descendants (<strong>, <span>) stay part of the parent's paragraph.
+    const blockyCache = new Map();
+    const isBlocky = (el) => {
+      if (blockyCache.has(el)) return blockyCache.get(el);
+      const d = getComputedStyle(el).display;
+      // inline-* (inline, inline-block, inline-flex, inline-grid) all flow
+      // INSIDE the parent's line boxes -- treating them as blocks would make
+      // an inline-block chip a candidate of its own and, via the
+      // innermost-only rule below, DELETE the parent paragraph from the
+      // scan (its widow/census/glue coverage with it).
+      const b = !d.startsWith('inline') && d !== 'contents' && d !== 'none'
+             && !d.startsWith('ruby');
+      blockyCache.set(el, b);
+      return b;
+    };
+    // Nearest blocky ancestor of each worded text node = its paragraph box.
+    const candSet = new Set();
+    const twAll = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+    for (let tn = twAll.nextNode(); tn; tn = twAll.nextNode()) {
+      if (!/[\p{L}\p{N}]{2}/u.test(tn.nodeValue || '')) continue;
+      let el = tn.parentElement;
+      if (!el) continue;
+      // Math/SVG internals are not prose; TABLE cells wrap short lines by
+      // design (the widow contract doesn't fit them -- contrast still covers
+      // their text via the separate scan below).
+      if (el.closest('mjx-container, .MathJax, math, svg, table,'
+                     + ' script, style')) continue;
+      while (el && el !== root && !isBlocky(el)) el = el.parentElement;
+      if (el) candSet.add(el);
+    }
+    // Innermost blocks only: a wrapper holding both direct text and a texted
+    // block child would judge a "last line" that isn't visually last.
+    const hasCandDesc = new Set();
+    candSet.forEach(el => {
+      for (let p = el.parentElement; p; p = p.parentElement) {
+        if (candSet.has(p)) hasCandDesc.add(p);
+      }
+    });
+    candSet.forEach(el => {
+      if (hasCandDesc.has(el)) return;
+      if (wlSet.has(el) || el.closest(WIDOW_SEL)) return;  // pool (1) owns it
+      if (el.querySelector(WIDOW_SEL)) return;             // wraps a pool-(1) leaf
+      if (el.closest('[data-vrail-title]')) return;        // deliberate stack
+      candidates.push({el, generic: true});
+    });
+  }
+
+  candidates.forEach(({el, generic}) => {
     // A vrail rail title is a DELIBERATELY narrow stacked column
     // (each word on its own horizontal line, an over-long word broken with a soft
     // hyphen at a syllable boundary the AGENT judges). Its short last line is
@@ -586,6 +702,14 @@ _POLISH_JS = r"""
     // opt out of the widow check. See SKILL.md Gate B.
     if (el.hasAttribute('data-vrail-title')) return;
     const cs = getComputedStyle(el);
+    // text-wrap protection census (fed to the aggregated TEXT-WRAP note):
+    // `pretty` guards the last-line orphan on prose, `balance` evens centered
+    // display text. Chromium exposes the computed value on `textWrap` (older)
+    // or `text-wrap-style` (newer split property) -- read both.
+    const twStyle = (cs.textWrap || cs.getPropertyValue('text-wrap')
+                     || cs.getPropertyValue('text-wrap-style') || '');
+    const wrapProtected = /pretty|balance/.test(twStyle);
+    let censusCounted = false;
     const ws = (cs.whiteSpace || '').toLowerCase();
     if (ws.indexOf('nowrap') !== -1 || ws.indexOf('pre') !== -1) return;
     if ((cs.direction || '') === 'rtl') return;               // "last word" geometry unclear in RTL
@@ -659,7 +783,46 @@ _POLISH_JS = r"""
 
     paras.forEach(para => {
       const norm = para.flat.replace(/\s+/g, ' ').trim();
-      if (norm.length === 0 || norm.length > cap) return;     // skip empty / long running prose
+      if (norm.length === 0) return;
+      // ---- GLUE-CHAIN: >=3 words fused with &nbsp; (U+00A0). A 2-token glue
+      // is the documented legit use (marker/stat cell); a longer chain is an
+      // unbreakable unit that wraps EARLY as a whole and tears a hole in the
+      // line above -- the lazy widow "fix". Fused PROSE is the problem;
+      // stat / math / list idioms are legit glue, so a chain flags only when
+      // it carries >= 3 prose words (>= 2 consecutive letters) AND no pure
+      // separator token: "alpha = 4" (no prose words), "> GRPO 3.93 > EMPO
+      // 3.80." (2), and a middot-joined footer contact strip (separator
+      // tokens) all stay quiet; "holds length and keeps improving." flags.
+      // Runs BEFORE the length caps below -- chains hide in long prose too.
+      {
+        const chainRe = /(?:\S+\u00A0+){2,}\S+/g;
+        let cm;
+        while ((cm = chainRe.exec(para.flat)) !== null) {
+          const words = cm[0].split(/\u00A0+/);
+          const proseWords =
+            words.filter(w => /[\p{L}]{2}/u.test(w)).length;
+          // A list/contact-strip separator ANYWHERE in the chain (middot,
+          // pipe, slash, en/em dash -- deliberately NOT the word-internal
+          // hyphen: a fused hyphenated compound is still fused prose) marks
+          // a joined-list idiom -- footers glue `&nbsp;\u00B7` tight against
+          // the next token, so a token-level "pure separator" test misses
+          // them.
+          const hasSep = /[\u00B7|/\u2014\u2013]/.test(cm[0]);
+          if (proseWords < 3 || hasSep) continue;
+          glueChains.push({
+            tag: el.tagName.toLowerCase(),
+            cls: el.className || '',
+            chain: cm[0].replace(/\u00A0+/g, ' ').slice(0, 60),
+            words: words.length,
+          });
+        }
+      }
+      // Long running prose used to be SKIPPED outright (norm.length > cap) --
+      // which is exactly how a 262-char .body-text shipped a stranded
+      // 'AIME24/25).' last line. Long prose (and every generic, unlisted-class
+      // block) is now judged by the CONSERVATIVE bar instead: only a stranded
+      // SINGLE word flags -- short multi-word tails are normal in long prose.
+      const extremeOnly = generic || norm.length > cap;
       // Tokenise on \S+ (JS `\s` includes U+00A0, so `&nbsp;` is a SEPARATOR
       // here -- a glued pair is two tokens). Token COUNT no longer decides;
       // the WIDTH test below does. The recommended `&nbsp;` glue still helps,
@@ -768,6 +931,15 @@ _POLISH_JS = r"""
         }
       }
       if (lines.length < 2) return;                           // single visual line: nothing to widow
+      // Census: this block genuinely WRAPS, so it either carries wrap
+      // protection (text-wrap: pretty / balance) or it doesn't. Once per el.
+      if (!censusCounted) {
+        censusCounted = true;
+        wrapCensus.push({
+          cls: el.className || '', tag: el.tagName.toLowerCase(),
+          protected: wrapProtected,
+        });
+      }
       const last = lines[lines.length - 1];
       // A last line carrying a FIGURE / icon / table (real media) is OUTSIDE
       // this prose-runt contract -- its width as a "runt" is meaningless and a
@@ -803,6 +975,12 @@ _POLISH_JS = r"""
       // the banner bar rather than silently falling back to the runt bar.
       const isBanner = !!el.closest('.fb-text');
       const threshold = isBanner ? BANNER_FILL_FRAC : RUNT_FRAC;
+      // Conservative bar for long prose / generic blocks: judge ONLY a
+      // stranded SINGLE word (one text token on the last line, still under
+      // the runt width). Multi-word short tails are normal in long running
+      // prose and unknowable in unlisted block types -- flagging them there
+      // would flood; a lone stranded word is bad in ANY block type.
+      if (extremeOnly && last.tis.size > 1) return;
       if (measure > 0 && (lastW / measure) < threshold) {
         const ord = Array.from(last.tis).sort((a, b) => a - b);
         widows.push({
@@ -813,6 +991,7 @@ _POLISH_JS = r"""
           lines: lines.length,
           text: (norm.length > 60) ? ('...' + norm.slice(-57)) : norm,
           banner: isBanner,   // banner -> "fill the rectangle" message; else the runt message
+          mode: generic ? 'generic' : (extremeOnly ? 'long' : 'std'),
         });
       }
     });
@@ -897,61 +1076,430 @@ _POLISH_JS = r"""
   // Scope to the poster so a stray `.card` outside it can't be sampled.
   const ivRoot = document.querySelector('[data-measure-role="poster"]')
               || document;
+  // Shared geometry: largest inter-child vertical gap inside `box`, minus its
+  // stated row-gap. Used for cards AND for header/footer tracks below.
+  // A positioned child may veto a void band only when it is wide, VISIBLE,
+  // and actually carries something -- paint (background), media, or real
+  // text. An invisible/empty positioned box must not mask a real void.
+  // `visibleIn` closes the invisibility channels innerText alone misses:
+  // opacity:0 / transparent ink anywhere on the chain up to the veto box.
+  const visibleIn = (el, root) => {
+    for (let e = el; e && e !== root.parentElement; e = e.parentElement) {
+      const es = window.getComputedStyle(e);
+      if (es.display === 'none' || es.visibility === 'hidden'
+          || es.visibility === 'collapse'
+          || parseFloat(es.opacity) === 0) {
+        return false;
+      }
+    }
+    return true;
+  };
+  // Alpha of a computed color string: comma-syntax rgba(...) OR slash
+  // alpha in any modern space (oklch(.5 .1 20 / 0), color(srgb 0 0 0 / 4%)).
+  // No alpha channel present -> opaque (1).
+  const alphaOfColor = (str) => {
+    let m = /rgba\([^)]*,\s*([\d.]+)\)/.exec(str || '');
+    if (m) return parseFloat(m[1]);
+    m = /\/\s*([\d.]+%?)\s*\)/.exec(str || '');
+    if (m) {
+      return m[1].endsWith('%')
+        ? parseFloat(m[1]) / 100 : parseFloat(m[1]);
+    }
+    return 1;
+  };
+  const absSubstantive = (c, contW) => {
+    const r = c.getBoundingClientRect();
+    if (r.height <= 0 || r.width < 0.5 * contW) return false;
+    // The veto element itself gets the full invisibility test (display /
+    // hidden / collapse / opacity) -- single hop of the same chain walk.
+    if (!visibleIn(c, c)) return false;
+    const cs2 = window.getComputedStyle(c);
+    // Painted fill = background only, judged by parsed ALPHA -- a fully
+    // transparent rgba(255, 0, 0, 0) or oklch(... / 0) paints nothing. A
+    // 1px border is decoration, not a band fill, and must not veto.
+    const bg = cs2.backgroundColor || '';
+    if ((bg && bg !== 'transparent' && alphaOfColor(bg) >= 0.05)
+        || (cs2.backgroundImage && cs2.backgroundImage !== 'none')) {
+      return true;
+    }
+    // VISIBLE ink with some substance -- hidden/opacity:0/transparent text
+    // or a lone glyph in a big empty box must not veto the band.
+    let inkLen = 0;
+    const twv = document.createTreeWalker(c, NodeFilter.SHOW_TEXT);
+    for (let tn = twv.nextNode(); tn; tn = twv.nextNode()) {
+      const frag = (tn.nodeValue || '').trim();
+      if (!frag) continue;
+      const pe = tn.parentElement;
+      if (!pe || !visibleIn(pe, c)) continue;
+      const pc = window.getComputedStyle(pe).color || '';
+      if (alphaOfColor(pc) < 0.05) continue;   // transparent ink
+      inkLen += frag.length;
+      if (inkLen >= 8) return true;
+    }
+    // Media: the element ITSELF, or a VISIBLE descendant that fills a real
+    // share of the box (a tiny icon in a big empty container doesn't).
+    const MEDIA_SEL = 'img, svg, canvas, video';
+    if (c.matches && c.matches(MEDIA_SEL)) return true;
+    for (const m of c.querySelectorAll(MEDIA_SEL)) {
+      const mr = m.getBoundingClientRect();
+      if (mr.height >= 0.3 * r.height && mr.width > 0
+          && visibleIn(m, c)) {
+        return true;
+      }
+    }
+    // Accepted residual: a container with real VISIBLE text/media still
+    // vetoes by its whole bbox even when the content sits in one corner --
+    // this is a soft, waivable warning and the veto errs toward silence.
+    return false;
+  };
+  const interChildVoid = (box, extraAbs) => {
+    const cs = window.getComputedStyle(box);
+    const cr = box.getBoundingClientRect();
+    if (cr.height <= 0) return null;
+    const gap = parseFloat(cs.rowGap || cs.gap || '0') || 0;
+    // Direct, in-flow element children with a real box. Skip abs/fixed
+    // (a corner badge/QR is not flow content). Use getAttribute('class')
+    // -- an SVG child's `.className` is an SVGAnimatedString and .trim()
+    // on it throws, which would crash the whole evaluate.
+    const all = Array.from(box.children).map(c => {
+      const r = c.getBoundingClientRect();
+      const pos = window.getComputedStyle(c).position;
+      const cl = ((c.getAttribute('class') || '').trim()
+                    .split(/\s+/)[0]) || '';
+      return {tag: c.tagName.toLowerCase(), cls: cl, top: r.top,
+              bottom: r.bottom, h: r.height, w: r.width, pos};
+    });
+    const kids = all
+      .filter(c => c.h > 0 && c.pos !== 'absolute' && c.pos !== 'fixed')
+      .sort((a, b) => a.top - b.top);
+    if (kids.length < 2) return null;
+    // Absolutely-positioned children are NOT flow content (a corner badge
+    // must not mask a void above it) -- but a SUBSTANTIVE positioned child
+    // that genuinely covers a candidate band (a full-width positioned
+    // figure) is not blank space either. Wide, VISIBLE, non-empty abs
+    // boxes get to veto a band (extraAbs carries boxes from unwrapped
+    // wrapper levels -- see the track loop).
+    const absKids = (extraAbs || []).concat(
+      Array.from(box.children).filter(c => {
+        const pos = window.getComputedStyle(c).position;
+        return pos === 'absolute' || pos === 'fixed';
+      }).filter(c => absSubstantive(c, cr.width))
+        .map(c => { const r = c.getBoundingClientRect();
+                    return {top: r.top, bottom: r.bottom}; }));
+    // Merge same-row children: walk in top order tracking the running MAX
+    // bottom of everything seen so far, and count a gap only when a child
+    // STARTS below that max. A side-by-side row (figure beside text, a
+    // flex row) is dominated by its tallest member, so a following block
+    // that clears the tall one is NOT a void -- this avoids measuring
+    // `next.top - shortSibling.bottom` across an already-filled row.
+    // NOTE: only DIRECT children are inspected; a void nested inside a
+    // single wrapper (`.card > .body` flex column) is not seen -- keep a
+    // card's content flat for the gate to cover it (see SKILL.md Gate C).
+    let rowMaxBottom = kids[0].bottom;
+    let rowMaxIdx = 0;
+    const bands = [];
+    for (let i = 1; i < kids.length; i++) {
+      const g = kids[i].top - rowMaxBottom;
+      if (g > 0) {
+        bands.push({g, top: rowMaxBottom, bottom: kids[i].top,
+                    above: rowMaxIdx, below: i});
+      }
+      if (kids[i].bottom > rowMaxBottom) {
+        rowMaxBottom = kids[i].bottom;
+        rowMaxIdx = i;
+      }
+    }
+    // Largest band no flow child covers, skipping bands a wide positioned
+    // child fills (>= 60% of the band's height).
+    const absCover = (band) => {
+      let best = 0;
+      for (const a of absKids) {
+        const ov = Math.min(a.bottom, band.bottom)
+                 - Math.max(a.top, band.top);
+        if (ov > best) best = ov;
+      }
+      return best / (band.bottom - band.top);
+    };
+    let maxGap = 0, pairBelow = -1, pairAbove = -1;
+    for (const b of bands) {
+      if (b.g <= maxGap) continue;
+      if (absCover(b) >= 0.6) continue;
+      maxGap = b.g; pairAbove = b.above; pairBelow = b.below;
+    }
+    const lab = k => k.tag + (k.cls ? '.' + k.cls : '');
+    return {
+      h: cr.height,
+      stated_gap: gap,
+      excess: maxGap - gap,
+      above: pairAbove >= 0 ? lab(kids[pairAbove]) : '',
+      below: pairBelow > 0 ? lab(kids[pairBelow]) : '',
+    };
+  };
   ivRoot.querySelectorAll('.card, [data-measure-role="card"]')
     .forEach(card => {
       if (seenIV.has(card)) return;
       seenIV.add(card);
-      const cs = window.getComputedStyle(card);
-      const cr = card.getBoundingClientRect();
-      if (cr.height <= 0) return;
-      const gap = parseFloat(cs.rowGap || cs.gap || '0') || 0;
-      // Direct, in-flow element children with a real box. Skip abs/fixed
-      // (a corner badge/QR is not flow content). Use getAttribute('class')
-      // -- an SVG child's `.className` is an SVGAnimatedString and .trim()
-      // on it throws, which would crash the whole evaluate.
-      const kids = Array.from(card.children).map(c => {
-        const r = c.getBoundingClientRect();
-        const pos = window.getComputedStyle(c).position;
-        const cl = ((c.getAttribute('class') || '').trim()
-                      .split(/\s+/)[0]) || '';
-        return {tag: c.tagName.toLowerCase(), cls: cl,
-                top: r.top, bottom: r.bottom, h: r.height, pos};
-      }).filter(c => c.h > 0 && c.pos !== 'absolute' && c.pos !== 'fixed')
-        .sort((a, b) => a.top - b.top);
-      if (kids.length < 2) return;
-      // Merge same-row children: walk in top order tracking the running MAX
-      // bottom of everything seen so far, and count a gap only when a child
-      // STARTS below that max. A side-by-side row (figure beside text, a
-      // flex row) is dominated by its tallest member, so a following block
-      // that clears the tall one is NOT a void -- this avoids measuring
-      // `next.top - shortSibling.bottom` across an already-filled row.
-      // NOTE: only DIRECT children are inspected; a void nested inside a
-      // single wrapper (`.card > .body` flex column) is not seen -- keep a
-      // card's content flat for the gate to cover it (see SKILL.md Gate C).
-      let rowMaxBottom = kids[0].bottom;
-      let rowMaxIdx = 0;
-      let maxGap = 0, pairBelow = -1, pairAbove = -1;
-      for (let i = 1; i < kids.length; i++) {
-        const g = kids[i].top - rowMaxBottom;
-        if (g > maxGap) { maxGap = g; pairBelow = i; pairAbove = rowMaxIdx; }
-        if (kids[i].bottom > rowMaxBottom) {
-          rowMaxBottom = kids[i].bottom;
-          rowMaxIdx = i;
-        }
-      }
-      const lab = k => k.tag + (k.cls ? '.' + k.cls : '');
+      const v = interChildVoid(card);
+      if (!v) return;
       innerVoids.push({
         cls: (card.getAttribute('class') || ''),
-        card_h: cr.height,
-        stated_gap: gap,
-        excess: maxGap - gap,
-        above: pairAbove >= 0 ? lab(kids[pairAbove]) : '',
-        below: pairBelow > 0 ? lab(kids[pairBelow]) : '',
+        card_h: v.h,
+        stated_gap: v.stated_gap,
+        excess: v.excess,
+        above: v.above,
+        below: v.below,
       });
     });
 
-  return {figures, orphans, cols, cards, innerVoids, flexbr, besideVoids,
-          widows, logos, qrs, header_w: headerW, header_cx: headerCx,
+  // ---- 7b) Track void: the same stacked-children void inside a HEADER /
+  //          FOOTER track (a vertical masthead spine, a side rail). These
+  //          tracks are neither measure columns nor `.card`s, so every void
+  //          gate above is blind there -- a wave-2 poster stretched its
+  //          full-height title spine with `justify-content: space-between`
+  //          and shipped two ~500 px voids, all gates green. What it
+  //          measures is the largest vertical band NO child covers -- so a
+  //          height-aligned horizontal masthead row stays quiet (children
+  //          overlap vertically), while side-by-side columns that are
+  //          vertically OFFSET (one hugging the top, one the bottom) do
+  //          register: the uncovered band between them is a real void.
+  const trackVoids = [];
+  ivRoot.querySelectorAll(
+      '[data-measure-role="header"], [data-measure-role="footer"]')
+    .forEach(track => {
+      if (seenIV.has(track)) return;
+      seenIV.add(track);
+      // Unwrap single-child padding/layout wrappers (header > .inner with
+      // the space-between on .inner): the void walk inspects DIRECT
+      // children only, and a lone wrapper used to hide the whole track.
+      let box = track;
+      const outerAbs = [];
+      const trackW = track.getBoundingClientRect().width;
+      for (let hops = 0; hops < 4; hops++) {
+        // A substantive positioned child at THIS level still covers bands
+        // measured after unwrapping -- carry it along (review round 3:
+        // wrapper + outer positioned figure combined used to false-flag).
+        Array.from(box.children).forEach(c => {
+          const pos = window.getComputedStyle(c).position;
+          if ((pos === 'absolute' || pos === 'fixed')
+              && absSubstantive(c, trackW)) {
+            const r = c.getBoundingClientRect();
+            outerAbs.push({top: r.top, bottom: r.bottom});
+          }
+        });
+        const flow = Array.from(box.children).filter(c => {
+          const r = c.getBoundingClientRect();
+          const pos = window.getComputedStyle(c).position;
+          return r.height > 0 && pos !== 'absolute' && pos !== 'fixed';
+        });
+        if (flow.length !== 1) break;
+        box = flow[0];
+      }
+      const v = interChildVoid(box, outerAbs);
+      if (!v) return;
+      trackVoids.push({
+        role: track.getAttribute('data-measure-role') || '',
+        cls: (track.getAttribute('class') || ''),
+        track_h: v.h,
+        stated_gap: v.stated_gap,
+        excess: v.excess,
+        above: v.above,
+        below: v.below,
+        space_between: (window.getComputedStyle(box).justifyContent || '')
+          .indexOf('space') !== -1,
+      });
+    });
+
+  // ---- 10) Composed text/ground contrast ----
+  // style_check verifies DECLARED token pairs; nothing verified the COMPOSED
+  // result -- an emphasis span inheriting white text while its own class
+  // paints a pale highlight behind it (wave-2: white '4.05' on #CFE6E4,
+  // 1.4:1), or an emph-colored lead-in on an accent fill (wave-1: rust on
+  // steel blue, 1.2:1). Sample the RENDERED foreground of every text run
+  // against the effective ground beneath it: the hit-test stack under the
+  // sample point, alpha-composited until opaque. Text over images/gradients
+  // (or any replaced layer) is unjudgeable and skipped -- this is a
+  // solid-fill contract; verify those grounds on the rendered crop.
+  const contrasts = [];
+  {
+    const parseC = (s) => {
+      const m = /rgba?\(([\d.]+),\s*([\d.]+),\s*([\d.]+)(?:,\s*([\d.]+))?\)/
+        .exec(s || '');
+      if (!m) return null;
+      return {r: +m[1], g: +m[2], b: +m[3], a: m[4] === undefined ? 1 : +m[4]};
+    };
+    const over = (top, bot) => {         // source-over compositing
+      const a = top.a + bot.a * (1 - top.a);
+      if (a <= 0) return {r: 0, g: 0, b: 0, a: 0};
+      return {
+        r: (top.r * top.a + bot.r * bot.a * (1 - top.a)) / a,
+        g: (top.g * top.a + bot.g * bot.a * (1 - top.a)) / a,
+        b: (top.b * top.a + bot.b * bot.a * (1 - top.a)) / a,
+        a,
+      };
+    };
+    const lum = (c) => {
+      const f = (v) => {
+        v /= 255;
+        return v <= 0.04045 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+      };
+      return 0.2126 * f(c.r) + 0.7152 * f(c.g) + 0.0722 * f(c.b);
+    };
+    const ratioOf = (c1, c2) => {
+      const l1 = lum(c1), l2 = lum(c2);
+      return (Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05);
+    };
+    const hex = (c) => '#' + [c.r, c.g, c.b]
+      .map(v => Math.round(v).toString(16).padStart(2, '0')).join('');
+    const REPLACED_RE = /^(IMG|CANVAS|VIDEO|SVG|IFRAME|OBJECT|EMBED)$/;
+    // Effective ground beneath `el` at (x, y): walk the hit-test stack from
+    // el downward, compositing translucent fills until one is opaque.
+    // null = unjudgeable (image/gradient/replaced layer, or el not hit).
+    const groundAt = (el, x, y) => {
+      // elementsFromPoint only resolves INSIDE the layout viewport; the
+      // render pipeline sets the viewport to the full poster canvas, so
+      // every on-canvas glyph is reachable -- text overflowing the canvas
+      // (already a hard `measure` failure) silently skips instead.
+      const stack = document.elementsFromPoint(x, y);
+      const idx = stack.indexOf(el);
+      if (idx === -1) return null;         // covered oddly / pointer-events
+      let acc = null;                      // accumulated translucent paint
+      for (let i = idx; i < stack.length; i++) {
+        const layer = stack[i];
+        if (layer !== el && REPLACED_RE.test(layer.tagName.toUpperCase())) {
+          return null;                     // picture ground: unjudgeable
+        }
+        const ls = window.getComputedStyle(layer);
+        if (ls.backgroundImage && ls.backgroundImage !== 'none') return null;
+        // A painted ::before/::after is invisible to elementsFromPoint (its
+        // paint belongs to the originating element), so a pseudo-element
+        // fill -- e.g. a split two-tone header band drawn by
+        // `.header::before/::after` -- would silently read as whatever sits
+        // BELOW it (white-on-white false positives, wave-2 poster 4). A
+        // layer carrying a painted pseudo makes the ground unjudgeable.
+        for (const pe of ['::before', '::after']) {
+          const ps = window.getComputedStyle(layer, pe);
+          if (ps.content === 'none') continue;
+          const pRaw = ps.backgroundColor || '';
+          const pBc = parseC(pRaw);
+          // Same contract as real layers: a painted pseudo OR one whose
+          // color the parser can't read (oklch()/lab()) is unjudgeable --
+          // treating a parse failure as alpha 0 would see THROUGH the fill.
+          if ((ps.backgroundImage && ps.backgroundImage !== 'none')
+              || (pBc ? pBc.a > 0 : (pRaw && pRaw !== 'transparent'))) {
+            return null;
+          }
+        }
+        // A translucent layer (opacity < 1 on the element or any ancestor
+        // in the stack) changes the effective ink/ground in ways this flat
+        // model doesn't composite -- unjudgeable.
+        if (parseFloat(ls.opacity) < 1) return null;
+        const rawBc = ls.backgroundColor || '';
+        const bc = parseC(rawBc);
+        if (!bc) {
+          // An authored color the parser can't read (oklch()/lab()/color())
+          // must be unjudgeable, NOT silently transparent -- falling through
+          // would judge against whatever paint sits below it.
+          if (rawBc && rawBc !== 'transparent') return null;
+          continue;
+        }
+        if (bc.a <= 0) continue;
+        acc = acc ? over(acc, bc) : bc;
+        if (acc.a >= 0.999) return acc;
+      }
+      // Fell through every layer: composite over the canvas default (white).
+      const white = {r: 255, g: 255, b: 255, a: 1};
+      return acc ? over(acc, white) : white;
+    };
+    const seenCEls = new Set();
+    // Aggregate JS-side by (class | fg | bg), keeping the WORST ratio per
+    // combo: a fixed collection cap in DOM order could otherwise fill up on
+    // early borderline runs and silently drop a severe defect further down
+    // the document. Unique low-contrast combos are bounded by the stylesheet
+    // (dozens), so the map stays small; 300 is a runaway backstop.
+    const contrastMap = new Map();
+    const cRoot = document.querySelector('[data-measure-role="poster"]')
+               || document.body;
+    const ctw = document.createTreeWalker(cRoot, NodeFilter.SHOW_TEXT);
+    for (let tn = ctw.nextNode(); tn; tn = ctw.nextNode()) {
+      if (!/\S/.test(tn.nodeValue || '')) continue;
+      const el = tn.parentElement;
+      if (!el || seenCEls.has(el)) continue;
+      seenCEls.add(el);
+      if (el.closest('mjx-container, .MathJax, math, svg, script, style')) {
+        continue;                          // math/vector ink: out of scope
+      }
+      const cs = window.getComputedStyle(el);
+      if (cs.visibility === 'hidden' || parseFloat(cs.opacity) === 0) continue;
+      // Outlined / shadowed text has engineered edge contrast this flat-fill
+      // model can't score -- skip rather than mis-judge.
+      if (cs.textShadow && cs.textShadow !== 'none') continue;
+      if (parseFloat(cs.webkitTextStrokeWidth) > 0) continue;
+      const fg0 = parseC(cs.color);
+      // Unparsable foreground (oklch()/lab() ink) is DELIBERATELY skipped
+      // as unjudgeable -- same contract as grounds; token-disciplined
+      // posters author hex/rgb (SKILL.md Gate G limits).
+      if (!fg0 || fg0.a < 0.05) continue;
+      // Sample the first and last glyph runs of this text node -- a run
+      // crossing two fills is judged at both ends, worst sample wins.
+      const rng = document.createRange();
+      rng.selectNodeContents(tn);
+      const rects = Array.from(rng.getClientRects())
+        .filter(r => r.width > 1 && r.height > 1);
+      if (!rects.length) continue;
+      const pts = [rects[0], rects[rects.length - 1]]
+        .map(r => [(r.left + r.right) / 2, (r.top + r.bottom) / 2]);
+      let worst = null;
+      for (const p of pts) {
+        const g = groundAt(el, p[0], p[1]);
+        if (!g) continue;
+        const fg = fg0.a < 1 ? over(fg0, g) : fg0;
+        const rr = ratioOf(fg, g);
+        if (!worst || rr < worst.ratio) worst = {ratio: rr, ground: g, fg};
+      }
+      // Only sub-7.0 samples ship to Python (payload stays small; the WARN
+      // threshold itself lives Python-side as --min-contrast, so any floor
+      // up to 7.0 is fully served -- higher floors are not supported).
+      if (!worst || worst.ratio >= 7.0) continue;
+      const fgHex = hex(worst.fg), bgHex = hex(worst.ground);
+      const key = (el.className || '') + '|' + fgHex + '|' + bgHex;
+      const prev = contrastMap.get(key);
+      if (prev) {
+        prev.count += 1;
+        if (worst.ratio < prev.ratio) {
+          prev.ratio = Math.round(worst.ratio * 100) / 100;
+          prev.text = (tn.nodeValue || '')
+            .replace(/\s+/g, ' ').trim().slice(0, 32);
+        }
+      } else {
+        if (contrastMap.size >= 300) {
+          // Backstop full: keep the map biased toward the WORST pairs, not
+          // toward DOM order -- evict the highest-ratio combo if this one
+          // is lower; drop it otherwise.
+          let maxKey = null, maxRatio = -1;
+          contrastMap.forEach((v, k) => {
+            if (v.ratio > maxRatio) { maxRatio = v.ratio; maxKey = k; }
+          });
+          if (worst.ratio >= maxRatio) continue;
+          contrastMap.delete(maxKey);
+        }
+        contrastMap.set(key, {
+          tag: el.tagName.toLowerCase(),
+          cls: el.className || '',
+          text: (tn.nodeValue || '').replace(/\s+/g, ' ').trim().slice(0, 32),
+          fg: fgHex,
+          bg: bgHex,
+          ratio: Math.round(worst.ratio * 100) / 100,
+          px: Math.round(parseFloat(cs.fontSize) || 0),
+          count: 1,
+        });
+      }
+    }
+    contrastMap.forEach(v => contrasts.push(v));
+  }
+
+  return {figures, orphans, cols, cards, innerVoids, trackVoids, flexbr,
+          besideVoids, widows, glueChains, wrapCensus, contrasts,
+          logos, qrs, header_w: headerW, header_cx: headerCx,
           header_content_left: headerContentLeft,
           header_content_right: headerContentRight, headerBlocks,
           bannerImgs};
@@ -1379,7 +1927,7 @@ def report_polish(data: dict, args: argparse.Namespace,
                 f"step, if it shifts the wrap (also makes the block bolder), without "
                 f"overflowing the banner or colliding with the stats; (c) expand the "
                 f"wording with a few truthful, on-message words (keep .fb-text under "
-                f"~400 chars, or the gate stops measuring it); (d) trim it to one-fewer "
+                f"~400 chars -- past that the gate only judges a single stranded word, not banner fill); (d) trim it to one-fewer "
                 f"full line. Keep the change proportionate -- don't push one lever to an "
                 f"extreme (e.g. a blown-up font) just to clear the gate, and never force "
                 f"it with text-align: justify / text-align-last or letter-spacing "
@@ -1387,14 +1935,75 @@ def report_polish(data: dict, args: argparse.Namespace,
                 f"Context: '{ascii_safe(w['text'])}'."
             )
         else:
+            mode = w.get("mode", "std")
+            if mode == "long":
+                where = (" (long running prose -- judged by the single-"
+                         "stranded-word bar only)")
+            elif mode == "generic":
+                where = (" (unlisted block type, judged by the single-"
+                         "stranded-word bar; a lone stranded word reads "
+                         "wrong in ANY block)")
+            else:
+                where = ""
             warns.append(
                 f"WIDOW: <{ascii_safe(w['tag'])} class='{ascii_safe(w['cls'])}'> "
                 f"wraps to a stranded last line that fills only "
                 f"{int(w['frac'])}% of the typeset width ('{ascii_safe(w['word'])}'), "
-                f"a runt (SKILL.md Gate B). Pull a word down -- glue the last two "
-                f"tokens with &nbsp;, or reword so the last line carries more of "
-                f"the measure. Context: '{ascii_safe(w['text'])}'."
+                f"a runt (SKILL.md Gate B){where}. Fix by REWORDING first: "
+                f"expand or trim a few words so the break lands on a phrase "
+                f"boundary and the last line carries more of the measure (if "
+                f"alignment is already tuned, swap a word for a longer synonym "
+                f"to keep the line count). On a CENTERED heading/title use "
+                f"text-wrap: balance instead. &nbsp;-glue is a LAST RESORT for "
+                f"a leading marker or a tight stat cell only -- glue at most "
+                f"two tokens; never chain more (a fused multi-word unit wraps "
+                f"early and tears a hole in the line above -- the GLUE-CHAIN "
+                f"gate flags it). Context: '{ascii_safe(w['text'])}'."
             )
+
+    # ---- Gate B (glue chains): >=3 words fused with &nbsp; ----
+    # The lazy widow "fix": fusing the last N words so the last line clears
+    # the runt bar. The fused unit is unbreakable, so it wraps EARLY as a
+    # whole -- the line above breaks with room to spare and the paragraph
+    # ships a mid-line hole the WIDOW width test cannot see (it only measures
+    # the LAST line). Numeric runs (stat comparisons) are exempted JS-side.
+    for gc in data.get("glueChains", []):
+        warns.append(
+            f"GLUE-CHAIN: <{ascii_safe(gc['tag'])} class='{ascii_safe(gc['cls'])}'> "
+            f"fuses {gc['words']} words with &nbsp; "
+            f"('{ascii_safe(gc['chain'])}') -- an unbreakable unit this long "
+            f"wraps early as a whole and tears a hole in the line above. "
+            f"Unglue it and REWORD the sentence instead (SKILL.md Gate B); "
+            f"keep &nbsp; for at most two tokens (a leading marker, a stat "
+            f"cell)."
+        )
+
+    # ---- Gate B (text-wrap census): wrap protection dropped wholesale ----
+    census = data.get("wrapCensus", [])
+    unprot = [c for c in census if not c.get("protected")]
+    min_unprot = getattr(
+        args, "min_unprotected_wraps", DEFAULT_MIN_UNPROTECTED_WRAPS)
+    if census and len(unprot) >= min_unprot:
+        sample_cls = []
+        for c in unprot:
+            cls_toks = str(c.get("cls") or "").split()
+            name = (
+                ("." + cls_toks[0]) if cls_toks
+                else f"<{c.get('tag', '?')}>"
+            )
+            if name not in sample_cls:
+                sample_cls.append(name)
+            if len(sample_cls) >= 5:
+                break
+        warns.append(
+            f"TEXT-WRAP: {len(unprot)} of {len(census)} wrapped text blocks "
+            f"carry neither `text-wrap: pretty` nor `balance` (e.g. "
+            f"{ascii_safe(', '.join(sample_cls))}) -- the templates' "
+            f"protective defaults were dropped, which is how custom skeletons "
+            f"strand single-word widows and ragged titles. Add the base "
+            f"defenses block (SKILL.md Step 3): `pretty` on prose, "
+            f"`balance` on centered display text."
+        )
 
     # ---- Gate C: space-between fill ----
     for c in data.get("cols", []):
@@ -1458,6 +2067,81 @@ def report_polish(data: dict, args: argparse.Namespace,
             f"short card with substance, or drop the bottom-pin / "
             f"equal-height stretch so it hugs its content. See Gate C in "
             f"SKILL.md."
+        )
+
+    # ---- Gate C (tracks): the same void inside a header/footer track ----
+    # A vertical masthead spine / side rail is neither a measure column nor a
+    # `.card`, so SPACE-BETWEEN, CARD/TRAILING and CARD/INNER-VOID are all
+    # blind there. Same thresholds as the card check. The fix ORDER matters
+    # (SKILL.md "Slack in a track"): real content first; then a CONSISTENT
+    # one-step type bump applied to a whole role -- never a single block
+    # blown up to eat one gap, which ships a patchwork of sizes; then narrow
+    # the track. Never absorb slack with justify-content: space-*.
+    for t in data.get("trackVoids", []):
+        th = float(t.get("track_h", 0) or 0)
+        excess = float(t.get("excess", 0) or 0)
+        if th <= 0 or excess <= iv_floor:
+            continue
+        if excess / th <= iv_ratio:
+            continue
+        between = ""
+        if t.get("above") and t.get("below"):
+            between = (f" between <{ascii_safe(t['above'])}> and "
+                       f"<{ascii_safe(t['below'])}>")
+        sb = (" (`justify-content: space-between` is stretching it -- that "
+              "is the whitespace-stretch SKILL.md forbids on any track)"
+              if t.get("space_between") else "")
+        warns.append(
+            f"TRACK/INNER-VOID: the {ascii_safe(t.get('role', 'track'))} "
+            f"track <{ascii_safe(t.get('cls', ''))}> has a {excess:.0f} px "
+            f"gap ({excess / th * 100:.0f}% of track height, stated row-gap "
+            f"{t['stated_gap']:.0f} px){between}{sb}. Absorb the slack with "
+            f"substance, in this order: (1) real content the track earns "
+            f"(a legend row, a mini-figure, a fuller byline); (2) bump the "
+            f"track's SUBORDINATE text one --fs-* step -- applied to the "
+            f"whole role consistently (every legend row, the whole byline), "
+            f"never one block alone, and keep it below the track's display "
+            f"register; (3) narrow the track and give the width back to the "
+            f"body. Never stretch with justify-content: space-*. See Slack "
+            f"in a track, SKILL.md."
+        )
+
+    # ---- Gate G: composed text/ground contrast ----
+    # Declared token pairs are style_check's job; this judges what actually
+    # rendered. Dedup by (class, fg, bg) so one styling mistake repeated in
+    # ten spans reads as one warning, not ten.
+    min_contrast = getattr(args, "min_contrast", DEFAULT_MIN_CONTRAST)
+    seen_contrast: dict[tuple, dict] = {}
+    for c in data.get("contrasts", []):
+        ratio = float(c.get("ratio", 99))
+        if ratio >= min_contrast:
+            continue
+        key = (str(c.get("cls", "")), str(c.get("fg", "")),
+               str(c.get("bg", "")))
+        prev = seen_contrast.get(key)
+        if prev is None:
+            entry = dict(c)
+            entry["count"] = int(c.get("count", 1) or 1)
+            seen_contrast[key] = entry
+        else:
+            prev["count"] += int(c.get("count", 1) or 1)
+            if ratio < float(prev.get("ratio", 99)):
+                prev["ratio"] = ratio
+                prev["text"] = c.get("text", prev.get("text"))
+    for entry in sorted(seen_contrast.values(),
+                        key=lambda e: float(e.get("ratio", 99)))[:10]:
+        more = (f" (+{entry['count'] - 1} more run(s) of this class/color "
+                f"pair)" if entry["count"] > 1 else "")
+        warns.append(
+            f"CONTRAST: <{ascii_safe(entry['tag'])} "
+            f"class='{ascii_safe(entry['cls'])}'> "
+            f"'{ascii_safe(entry['text'])}' renders {entry['fg']} on "
+            f"{entry['bg']} = {entry['ratio']}:1 (floor "
+            f"{min_contrast}:1){more}. The usual cause: an inline "
+            f"emphasis/highlight class sets a background but INHERITS its "
+            f"text color from a different ground -- any class that paints a "
+            f"background must declare its own `color`. Fix the token pairing "
+            f"(use the matching *-ink token), then re-render and look."
         )
 
     # ---- Gate D: <br> inside a flex container ----
@@ -1707,9 +2391,13 @@ def report_polish(data: dict, args: argparse.Namespace,
     print(f"  figures checked     : {len(data.get('figures', []))}")
     print(f"  stat-like elements  : {len(data.get('orphans', []))}")
     print(f"  prose widows        : {len(data.get('widows', []))}")
+    print(f"  glue chains         : {len(data.get('glueChains', []))}")
+    print(f"  wrapped text blocks : {len(data.get('wrapCensus', []))}")
     print(f"  space-between cols  : {len(data.get('cols', []))}")
     print(f"  cards checked       : {len(data.get('cards', []))}")
     print(f"  inner-void cards    : {len(data.get('innerVoids', []))}")
+    print(f"  tracks w/ void geom : {len(data.get('trackVoids', []))}")
+    print(f"  contrast pairs (<7) : {len(data.get('contrasts', []))}")
     print(f"  beside-text floats  : {len(data.get('besideVoids', []))}")
     print(f"  flex/<br> parents   : {len(data.get('flexbr', []))}")
     print(f"  header logos        : {len(data.get('logos', []))}")

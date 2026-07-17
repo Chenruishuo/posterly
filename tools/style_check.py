@@ -7,18 +7,22 @@
 # ---------------------------------------------------------------------------
 """style_check — the style HARD gate for HTML academic posters.
 
-Implements the 13 style rules of DESIGN_FINAL.md §3 (plus the §12.5 nit-1
-refinement on rule 8) split across two gates:
+Implements the 14 style rules: the 13 of DESIGN_FINAL.md §3 (plus the
+§12.5 nit-1 refinement on rule 8) and posterly's rule 14 (numeric utility
+classes used must be defined), split across two gates:
 
-  Source gate (rules 1,2,3,5,6,7,8,9,10,11,13) — pure static analysis. We
+  Source gate (rules 1,2,3,5,6,7,8,9,10,11,13,14) — pure static analysis. We
     parse the HTML with ``html.parser`` to walk tags+attributes, extract
     the ``<style>`` blocks, strip CSS comments, locate the design-token
     block via the canonical comment pair, and then scan for: color
     literals outside the token block, forbidden ``style=`` attributes,
     gradients, font-family stacks against the whitelist, font-size values
     against the ``--fs-*`` scale, font-size token count, the
-    data-attribute / inline-SVG contracts, and (rule 13) BEM-modifier
-    variant classes used in the markup but missing their CSS rule.
+    data-attribute / inline-SVG contracts, (rule 13) BEM-modifier
+    variant classes used in the markup but missing their CSS rule, and
+    (rule 14) numeric utility classes (``w-65``, ``mt-2``, ``sr-46``)
+    used but undefined -- the silent figure-at-natural-size column
+    blow-up.
 
   Render gate (rules 4 and 12) — needs computed style, so it lazy-imports
     Playwright, prints-emulates the poster at the @page viewport (reusing
@@ -491,7 +495,7 @@ def run_source_gate(
     html_text: str, html_path: Path,
     font_whitelists: tuple[set[str], set[str], set[str]] | None = None,
 ) -> tuple[list[RuleResult], _PosterParser, str | None]:
-    """Run rules 1,2,3,5,6,7,8,9,10,11,13 (the static rules).
+    """Run rules 1,2,3,5,6,7,8,9,10,11,13,14 (the static rules).
 
     ``font_whitelists`` overrides the built-in (serif, sans, mono) sets
     for rule 7 — pass ``resolve_font_whitelists(tokens_path)`` to let a
@@ -913,6 +917,108 @@ def run_source_gate(
             f"second row). Add the variant's CSS rule, or remove the class."
         )
     results.append(r13)
+
+    # --- Rule 14 (hard): every numeric UTILITY class used must be defined ---
+    # Rule 13's disease in its other common form: an atomic utility class
+    # (`w-65`, `sr-46`, `mt-2`, `fs-3`) referenced in the markup with no
+    # matching CSS rule. Unlike a dropped variant (which degrades to the base
+    # look), a missing WIDTH utility on an <img> silently renders the figure
+    # at natural size and blows the column open -- three wave-2 posters hit
+    # exactly this (w-82; w-50/w-58/w-64; w-78/w-88) and each agent burned a
+    # debug round rediscovering it. Same one-directional contract as rule 13
+    # (USED implies DEFINED) and the same logo-subtree exemption.
+    # Accepted residual: the logo-subtree exemption (matching rule 13) also
+    # skips a numeric utility on the exempt root itself (`<img data-color-
+    # exempt="logo" class="w-82">`) -- vendor exports carry arbitrary class
+    # names, and a mis-sized logo is Gate E's job at render time.
+    r14 = RuleResult(14, "hard", "numeric utility class used must be defined")
+    util_re = re.compile(
+        r"^(?:w|h|fs|m[tblr]?|p[tblr]?|[mp][xy]|gap|sr|sz)-\d+$"
+    )
+    used_utils: set[str] = set()
+    for el in parser.elements:
+        if el["inside_logo"]:
+            continue
+        for tok in el["attrs"].get("class", "").split():
+            if util_re.fullmatch(tok):
+                used_utils.add(tok)
+    if used_utils:
+        # Selector-only extraction (same _iter_css_rules walk as rule 13):
+        # a naive whole-CSS regex would count `.w-82` inside a string
+        # (`content: ".w-82"`), a url(), or a comment as "defined".
+        defined_classes: set[str] = set()
+        for selector, _body in _iter_css_rules(css_nc):
+            # Strip quoted strings FIRST, then attribute selectors: a class
+            # name inside `[data-note=".w-82"]` is not a class selector, and
+            # a quoted `]` inside the attribute value (`[data-note="].w-82"]`)
+            # would otherwise cut the bracket strip short. Then resolve
+            # functional pseudo-classes INNERMOST-OUT: :is()/:where() args
+            # DO receive the declarations, so they unwrap in place;
+            # :not()/:has() args are match CONDITIONS, not definitions
+            # (`img:not(.w-82)` styles other imgs), so they are dropped --
+            # which also resolves nesting correctly (`:not(:is(.w-82))`
+            # unwraps then drops; `:has(:is(.w-82))` unwraps then drops);
+            # `:nth-*(... of S)` unwraps to S (it styles the matching S);
+            # other functional pseudos carry no class definitions and drop. Accepted residuals, documented: a double
+            # negation (`:not(:not(.w-82))`) reads as a condition and can
+            # hard-fail a technically-defined utility -- define utilities
+            # as plain `.class` rules; and _iter_css_rules itself is not
+            # string-aware -- a literal `{` in a content string derails
+            # rule boundaries for EVERY source rule, not just this one
+            # (parser-wide limitation).
+            sel = re.sub(r"(['\"])(?:\\.|(?!\1).)*\1", "", selector)
+            sel = re.sub(r"\[[^\]]*\]", "", sel)
+
+            def _pseudo_repl(m: re.Match) -> str:
+                name = m.group(1).lower()
+                # Unwraps splice IN PLACE, delimited by a \x00 sentinel:
+                # no whitespace (a `:is(.w-82):hover` compound must not
+                # split on a phantom descendant combinator) and no bare
+                # concatenation (`.w-82:is(img)` must not fuse into a
+                # `.w-82img` identifier). \x00 is neither a combinator to
+                # the compound split below nor an identifier char to the
+                # class regex.
+                if name in ("is", "where", "matches", "any", "-webkit-any"):
+                    return "\x00" + m.group(2).strip() + "\x00"
+                if name.startswith("nth"):
+                    # `:nth-child(1 of .w-82)` DOES style the matching
+                    # .w-82 -- keep the `of` selector list.
+                    m2 = re.search(r"\bof\b(.*)", m.group(2))
+                    return ("\x00" + m2.group(1).strip() + "\x00") \
+                        if m2 else ""
+                return ""  # :not / :has etc. -- conditions, not subjects
+
+            for _ in range(8):  # innermost-out; bounded for safety
+                sel2 = re.sub(
+                    r":([a-zA-Z-]+)\(\s*([^()]*)\)", _pseudo_repl, sel
+                )
+                if sel2 == sel:
+                    break
+                sel = sel2
+            # SUBJECT-ONLY extraction: the declarations apply to the
+            # RIGHTMOST compound of each comma part -- `.w-82 img` or
+            # `.w-82 + .child` styles the img/.child, and defines nothing
+            # for `.w-82` itself. `.figure .w-82` keeps .w-82 the subject.
+            for part in sel.split(","):
+                compounds = [c for c in re.split(r"[\s>+~]+", part) if c]
+                if not compounds:
+                    continue
+                for m in re.finditer(r"\.([A-Za-z][\w-]*)", compounds[-1]):
+                    defined_classes.add(m.group(1))
+        dangling_utils = sorted(used_utils - defined_classes)
+        if dangling_utils:
+            shown = ", ".join(dangling_utils[:6]) + (
+                " ..." if len(dangling_utils) > 6 else "")
+            r14.fail(
+                f"utility class(es) used in HTML with no matching CSS rule: "
+                f"{shown}. An undefined width/size utility silently no-ops "
+                f"-- the classic failure is `class=\"w-82\"` on an <img> "
+                f"with no `.w-82` rule, so the figure renders at NATURAL "
+                f"size and balloons its column. Define the class (e.g. "
+                f"`.w-82 {{ width: 82%; }}`) or use one the stylesheet "
+                f"already ships."
+            )
+    results.append(r14)
 
     return results, parser, token_block_text
 
@@ -1496,10 +1602,11 @@ def cmd_style_check(args: argparse.Namespace) -> int:
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
         prog="style_check",
-        description="Style HARD gate for HTML academic posters: 13 rules "
-                    "(DESIGN_FINAL.md §3 + §12.5 nit 1). Source gate "
-                    "(rules 1-3,5-11,13) is pure static analysis; render gate "
-                    "(rules 4,12) print-emulates via Playwright.",
+        description="Style HARD gate for HTML academic posters: 14 rules "
+                    "(DESIGN_FINAL.md §3 + §12.5 nit 1 + posterly rule 14). "
+                    "Source gate (rules 1-3,5-11,13,14) is pure static "
+                    "analysis; render gate (rules 4,12) print-emulates via "
+                    "Playwright.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="exit codes: 0=PASS (no hard fail), 1=hard fail, "
                "2=usage/environment error.",

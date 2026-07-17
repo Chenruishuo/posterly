@@ -180,6 +180,30 @@
      ========================================================= */
   * { box-sizing: border-box; margin: 0; padding: 0; }
 
+  /* =========================================================
+     BASE DEFENSES -- wrap & ink safety. KEEP this block in ANY
+     skeleton, including a fully custom one (copy it over and
+     EXTEND the selector lists with your own prose/display
+     classes -- a hand-rolled skeleton that drops it strands
+     single-word widows and ragged titles; polish warns as
+     TEXT-WRAP).
+     - pretty: fills each line, protects the last-line orphan
+       (single-word widow). Safe on all prose.
+     - balance: evens CENTERED display text only -- never pair
+       it with left-aligned multi-sentence prose (SKILL.md wrap
+       rules).
+     - Any inline class you add that paints a background (a
+       .mark highlight, a keyword chip) must declare its own
+       `color` (Gate G -- never inherit ink across a ground
+       change) plus `box-decoration-break: clone;
+       -webkit-box-decoration-break: clone;` so a wrapped
+       highlight keeps its padding on both fragments (then it
+       never needs &nbsp;-gluing to hold one line).
+     ========================================================= */
+  p, li, dd, figcaption,
+  .body-text, .caption, .callout, .section-title { text-wrap: pretty; }
+  .title { text-wrap: balance; }
+
   html, body {
     background: var(--bg-screen);
     font-family: var(--font-serif);

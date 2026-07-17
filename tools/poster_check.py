@@ -400,7 +400,27 @@ def build_parser() -> argparse.ArgumentParser:
         default=_polish.DEFAULT_CARD_INNER_VOID_PX,
         help="CARD/INNER-VOID absolute floor in px (default %(default)s); a "
              "gap must exceed BOTH this and --max-card-inner-void to flag, "
-             "so a sub-line gap on a small card stays quiet",
+             "so a sub-line gap on a small card stays quiet. The same "
+             "ratio+floor also drive TRACK/INNER-VOID on header/footer "
+             "tracks (a vertical masthead spine or side rail)",
+    )
+    ppl.add_argument(
+        "--min-contrast", type=float,
+        default=_polish.DEFAULT_MIN_CONTRAST,
+        help="warn (CONTRAST) if a rendered text run's WCAG ratio against "
+             "the solid ground beneath it falls below this (default "
+             "%(default)s -- flags only unambiguous defects; deliberate "
+             "muted inks sit ~3.5+; values above 7.0 are not supported -- "
+             "the collector only ships sub-7 samples). Text over "
+             "images/gradients/translucency is skipped",
+    )
+    ppl.add_argument(
+        "--min-unprotected-wraps", type=int,
+        default=_polish.DEFAULT_MIN_UNPROTECTED_WRAPS,
+        help="aggregate TEXT-WRAP note fires when at least this many "
+             "wrapped text blocks carry neither text-wrap: pretty nor "
+             "balance (default %(default)s) -- the dropped-base-defenses "
+             "signature of a custom skeleton",
     )
     ppl.add_argument(
         "--logo-max-width-ratio", type=float,

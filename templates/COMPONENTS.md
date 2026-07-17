@@ -42,7 +42,7 @@ class names did not change, so the catalog applies to posterly's templates direc
 | **Anti-patterns** | Specific things the loop has been caught doing. Each maps to a HARD style/asset rule, a rubric cap, or (for the disabled rule 4/5 cases) the catalog convention noted above. |
 
 Gate name shorthand (DESIGN_FINAL §3–§7):
-`preflight` (structure), `style` (`style_check.py`, 13 rules), `asset` (`asset_check.py`),
+`preflight` (structure), `style` (`style_check.py`, 14 rules), `asset` (`asset_check.py`),
 `measure` (`poster_check.py measure`, column/footer/canvas geometry),
 `polish` (`poster_check.py polish`, figure-AR / orphan / whitespace).
 
@@ -52,8 +52,8 @@ Gate name shorthand (DESIGN_FINAL §3–§7):
 > per-component "rule 4" / "rule 5" notes below describe the catalog **convention** (the templates
 > ship ≤2 hue families and flat fills, and keeping them that way is the recommended default), not
 > a hard failure — they only hard-fail if you re-enable them with `--style-disable ''`. The other
-> 11 rules (token-only colors, no inline `style=`, the font/size scale, the data-attribute and
-> variant-class contracts) stay HARD.
+> 12 rules (token-only colors, no inline `style=`, the font/size scale, the data-attribute,
+> variant-class and numeric-utility-class contracts) stay HARD.
 
 ---
 
