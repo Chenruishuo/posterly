@@ -35,8 +35,77 @@ menu of *what to compose*.
   hero region may hold a figure (60655), a statement (64621), a metric wall
   (62378), or the title itself (63136) — say which.
 - Canvas orientation is venue metadata (an input), never a style choice.
+  When the input says portrait, pick the skeleton from the portrait
+  translation table below — same menu, translated geometry.
 - Ownership: this axis reserves *geometry* (e.g. a title track, a stage);
   how the title/identity is arranged inside it belongs to Axis 8.
+
+### Axis 1 · portrait translations
+
+The 10-topology menu above is distilled from a landscape corpus, and most of
+its geometry assumes width is cheap. This table is calibrated for the
+**~24 in-wide portrait class** — 24×36 in boards and the near-identical
+61×91 cm ICLR-workshop spec. There, usable width is ~2 columns, so the cheap
+direction is the full-width row, and the unprompted reading order is
+top-to-bottom (the board is also just small: ~40% of a 60×36 board's area, so
+width economics *and* total capacity both bite). Translate the topology —
+keep its *idea*, move its focal geometry onto full-width rows — rather than
+improvising, and rather than collapsing every portrait poster onto the
+shipped 2-col default (the anti-convergence fingerprint axes include the
+layout skeleton). Anchors are the landscape originals that demonstrate the
+technique; there is no portrait corpus yet.
+
+| landscape base | portrait form (~24 in wide) | notes & anchors |
+|---|---|---|
+| 2-column vertical flow | as-is — shipped default (`portrait_2col_neutral`) | 63574, 66429 |
+| horizontal band-rows | **full-width band stack** | the most portrait-native skeleton; bands stack in reading order, so the landscape row's "side or top nav signal" note is satisfied by numbered band headers (Axis 7 markers) alone. 65626, 66466 |
+| top hero + bottom grid | **top hero band + 2-col grid** | hero band up to ~40% of body height. 66579, 62378 |
+| hero panel 1.5fr+1fr | ⚠ side-by-side is legal but weak — usually give the hero a full-width top or mid band instead | side-by-side leaves a ~9 in support column (short cards only) and a ~13.6 in hero track, barely wider than a plain 2-col column, so the drama mostly evaporates |
+| center stage + wings | **mid-stage band** | the stage rotates 90°: a full-width middle band (~45–55% of body height), support zones above and below. 60655, 64621 |
+| mosaic / named-area grid | **2-col × N-row named grid** | landscape's cross-column freedom compresses to **row-spans** on a 2-track grid; the gate-compatible build is two `column` stacks whose complementary per-column row tracks stagger the seams (the role model only expresses sequential column stacks — modules each posing as a `column` would put mid-poster bottoms into the measure spread). 63300, 63640, 65372 |
+| asymmetric display-title column | **title spine** (a narrow rotated title rail, ~3–4 in) *or* **playbill top block** (the title owns the top ~20–25% as display geometry — a focal region, not a masthead row) | 63136, 61403; hard rule 3 binds Axis 8 in both forms |
+| radial hub | ⚠ constrained; the usually-better portrait analog is the **central spine** — a vertical axis down the middle, satellite cards alternating left/right on staggered half-rows | satellite columns ≈ 7 in, hub ≈ 8 in — the same width class as the ⚠ 3-col row, with radial's balance problem on top |
+| 3-column | ⚠ columns ≈ 7.3 in — list/bullet content only; prose measures too narrow | — |
+| 4-column | ✗ below minimum readable column width | — |
+
+- **A0 portrait (33.1×46.8 in) is a different size class** — don't carry the
+  24-in numbers over: 3-col columns are ~10.4 in (comfortable), 4-col ~7.7 in
+  (drops to the ⚠ class), a side-by-side hero leaves a ~12.7 in support
+  column (viable), radial returns to its landscape "rare, hard to balance"
+  status, and capacity is ~72% of a 60×36 board. The full-width-row
+  translations above still work on A0; they just stop being forced.
+- Span modifiers and focal content transfer unchanged; on a narrow board a
+  full-width row is the cheap move, a reserved side track the expensive one.
+- Capacity: at 24×36 the same content volume reads one Axis-5 step denser
+  than on 60×36 (landscape-balanced ≈ portrait-dense) — budget content down
+  before type size (clash rule 1).
+- The narrow-header masthead rules (logo stacking above the QR, one-line
+  footer blocks) live in SKILL.md and apply to every skeleton here. One
+  exception to re-judge by hand: on the **title-spine** form the `header`
+  role is a vertical rail, and Gate E's horizontal-masthead calibrations
+  (logo ≤ 22% of header *width*, right-block ≤ 32%, TITLE-SQUEEZED, and the
+  logo↔QR height match) mis-fire there — re-judge exactly that calibration
+  class visually and record the accepted deviations; stack rail logos/QR with
+  `.logo-row.logo-stack` (exempt from the height match) re-capped to the rail
+  width. Never waive LOGO/BROKEN or genuine overflow. A rail-aware Gate E is
+  queued alongside the `band` role below.
+- Measure roles: `column` is only for **card stacks that end at the shared
+  bottom line** (a band stack is ONE full-width column, each band a `card`;
+  the measure gate computes bottom-spread across all column/hero bottoms). A
+  full-width hero/stage band is `banner` (excluded from spread — the wave-3
+  orrery-band precedent), **not** `hero` (`hero` means a terminal panel that
+  bottom-aligns with the columns). Support blocks *above* a mid band must not
+  be `column`s either — wrap that whole upper region in a `banner`. `card`
+  only nests under `column`/`hero` (preflight), so banner-internal modules
+  carry no role. Two caveats: `banner` must hang directly under `poster`,
+  never inside a `body`-role region (preflight); and banner content escapes
+  the clipping / broken-image / letterboxing gates that cover
+  `card`/`column`/`hero` — eyeball the band in the print-emulated render
+  (the `render_preview` PDF/PNG, not a screen view; a first-class
+  non-terminal `band` role that keeps those checks is the queued tool
+  extension).
+- Rendered wireframes with copy-ready grid definitions:
+  `specimens/axes/axis1_layout.html` §竖版翻译.
 
 ## Axis 2 — Canvas (`base + treatment + coverage`)
 
@@ -207,8 +276,9 @@ clash rules — nothing more.
 
 ## Anti-convergence
 
-Consecutive posters in a wave must differ on at least two of: canvas,
-frame-line, section-heading joint, masthead — and must not reuse the previous
-poster's concept statement. The shipped default (white · soft card · plain
-headings · centered masthead) counts as one combo — do not let every poster
-collapse back to it.
+Consecutive posters in a wave must differ on at least two of: layout
+skeleton, canvas, frame-line, section-heading joint, masthead — and must not
+reuse the previous poster's concept statement. The shipped default (4-col
+landscape / 2-col portrait skeleton · white · soft card · plain headings ·
+centered masthead) counts as one combo — do not let every poster collapse
+back to it.

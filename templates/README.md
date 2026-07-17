@@ -21,7 +21,7 @@ So the loop is: copy → fill content + uncomment figures → run `measure`/`pol
 |---|---|---|---|
 | **landscape_4col_neutral** | 60 × 36 in landscape | header → optional banner → **4 columns** → optional takeaways → footer | Standard ML conference poster (ICML / NeurIPS / generic). You have ~3–5 content cards per column. Mix of figures, equations, tables. The default choice. |
 | **landscape_hero_neutral** | 60 × 36 in landscape | header → **hero panel (1.5fr)** + supporting column (1fr) → optional takeaways → footer | The paper's main figure or system diagram IS the visual hook. You want one big illustration on the left and 3–4 short cards on the right. No framework banner (hero replaces it). |
-| **portrait_2col_neutral** | 24 × 36 in portrait | header → **2 columns** → footer (no banner, no takeaways strip) | ICLR / CVPR portrait spec, or any venue with portrait orientation. Vertical space is precious — banner + takeaways are dropped; final card on right column acts as a takeaways callout. |
+| **portrait_2col_neutral** | 24 × 36 in portrait | header → **2 columns** → footer (no banner, no takeaways strip) | ICLR / CVPR portrait spec, or any venue with portrait orientation. Vertical space is precious — banner + takeaways are dropped; final card on right column acts as a takeaways callout. 2-col is the *default* portrait skeleton, not the only one: other portrait topologies (band stack, playbill, mid-stage band, …) are in `DESIGN-AXES.md` §Axis 1 · portrait translations — build those from this template's tokens and carry its BASE DEFENSES block into the custom skeleton. |
 
 ## Adding a new template
 

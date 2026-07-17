@@ -3,7 +3,9 @@
   posterly · specimens/axes/axis1_layout.html
   轴 1「版式骨架 Layout Skeleton」选项目录 — 独立浏览页,非海报。
   每个演示块是【真实的 CSS grid 构造】(grid-template-rows/columns/areas 照实),
-  代码注释块中给出可直接搬进模板的定义。锚点 ID 来自 80 张 ICML 2026 精选:
+  代码注释块中给出可直接搬进模板的定义。
+  (竖版翻译节 P1–P7 例外:线框只作几何示意,可搬构造见各条代码块 — 该节说明有言。)
+  锚点 ID 来自 80 张 ICML 2026 精选:
   https://icml.cc/media/PosterPDFs/ICML%202026/<id>.png
   控制变量:全部演示用中性基线(白底 / 浅灰块 / slate 蓝 #2D5F8B 标签色),
   不引入其他轴的花样 — 拓扑差异是唯一变量。
@@ -132,7 +134,8 @@
   /* =========================================================
      迷你海报线框 — 真实 grid 构造(可搬运部分)
      每个 .ax1-poster 是一张海报画布;grid-template-* 与代码
-     注释块逐字一致。--u 缩放:约 0.128px/mm(60in 画布 → 460px)。
+     注释块逐字一致(竖版翻译节 P1–P7 除外 — 其线框只作几何示意)。
+     --u 缩放:约 0.128px/mm(60in 画布 → 460px)。
      ========================================================= */
   .ax1-poster {
     width: 460px; max-width: 100%;
@@ -188,7 +191,7 @@
   .ax1-ga-mc    { grid-area: mc; }     .ax1-ga-md   { grid-area: md; }
   .ax1-ga-me    { grid-area: me; }
   .ax1-ga-g1    { grid-area: g1; }     .ax1-ga-g2   { grid-area: g2; }
-  .ax1-ga-g3    { grid-area: g3; }
+  .ax1-ga-g3    { grid-area: g3; }     .ax1-ga-g4   { grid-area: g4; }
   .ax1-ga-hub   { grid-area: hub; }
   .ax1-ga-s1 { grid-area: s1; } .ax1-ga-s2 { grid-area: s2; }
   .ax1-ga-s3 { grid-area: s3; } .ax1-ga-s4 { grid-area: s4; }
@@ -295,6 +298,86 @@
   }
   .ax1-hub-circle b { font-size: 10px; font-weight: 600; color: var(--ax1-slate-deep); }
   .ax1-hub-circle .ax1-fr { font-family: var(--ax1-mono); font-size: 9px; color: var(--ax1-ink-3); }
+
+  /* =========================================================
+     竖版翻译 P1–P7 的线框 grid 定义(画布 24:36;仅几何示意 —
+     可搬构造见各条目的代码块)
+     ========================================================= */
+  /* P1 全宽横带堆叠(07 横向条带行 → 竖版) */
+  .ax1-p-bands {
+    grid-template-rows:    auto 1fr 1.2fr 1fr auto;
+    grid-template-columns: 1fr;
+    grid-template-areas:   "ht" "b1" "b2" "b3" "ft";
+  }
+  /* P2 顶部英雄带 + 双栏网格(09 → 竖版) */
+  .ax1-p-tophero {
+    grid-template-rows:    auto 1.2fr 1fr 1fr auto;
+    grid-template-columns: 1fr 1fr;
+    grid-template-areas:   "ht ht"
+                           "hero hero"
+                           "g1 g2"
+                           "g3 g4"
+                           "ft ft";
+  }
+  /* P3 中段舞台带(05 中央舞台+两翼 → 竖版,舞台转 90°) */
+  .ax1-p-midstage {
+    grid-template-rows:    auto 1fr 1.7fr 1fr auto;
+    grid-template-columns: 1fr 1fr;
+    grid-template-areas:   "ht ht"
+                           "u1 u2"
+                           "stage stage"
+                           "l1 l2"
+                           "ft ft";
+  }
+  /* P4 双栏马赛克(08 → 竖版 2×N 命名区) */
+  .ax1-p-mosaic {
+    grid-template-rows:    auto 1fr 1fr 1fr auto;
+    grid-template-columns: 1fr 1fr;
+    grid-template-areas:   "ht ht"
+                           "ma mb"
+                           "mc mb"
+                           "mc md"
+                           "ft ft";
+  }
+  /* P5 标题脊柱(06 非对称标题列 → 竖版变体 a:窄旋转题轨) */
+  .ax1-p-spinetitle {
+    grid-template-rows:    1fr 1.2fr 1fr auto;
+    grid-template-columns: 0.2fr 1fr;
+    grid-template-areas:   "title b1"
+                           "title b2"
+                           "title b3"
+                           "ft ft";
+  }
+  /* P6 剧目单题区(06 → 竖版变体 b:题区占顶部显示几何) */
+  .ax1-p-playbill {
+    grid-template-rows:    1fr 3fr auto;
+    grid-template-columns: 1fr 1fr;
+    grid-template-areas:   "title title"
+                           "c1 c2"
+                           "ft ft";
+  }
+  /* P7 中轴脊线(10 放射轮毂的竖版类比;卡片跨 2 个半行、左右错 1 个半行,
+     脊线为装饰层 ::before,沿中缝绘制,不占轨道) */
+  .ax1-p-spine {
+    position: relative;
+    grid-template-rows:    auto repeat(7, 1fr) auto;
+    grid-template-columns: 1fr 1fr;
+    grid-template-areas:   "ht ht"
+                           "s1 ."
+                           "s1 s2"
+                           "s3 s2"
+                           "s3 s4"
+                           "s5 s4"
+                           "s5 s6"
+                           "s5 s6"
+                           "ft ft";
+  }
+  .ax1-p-spine::before {
+    content: "";
+    position: absolute; left: 50%; top: 10%; bottom: 9%;
+    width: 2px; margin-left: -1px;
+    background: var(--ax1-slate-line);
+  }
 
   /* =========================================================
      span modifier 三小样(基础拓扑固定为三栏,修饰是唯一变量)
@@ -422,6 +505,7 @@
       <a href="#t10">10 放射轮毂</a>
       <a href="#sec-span" class="ax1-toc--mod">修饰 · span modifier</a>
       <a href="#sec-focal" class="ax1-toc--mod">焦点 · focal content</a>
+      <a href="#sec-portrait">P1–P7 竖版翻译</a>
     </nav>
   </header>
 
@@ -527,6 +611,7 @@ grid-template-areas:   "ht ht"
                        "c1 c2"
                        "ft ft";</pre>
           <p class="ax1-scene"><b>适用场景</b>竖版会场(portrait venue)的默认骨架;阅读顺序为先左列到底、再右列。</p>
+          <p class="ax1-extra">竖版不是只有这一个骨架 — 其余拓扑的竖版形态见下方「竖版翻译 P1–P7」节。</p>
         </div>
       </div>
     </article>
@@ -889,6 +974,312 @@ grid-template-areas: "ht ht ht"  "u1 u2 u3"
         <p>标题即焦点。硬冲突规则 3:轴 8 必须选"标题入舞台"刊头;舞台内标题怎么排归轴 8。</p>
       </div>
     </div>
+  </section>
+
+  <!-- ================= 第四节:竖版翻译 ================= -->
+  <section class="ax1-sec" id="sec-portrait">
+    <h2>竖版翻译 Portrait translations<span>画布 24:36 · 横版拓扑的竖版形态 · P1–P7</span></h2>
+    <p class="ax1-secnote">
+      朝向是会场输入。本节按 <b>~24 in 宽的竖版档位</b>标定(24×36 in 板及几乎同尺寸的
+      61×91 cm ICLR workshop 规格):可用宽度只有约 2 栏,便宜方向是全宽行,
+      读者默认自上而下扫读;板子总量也小 — 面积仅为 60×36 横版的 ~40%。
+      <b>A0 竖版(33.1×46.8 in)是另一个档位,这些英寸数不通用</b>:3 栏 ~10.4 in 已舒适、
+      4 栏 ~7.7 in 降到 ⚠ 档、并列 hero 支撑栏 ~12.7 in 可行 — 见规范表的 A0 条目。
+      翻译原则:<b>保留拓扑的想法,把焦点几何搬到全宽行上</b> — 不要临场发挥,
+      也不要让每张竖版都塌回 03 双栏纵流(防趋同的指纹轴含版式骨架)。
+      判定汇总:03 原生适用;07 / 09 / 05 / 08 / 06 / 10 的竖版形态见 P1–P7;
+      04 英雄面板并列形态 ⚠ 合法但戏剧性弱(支撑栏 ~9 in 只装短卡,hero 轨 ~13.6 in
+      比普通双栏宽不了多少),通常改用 P2 / P3 的横带形态;
+      02 三栏 ⚠ 栏宽仅 ≈7.3 in,只装得下短句 / 列表;01 四栏 ✗ 低于最小可读栏宽。
+      锚点均为横版原型(尚无竖版语料);规范表见
+      <code>templates/DESIGN-AXES.md</code> §Axis 1 · portrait translations。
+      <b>本节契约与横版节不同</b>:线框画的是<b>区域几何示意</b>;代码块给出的才是
+      门禁角色合规的<b>可搬运构造</b>(外层 poster grid + 内层 column / banner 结构),
+      两者的行分割不必逐字相同。
+      measure 角色:<code>column</code> 只给<b>底边收在同一线上的贯底卡栈</b>
+      (带堆叠 = 一条全宽 column,各带标 <code>card</code>;spread 按全部 column / hero
+      底边计算);全宽 hero / 舞台带标 <code>banner</code>(不计入 spread — wave-3
+      天象仪带先例),<b>不要标 hero</b>(hero 语义是与栏底对齐的贯底面板);
+      中段带<b>上方</b>的支撑区同样不能标 column,整块包进 banner;
+      <code>card</code> 只能挂在 column / hero 下(preflight),banner 内部构件不带角色。
+      注意两点:banner 必须直接挂在 poster 下(不能在 body 角色区内);
+      banner 内容不受裁剪 / 坏图 / letterbox 门禁覆盖(那些只扫 card / column / hero)—
+      带内视觉须以 print 仿真渲染(render_preview 的 PDF/PNG,非屏幕预览)人工过目。
+    </p>
+
+    <!-- P1 全宽横带堆叠 -->
+    <article class="ax1-item" id="p01">
+      <div class="ax1-item-head">
+        <span class="ax1-no">P1</span>
+        <h3>全宽横带堆叠<span>full-width band stack</span></h3>
+        <span class="ax1-tag">07 横向条带行 → 竖版 · 最竖版原生的骨架</span>
+        <span class="ax1-anchors">横版原型<code>65626</code><code>66466</code></span>
+      </div>
+      <div class="ax1-item-body">
+        <div class="ax1-demo">
+          <div class="ax1-poster ax1-poster--portrait ax1-p-bands">
+            <div class="ax1-r ax1-r--chrome ax1-r--strip ax1-ga-ht"><b>header</b><span class="ax1-fr">auto</span></div>
+            <div class="ax1-r ax1-r--strip ax1-ga-b1"><b>band 1</b><span class="ax1-fr">1fr</span></div>
+            <div class="ax1-r ax1-r--strip ax1-ga-b2"><b>band 2</b><span class="ax1-fr">1.2fr</span></div>
+            <div class="ax1-r ax1-r--strip ax1-ga-b3"><b>band 3</b><span class="ax1-fr">1fr</span></div>
+            <div class="ax1-r ax1-r--chrome ax1-r--strip ax1-ga-ft"><b>footer</b><span class="ax1-fr">auto</span></div>
+          </div>
+          <p class="ax1-demo-cap">24 : 36 竖版 · 真实 grid 线框</p>
+        </div>
+        <div class="ax1-meta">
+<pre class="ax1-code"><em>/* 外层 poster grid(minmax(0,·):过高内容被压缩,
+   而不是把 footer 推出画布 — 同 shipped 模板的防线) */</em>
+grid-template-rows:    auto minmax(0, 1fr) auto;
+grid-template-areas:   "ht" "bd" "ft";
+<em>/* bd = 一条全宽 column,每条带一张 card(角色合规,spread 恒 0):
+   &lt;div class="bands" data-measure-role="column"&gt;      ← grid-area: bd
+     &lt;section class="card" data-measure-role="card"&gt;band&lt;/section&gt; ×N
+   带高由内容决定 — 线框的 1fr/1.2fr/1fr 行仅示意比例 */</em></pre>
+          <p class="ax1-scene"><b>适用场景</b>按步骤 / 阶段逐段推进的叙事;竖版里横带堆叠就是默认阅读顺序,整带通宽适合流程图、时间线、宽表。</p>
+          <p class="ax1-extra">横版 07 行备注要求的「侧栏或顶部导航信号」在竖版由带头编号(轴 7 marker)即可满足 — 带堆叠本身就是阅读顺序。带内部可再分 2–3 个子格。measure 角色:整个堆叠标一条全宽 column,各带标 card。</p>
+        </div>
+      </div>
+    </article>
+
+    <!-- P2 顶部英雄带 + 双栏网格 -->
+    <article class="ax1-item" id="p02">
+      <div class="ax1-item-head">
+        <span class="ax1-no">P2</span>
+        <h3>顶部英雄带 + 双栏网格<span>top hero band + 2-col grid</span></h3>
+        <span class="ax1-tag">09 顶部英雄+底部网格 → 竖版</span>
+        <span class="ax1-anchors">横版原型<code>66579</code><code>62378</code></span>
+      </div>
+      <div class="ax1-item-body">
+        <div class="ax1-demo">
+          <div class="ax1-poster ax1-poster--portrait ax1-p-tophero">
+            <div class="ax1-r ax1-r--chrome ax1-r--strip ax1-ga-ht"><b>header</b><span class="ax1-fr">auto</span></div>
+            <div class="ax1-r ax1-r--focal ax1-r--strip ax1-ga-hero"><b>hero(全宽)</b><span class="ax1-fr">1.2fr</span></div>
+            <div class="ax1-r ax1-ga-g1"><b>grid cell</b><span class="ax1-fr">1fr</span></div>
+            <div class="ax1-r ax1-ga-g2"><b>grid cell</b><span class="ax1-fr">1fr</span></div>
+            <div class="ax1-r ax1-ga-g3"><b>grid cell</b><span class="ax1-fr">1fr</span></div>
+            <div class="ax1-r ax1-ga-g4"><b>grid cell</b><span class="ax1-fr">1fr</span></div>
+            <div class="ax1-r ax1-r--chrome ax1-r--strip ax1-ga-ft"><b>footer</b><span class="ax1-fr">auto</span></div>
+          </div>
+          <p class="ax1-demo-cap">24 : 36 竖版 · 真实 grid 线框</p>
+        </div>
+        <div class="ax1-meta">
+<pre class="ax1-code"><em>/* 外层 poster grid */</em>
+grid-template-rows:    auto minmax(0, 1.2fr) minmax(0, 2fr) auto;
+                       <em>/* hero 1.2/3.2 ≈ 37% ≤ ~40% 主体高 */</em>
+grid-template-areas:   "ht" "hero" "bd" "ft";
+<em>/* hero 带标 banner(直接挂 poster 下,不计 spread;不要标 hero):
+   &lt;div class="hero-band" data-measure-role="banner"&gt;…&lt;/div&gt;
+   bd = body 角色 2 栏 grid(照 shipped .body-grid),两条贯底 column:
+   &lt;div class="body-grid" data-measure-role="body"&gt;
+     &lt;div class="column" data-measure-role="column"&gt;card ×2&lt;/div&gt; ×2
+   线框的 g1–g4 是结果几何示意 */</em></pre>
+          <p class="ax1-scene"><b>适用场景</b>一个全宽主视觉 / 主结论压顶,结果矩阵在下;竖版里 hero 带可以给到更高比例(全宽横带比通高侧轨更经济)。</p>
+          <p class="ax1-extra">04 英雄面板并列形态 ⚠ 合法但通常也翻译到这里(并列时支撑栏 ~9 in 只装短卡、hero 轨 ~13.6 in 戏剧性弱)。measure 角色:hero 带标 <b>banner</b>(不是 hero — 它不与栏底对齐),下方网格标 2 条贯底 column。</p>
+        </div>
+      </div>
+    </article>
+
+    <!-- P3 中段舞台带 -->
+    <article class="ax1-item" id="p03">
+      <div class="ax1-item-head">
+        <span class="ax1-no">P3</span>
+        <h3>中段舞台带<span>mid-stage band</span></h3>
+        <span class="ax1-tag">05 中央舞台+两翼 → 竖版 · 舞台转 90°</span>
+        <span class="ax1-anchors">横版原型<code>60655</code><code>64621</code></span>
+      </div>
+      <div class="ax1-item-body">
+        <div class="ax1-demo">
+          <div class="ax1-poster ax1-poster--portrait ax1-p-midstage">
+            <div class="ax1-r ax1-r--chrome ax1-r--strip ax1-ga-ht"><b>header</b><span class="ax1-fr">auto</span></div>
+            <div class="ax1-r ax1-ga-u1"><b>support</b><span class="ax1-fr">1fr</span></div>
+            <div class="ax1-r ax1-ga-u2"><b>support</b><span class="ax1-fr">1fr</span></div>
+            <div class="ax1-r ax1-r--focal ax1-r--strip ax1-ga-stage"><b>stage(全宽中段带)</b><span class="ax1-fr">1.7fr ≈ 46%</span></div>
+            <div class="ax1-r ax1-ga-l1"><b>support</b><span class="ax1-fr">1fr</span></div>
+            <div class="ax1-r ax1-ga-l2"><b>support</b><span class="ax1-fr">1fr</span></div>
+            <div class="ax1-r ax1-r--chrome ax1-r--strip ax1-ga-ft"><b>footer</b><span class="ax1-fr">auto</span></div>
+          </div>
+          <p class="ax1-demo-cap">24 : 36 竖版 · 真实 grid 线框</p>
+        </div>
+        <div class="ax1-meta">
+<pre class="ax1-code"><em>/* 外层 poster grid */</em>
+grid-template-rows:    auto minmax(0, 1fr) minmax(0, 1.7fr) minmax(0, 1fr) auto;
+  <em>/* stage 1.7fr ≈ 46% 主体高;规格 ~45–55% ⇒ 1.64fr–2.44fr 可调 */</em>
+grid-template-areas:   "ht" "up" "stage" "lo" "ft";
+<em>/* stage 与上段支撑区 up 都标 banner(直接挂 poster 下;up 标 column
+   会把中部底边计入 spread),banner 内部构件不带角色;
+   lo = body 角色 2 栏 grid + 两条贯底 column(card 照常)。
+   线框的 u/l 四格是几何示意 */</em></pre>
+          <p class="ax1-scene"><b>适用场景</b>核心主张 / 核心图值得戏剧化聚焦:舞台从"中央竖轨"转 90° 变成"拦腰全宽带",上下为支撑区。彩色 / 深色舞台带的用色归轴 2/3。</p>
+          <p class="ax1-extra">上下两段支撑区各自独立排内容,不跨带续排(同全宽中段横带修饰的规则)。measure 角色:舞台带标 banner;<b>上段支撑区不能标 column</b>(底边收在海报中部,会炸 bottom-spread)— 整块包进 banner,内部构件不带角色;下段两栈标贯底 column。</p>
+        </div>
+      </div>
+    </article>
+
+    <!-- P4 双栏马赛克 -->
+    <article class="ax1-item" id="p04">
+      <div class="ax1-item-head">
+        <span class="ax1-no">P4</span>
+        <h3>双栏马赛克<span>2-col × N-row named grid</span></h3>
+        <span class="ax1-tag">08 马赛克命名区 → 竖版</span>
+        <span class="ax1-anchors">横版原型<code>63300</code><code>63640</code><code>65372</code></span>
+      </div>
+      <div class="ax1-item-body">
+        <div class="ax1-demo">
+          <div class="ax1-poster ax1-poster--portrait ax1-p-mosaic">
+            <div class="ax1-r ax1-r--chrome ax1-r--strip ax1-ga-ht"><b>header</b><span class="ax1-fr">auto</span></div>
+            <div class="ax1-r ax1-ga-ma"><b>module A</b><span class="ax1-fr">1 × 1</span></div>
+            <div class="ax1-r ax1-r--focal ax1-ga-mb"><b>module B</b><span class="ax1-fr">跨 2 行</span></div>
+            <div class="ax1-r ax1-ga-mc"><b>module C</b><span class="ax1-fr">跨 2 行</span></div>
+            <div class="ax1-r ax1-ga-md"><b>module D</b><span class="ax1-fr">1 × 1</span></div>
+            <div class="ax1-r ax1-r--chrome ax1-r--strip ax1-ga-ft"><b>footer</b><span class="ax1-fr">auto</span></div>
+          </div>
+          <p class="ax1-demo-cap">24 : 36 竖版 · 真实 grid 线框</p>
+        </div>
+        <div class="ax1-meta">
+<pre class="ax1-code"><em>/* 外层 poster grid */</em>
+grid-template-rows:    auto minmax(0, 1fr) auto;
+grid-template-areas:   "ht" "bd" "ft";
+<em>/* 内层:bd = body 角色 2 栏 grid,每栏是显式行轨的 grid,
+   行轨比例互补 ⇒ 接缝交错(即线框的跨行效果): */</em>
+.mosaic-grid { display: grid; grid-template-columns: 1fr 1fr;
+               gap: calc(12 * var(--u)); min-height: 0; }
+.mosaic-col  { display: grid; gap: calc(12 * var(--u)); min-height: 0; }
+.mosaic-col--a { grid-template-rows: minmax(0, 1fr) minmax(0, 2fr); }
+.mosaic-col--b { grid-template-rows: minmax(0, 2fr) minmax(0, 1fr); }
+<em>/* column 角色标在 .mosaic-col 上,每张 card 占一行(贯底,spread 合规)。
+   真·named-area 模块网格无法用现有角色模型表达(role/preflight/卡间距
+   都只认顺序 column 栈);把模块各自冒充 column,上排底边才会
+   计入 spread(wave-3 横版马赛克同为栈式构造) */</em></pre>
+          <p class="ax1-scene"><b>适用场景</b>模块体量差异大的"仪表盘感"在竖版同样成立;跨列空间有限(只有 2 列),错落主要靠<b>跨行</b>。</p>
+        </div>
+      </div>
+    </article>
+
+    <!-- P5 标题脊柱 -->
+    <article class="ax1-item" id="p05">
+      <div class="ax1-item-head">
+        <span class="ax1-no">P5</span>
+        <h3>标题脊柱<span>title spine</span></h3>
+        <span class="ax1-tag">06 非对称标题列 → 竖版变体 a</span>
+        <span class="ax1-anchors">横版原型<code>63136</code><code>61403</code></span>
+      </div>
+      <div class="ax1-item-body">
+        <div class="ax1-demo">
+          <div class="ax1-poster ax1-poster--portrait ax1-p-spinetitle">
+            <div class="ax1-r ax1-r--focal ax1-r--v ax1-ga-title"><b>title spine</b></div>
+            <div class="ax1-r ax1-r--strip ax1-ga-b1"><b>band 1</b><span class="ax1-fr">1fr</span></div>
+            <div class="ax1-r ax1-r--strip ax1-ga-b2"><b>band 2</b><span class="ax1-fr">1.2fr</span></div>
+            <div class="ax1-r ax1-r--strip ax1-ga-b3"><b>band 3</b><span class="ax1-fr">1fr</span></div>
+            <div class="ax1-r ax1-r--chrome ax1-r--strip ax1-ga-ft"><b>footer</b><span class="ax1-fr">auto</span></div>
+          </div>
+          <p class="ax1-demo-cap">24 : 36 竖版 · 真实 grid 线框</p>
+        </div>
+        <div class="ax1-meta">
+<pre class="ax1-code"><em>/* 外层 poster grid */</em>
+grid-template-rows:    minmax(0, 1fr) auto;
+grid-template-columns: 0.2fr 1fr;   <em>/* 题轨 0.2fr ≈ 3.8 in,旋转排版 */</em>
+grid-template-areas:   "title bd"
+                       "ft    ft";   <em>/* 无顶部横向刊头 */</em>
+<em>/* title 轨即刊头(role=header,内部排版归轴 8);
+   bd = 一条全宽 column,带 = card — 线框的三段行高仅示意 */</em></pre>
+          <p class="ax1-scene"><b>适用场景</b>标题很强、想让"身份"占一条通高窄轨的编辑式竖版;右侧内容按横带堆叠。</p>
+          <p class="ax1-extra">硬冲突规则 3:轴 8 必须选"标题列刊头";题轨宽度别超过 ~4 in,否则挤压本已稀缺的内容宽度。题轨内部怎么排(竖排、旋转、叠字)归轴 8。measure 角色:题轨即刊头(标 header),右侧带栈标一条全宽 column。注意:Gate E 按<b>横向刊头</b>校准(logo ≤ header 宽 22%、right-block ≤ 32%、TITLE-SQUEEZED、logo↔QR 高度匹配),在 ~3.8 in 宽的竖轨上会误报 — <b>重判范围仅限这类横向校准警告</b>,人工重判并记录偏差;竖排用 <code>.logo-row.logo-stack</code>(豁免高度匹配),宽度上限改按轨宽;LOGO/BROKEN、真实溢出<b>不得</b> waiver(rail 版 Gate E 已列入工具扩展队列)。</p>
+        </div>
+      </div>
+    </article>
+
+    <!-- P6 剧目单题区 -->
+    <article class="ax1-item" id="p06">
+      <div class="ax1-item-head">
+        <span class="ax1-no">P6</span>
+        <h3>剧目单题区<span>playbill top block</span></h3>
+        <span class="ax1-tag">06 非对称标题列 → 竖版变体 b</span>
+        <span class="ax1-anchors">横版原型<code>63136</code></span>
+      </div>
+      <div class="ax1-item-body">
+        <div class="ax1-demo">
+          <div class="ax1-poster ax1-poster--portrait ax1-p-playbill">
+            <div class="ax1-r ax1-r--focal ax1-ga-title"><b>playbill title block</b><span class="ax1-fr">1fr ≈ 顶部 22%</span></div>
+            <div class="ax1-r ax1-ga-c1"><b>column</b><span class="ax1-fr">1fr</span></div>
+            <div class="ax1-r ax1-ga-c2"><b>column</b><span class="ax1-fr">1fr</span></div>
+            <div class="ax1-r ax1-r--chrome ax1-r--strip ax1-ga-ft"><b>footer</b><span class="ax1-fr">auto</span></div>
+          </div>
+          <p class="ax1-demo-cap">24 : 36 竖版 · 真实 grid 线框</p>
+        </div>
+        <div class="ax1-meta">
+<pre class="ax1-code">grid-template-rows:    minmax(0, 1fr) minmax(0, 3fr) auto;
+                       <em>/* 题区 ~20–25%,是显示几何不是页眉行 */</em>
+grid-template-columns: 1fr 1fr;
+grid-template-areas:   "title title"
+                       "c1 c2"
+                       "ft ft";
+<em>/* 角色即字面结构:title 区标 header,c1/c2 即 column 元素,
+   card 照常 — 本节唯一线框=构造、可逐字照搬的翻译项 */</em></pre>
+          <p class="ax1-scene"><b>适用场景</b>书封 / 剧目单式的竖版开场:题区独占顶部 20–25% 作显示级几何(大字标题 + 一句话主张),下方回到双栏。</p>
+          <p class="ax1-extra">硬冲突规则 3:题区是轴 1 预留的焦点几何,轴 8 须选与之匹配的显示刊头(eyebrow + display 或题入舞台一类),不能再排一条普通页眉行。measure 角色:题区标 header,下方两栏照常标 column。</p>
+        </div>
+      </div>
+    </article>
+
+    <!-- P7 中轴脊线 -->
+    <article class="ax1-item" id="p07">
+      <div class="ax1-item-head">
+        <span class="ax1-no">P7</span>
+        <h3>中轴脊线<span>central spine</span></h3>
+        <span class="ax1-tag">10 放射轮毂的竖版类比 · 轮毂在 24 in 板上 ⚠ 受限</span>
+        <span class="ax1-anchors">横版原型<code>—</code></span>
+      </div>
+      <div class="ax1-item-body">
+        <div class="ax1-demo">
+          <div class="ax1-poster ax1-poster--portrait ax1-p-spine">
+            <div class="ax1-r ax1-r--chrome ax1-r--strip ax1-ga-ht"><b>header</b><span class="ax1-fr">auto</span></div>
+            <div class="ax1-r ax1-r--faint ax1-ga-s1"><b>satellite</b></div>
+            <div class="ax1-r ax1-r--faint ax1-ga-s2"><b>satellite</b></div>
+            <div class="ax1-r ax1-r--faint ax1-ga-s3"><b>satellite</b></div>
+            <div class="ax1-r ax1-r--faint ax1-ga-s4"><b>satellite</b></div>
+            <div class="ax1-r ax1-r--faint ax1-ga-s5"><b>satellite</b></div>
+            <div class="ax1-r ax1-r--faint ax1-ga-s6"><b>satellite</b></div>
+            <div class="ax1-r ax1-r--chrome ax1-r--strip ax1-ga-ft"><b>footer</b><span class="ax1-fr">auto</span></div>
+          </div>
+          <p class="ax1-demo-cap">24 : 36 竖版 · 真实 grid 线框(脊线为装饰层)</p>
+        </div>
+        <div class="ax1-meta">
+<pre class="ax1-code"><em>/* 外层 poster grid */</em>
+grid-template-rows:    auto minmax(0, 1fr) auto;
+grid-template-areas:   "ht" "bd" "ft";
+<em>/* 内层:bd = body 角色 2 栏 grid,两条贯底 column;
+   两栏共用 7 条等高半行轨道(轨道高 = (body 高 − 6×行 gap,即 6×7u) / 7,
+   随画布缩放;右栏错开一个网格行 = 一条轨道 + 一个行 gap),
+   普通卡跨 2 个半行、左右错 1 个 — 错位与末端对齐都由轨道保证: */</em>
+.spine-body  { position: relative; display: grid;
+               grid-template-columns: 1fr 1fr;
+               gap: calc(12 * var(--u)); min-height: 0; }
+.spine-col   { display: grid; gap: calc(7 * var(--u)); min-height: 0;
+               grid-template-rows: repeat(7, minmax(0, 1fr)); }
+.spine-col--l &gt; :nth-child(1) { grid-row: 1 / 3; }  <em>/* 左:1/3, 3/5, 5/8 */</em>
+.spine-col--l &gt; :nth-child(2) { grid-row: 3 / 5; }
+.spine-col--l &gt; :nth-child(3) { grid-row: 5 / 8; }
+.spine-col--r &gt; :nth-child(1) { grid-row: 2 / 4; }  <em>/* 右:2/4, 4/6, 6/8 */</em>
+.spine-col--r &gt; :nth-child(2) { grid-row: 4 / 6; }
+.spine-col--r &gt; :nth-child(3) { grid-row: 6 / 8; }
+<em>/* :nth-child 按「每栏恰有 3 个直接子元素且全是 card」假设计数 —
+   栏内一旦加入其他直接子级(标签 / 装饰),槽位整体错移;
+   那种情况改用显式槽位类(.sp-1/.sp-2/.sp-3)标 grid-row。
+   卡数不同时改行数与 grid-row 放置,保持两栏末行同线收尾;
+   卡内容要能装进其轨道高(容量按卡预算) */</em>
+<em>/* 脊线画在 .spine-body 上 — 不要用 .poster::before,
+   竖版模板已用它画顶部色条,两者会互相覆盖: */</em>
+.spine-body::before {
+  content: ""; position: absolute;
+  left: 50%; top: 0; bottom: 0;
+  width: calc(1.2 * var(--u)); transform: translateX(-50%);
+  background: var(--border-strong);
+}</pre>
+          <p class="ax1-scene"><b>适用场景</b>方法真有"一条主线 + 多个环节"时:竖版的中心—辐射 — 主线变成沿中缝的脊线,环节卡片左右交替错落。</p>
+          <p class="ax1-extra">放射轮毂本体在 24 in 板上 ⚠ 受限:卫星栏 ≈7 in、hub 栏 ≈8 in,和 ⚠ 三栏同档,再叠加轮毂自身的平衡难题 — 通常用本条替代;A0 竖版上轮毂回到横版的「罕见 · 难平衡」档。同 10 号的告诫:仅当结构真实存在时用。measure 角色:左右两栈标 column(末尾一对卡底边对齐)。</p>
+        </div>
+      </div>
+    </article>
   </section>
 
   <!-- ================= 页脚 ================= -->
