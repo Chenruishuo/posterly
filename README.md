@@ -18,7 +18,7 @@
 > [!NOTE]
 > **Built with Claude, works with Codex too.** posterly is developed primarily with Claude (Opus 4.7 / 4.8), but in testing Codex (GPT-5.5) drives it just as well — and any coding agent with skill support should be fine. Hit a snag? A ⭐ and an issue are always welcome!
 
-A poster in `posterly` is **one HTML file** styled for an exact print canvas. The skill ships three neutral templates, four sanity-check CLIs, and a render pipeline that produces a PDF at exact ICML / NeurIPS / ICLR / CVPR dimensions. Inside your agent, `/posterly` walks you through venue lookup → template pick → content fill → render — see `SKILL.md` for the full workflow it follows.
+A poster in `posterly` is **one HTML file** styled for an exact print canvas. The skill ships three neutral templates, four sanity-check CLIs, and a render pipeline that produces a PDF at exact ICML / NeurIPS / ICLR / CVPR dimensions. Inside your agent, `/posterly` walks you through venue lookup → design direction (picked by eye from rendered thumbnails) → content fill → gated render loop — see `SKILL.md` for the full workflow it follows.
 
 ---
 
@@ -130,7 +130,14 @@ Once installed, just point your agent at the paper's source directory:
 
 > /posterly — make my ICML 2026 poster from the LaTeX project at ~/papers/mypaper/. Logos are in ~/papers/mypaper/logos/, QR should point to https://github.com/you/yourcode
 
-The paper source is the only required input — hand over the LaTeX project directory (an easily-parsed format like Word should also do) and posterly reads the actual source, so numbers and claims come from the paper, not from memory. Logos and the QR target URL are optional: anything you don't hand over up front, the skill asks about in one batch of design questions before it starts (and degrades gracefully if the answer is "none" — text venue badge, no empty logo/QR boxes).
+The paper source is the only required input — hand over the LaTeX project directory (an easily-parsed format like Word should also do) and posterly reads the actual source, so numbers and claims come from the paper, not from memory. Everything else is optional steering; whatever you don't say up front is asked in one batch of design questions before drafting:
+
+- **Logos & QR** — file paths and a target URL, or "none" (degrades gracefully: text venue badge, no empty boxes; the QR is generated offline, never a remote QR-service link).
+- **Style leanings** — must-haves or vetoes in plain words: "keep it light", "a dark editorial look is welcome", "no mascots". You are never asked to pick a style from a text list — see below.
+- **Palette** — your lab/venue colors as the seed; without them one is derived from your logo, affiliation brand, or the paper's own figures (the shipped steel-blue is a last resort, not a default).
+- **Text density and block count** — two independent switches: Normal vs **Light** (fewer words, the space goes to larger paper figures) and Normal vs **Fewer** (fewer, larger cards — same content, less subdivided).
+
+**How the look is chosen.** posterly composes a design instead of picking a theme. The menu is **8 orthogonal axes** — layout skeleton, canvas, palette, typography, density, card surface & frame, section-heading joint, masthead — plus a pool of pluggable devices, distilled from a corpus of 80 ICML 2026 posters: `templates/DESIGN-AXES.md` is the menu (with explicit clash rules), `specimens/axes/` the rendered catalog of every option. Each candidate direction starts from a one-line *concept*, derives its axis picks from it, and designates exactly one *hero moment*. The agent renders 2–3 genuinely different candidates as small thumbnails and you pick by eye. The locked direction then travels with the poster — a `DESIGN DIRECTION` comment in `poster.html` plus `design_tokens.json` (hue centers, vendored fonts, dark-ground flag) that every gate run reads — so later edits and the style gate respect deliberate choices instead of "correcting" them. Building several posters in a batch? Anti-convergence rules force consecutive posters apart on the fingerprint axes.
 
 > [!NOTE]
 > Building straight from a **PDF** is untested. It may still work if your agent has a screenshot / figure-extraction tool, or if the poster doesn't need to reuse the paper's figures — if you try it, an issue with your result is welcome!
@@ -173,11 +180,14 @@ Detailed thresholds and tuning flags are in `SKILL.md`. See `templates/README.md
 
 ## Customizing your poster
 
-The three knobs you'll actually touch:
+Every visual decision routes through the `:root` token block — restyle there, not on individual elements (the style gate enforces this). The knobs:
 
-- **Colors / fonts**: edit `:root` design tokens (`--accent`, `--emph`, `--font-serif`, …) in the template you copied.
-- **Logos**: drop into the same directory as `poster.html`, reference as `images/your_logo.png`.
-- **QR code**: give `/posterly` your paper/code URL and Claude generates the QR for you — the showcase posters' codes were made this way. Templates ship an inline SVG placeholder so they render offline; to make one by hand, `qrencode -o qr.png -s 12 "<url>"` (Linux) or `python -c "import qrcode; qrcode.make('<url>').save('qr.png')"`, then point the QR `<img src=…>` at it.
+- **Palette**: the rebrand surface is eight tokens — `--accent` / `--accent-deep` / `--accent-light` / `--accent-soft` / `--accent-ink` plus the emphasis register `--emph` / `--emph-soft` / `--emph-ink`. `templates/THEMES.md` holds a calibrated pool of register choices.
+- **Fonts**: the `--font-serif` / `--font-sans` stacks. A face outside the built-in whitelist is fine — vendor the files locally (never a CDN) and declare the family under `"fonts"` in `design_tokens.json` so the style gate accepts it.
+- **Shape & figure mounts**: `--rs` scales every corner radius (1 = shipped soft look, 0 = square); `--fig-bg` / `--fig-frame` restyle how paper figures are mounted on cards (`--fig-frame: transparent` = frameless); `--u` is the global size unit.
+- **`design_tokens.json`**: lives next to `poster.html` and is passed to every gate run (`run_gates.py … --tokens design_tokens.json`). It declares the poster's two hue centers, vendored fonts, and `"dark_ground": true` for a deliberate dark canvas.
+- **Logos**: drop into the same directory as `poster.html`, reference as `images/your_logo.png`; the advisory `fit-logos` CLI proposes a header arrangement you can take or leave.
+- **QR code**: give `/posterly` your paper/code URL and the agent generates the QR offline — the showcase posters' codes were made this way. By hand: `qrencode -o qr.png -s 12 "<url>"` (Linux) or `python -c "import qrcode; qrcode.make('<url>').save('qr.png')"`, then point the QR `<img src=…>` at it. Templates ship an inline SVG placeholder so they render offline.
 
 ---
 
