@@ -655,7 +655,7 @@ def _logo_data(logos, qrs=None, header_w=2000.0, header_blocks=None):
 
 def test_logo_broken_raster_flagged(tmp_path, monkeypatch, capsys) -> None:
     """A 404'd header logo used to print blank SILENTLY -- the FIG/BROKEN
-    gate only scans card/hero images. LOGO/BROKEN must surface it."""
+    gate only scans card/hero/band images. LOGO/BROKEN must surface it."""
     data = _logo_data([_logo(natural_w=0.0, natural_h=0.0)])
     combined, rc = _run(monkeypatch, tmp_path, capsys, data)
     assert "LOGO/BROKEN" in combined

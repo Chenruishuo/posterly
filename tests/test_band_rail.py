@@ -434,3 +434,68 @@ def test_horizontal_header_behavior_unchanged(
     assert "% of header width" in out
     assert "LOGO/QR-MISMATCH" in out
     assert "vertical rail" not in out
+
+
+# ---- polish: end-to-end through the real _POLISH_JS ---------------------
+# The mocked tests above pin the Python side only; this one renders a
+# real rail+band poster so the NEW collection paths execute in Chromium:
+# the band img must land in `figures` (FIG/BROKEN) and NOT in
+# `bannerImgs` (Gate F stays banner-only), header_h + the four content
+# edges must ship (rail detection + vertical overflow).
+
+_E2E_POSTER = """<!DOCTYPE html>
+<html><head><meta charset="utf-8">
+<style>
+  @page { size: 24in 36in; margin: 0; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 100%; height: 100%; background: #fff; }
+  .poster { width: 24in; height: 36in; background: #fff; color: #111;
+            display: grid; grid-template-columns: 360px 1fr;
+            grid-template-rows: 600px 1fr; }
+  .rail   { grid-row: 1 / 3; grid-column: 1; padding: 20px;
+            background: #eee; }
+  .right-block { width: 200px; height: 4000px; background: #ddd; }
+  .band   { grid-row: 1; grid-column: 2; padding: 20px; }
+  .column { grid-row: 2; grid-column: 2; display: flex;
+            flex-direction: column; }
+  .card   { flex: 1; border: 2px solid #888; padding: 20px; }
+</style></head>
+<body>
+  <div class="poster" data-measure-role="poster">
+    <header class="rail" data-measure-role="header">
+      <div class="right-block">stacked block</div>
+    </header>
+    <div class="band" data-measure-role="band">
+      <!-- display:block matters: a broken INLINE img with alt collapses
+           to Chromium's 24x18 icon (CSS size ignored) and would duck the
+           50px collection floor; the shipped figure components set
+           display:block, under which the CSS size applies. -->
+      <img src="missing.png" alt="x"
+           style="display:block;width:300px;height:200px">
+    </div>
+    <div class="column" data-measure-role="column">
+      <div class="card" data-measure-role="card">card content</div>
+    </div>
+  </div>
+</body></html>
+"""
+
+
+@pytest.mark.skipif(not _HAS_CHROMIUM,
+                    reason="playwright + chromium not available")
+def test_rail_band_end_to_end(tmp_path, capsys) -> None:
+    poster = tmp_path / "poster.html"
+    poster.write_text(_E2E_POSTER, encoding="utf-8")
+    rc = _polish.cmd_polish(_polish_args(poster))
+    out = "".join(capsys.readouterr())
+    # Rail detected from the real header box (360 wide x full height).
+    assert "vertical rail" in out
+    # Band img collected by the band selector -> FIG/BROKEN fires.
+    assert "figures checked     : 1" in out
+    assert "WARN: FIG/BROKEN" in out
+    # ...and NOT by the Gate F banner walk-up.
+    assert "banner images       : 0" in out
+    # The 4000px block spills the rail's bottom content edge.
+    assert "WARN: HEADER/OVERFLOW" in out
+    assert "top/bottom" in out
+    assert rc == 0

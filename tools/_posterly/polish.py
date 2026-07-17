@@ -1754,7 +1754,7 @@ def report_polish(data: dict, args: argparse.Namespace,
         # extension (after stripping any ?query / #fragment) plus inline
         # SVG data URIs. Imperfect: an SVG behind an extensionless URL
         # still slips through; an `img.decode()`-based JS probe would be
-        # exact. Covers both card and hero <img> (see _POLISH_JS).
+        # exact. Covers card, hero, and band <img> (see _POLISH_JS).
         src_path = src_l.split("?", 1)[0].split("#", 1)[0]
         is_svg = (
             src_path.endswith((".svg", ".svgz"))
@@ -2426,8 +2426,9 @@ def report_polish(data: dict, args: argparse.Namespace,
     # a caption that expands the slot past the image (the half-fix: margin:auto
     # evens the gaps but a long single-line caption still sets the width).
     # Anchored on the img; the shipped `banner-figure` (width:min-content)
-    # collapses the slot to the image and never trips it. Gates A/A2 only scan
-    # card+hero images, so banner images are otherwise unchecked.
+    # collapses the slot to the image and never trips it. Gates A/A2 scan
+    # card/hero/band images but not banner's, so banner images are
+    # otherwise unchecked.
     slot_min_pic_w = getattr(
         args, "banner_slot_min_pic_w", DEFAULT_BANNER_SLOT_MIN_PIC_W)
     slot_min_pic_h = getattr(
