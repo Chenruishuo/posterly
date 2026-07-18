@@ -33,3 +33,8 @@ jobs:
         with:
           repos: ${{ github.repository }}
           output-dir: docs/star-history
+          # GitHub's 2026 stargazers restriction blocks the default Actions bot
+          # token (403), so read stargazers with an owner-identity PAT stored as
+          # a repo secret. This token is used ONLY to read stargazers; the commit
+          # push is still authorized by the default GITHUB_TOKEN (contents:write).
+          token: ${{ secrets.STAR_HISTORY_TOKEN }}
