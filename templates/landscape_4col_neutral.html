@@ -211,6 +211,7 @@
     margin: 20px auto;
     padding: calc(10 * var(--u)) calc(14 * var(--u));
     display: grid;
+    grid-template-columns: minmax(0, 1fr);  /* column-axis twin of the minmax(0,1fr) body-row defense: without it the implicit `auto` column grows to a wide child's max-content and a full-width row overflows the canvas (measure's canvas-overflow gate). Keep on any custom skeleton. */
     grid-template-rows: auto auto minmax(0, 1fr) auto auto;  /* header | banner | body | takeaways | footer. minmax(0,1fr) (not bare 1fr): an over-tall body compresses instead of pushing takeaways/footer off-canvas */
     gap: calc(6 * var(--u));
     box-shadow: var(--shadow-screen);

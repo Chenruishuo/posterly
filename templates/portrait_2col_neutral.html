@@ -223,6 +223,13 @@
     margin: 20px auto;
     padding: calc(10 * var(--u)) calc(12 * var(--u));
     display: grid;
+    /* Single content column pinned to minmax(0,1fr): without an explicit
+       grid-template-columns the implicit `auto` column grows to a wide
+       child's max-content, so a full-width band overflows the canvas and
+       is sliced off at the page edge (measure's canvas-overflow gate).
+       Keep this on any custom skeleton -- it's the column-axis twin of
+       the minmax(0,1fr) body-row defense below. */
+    grid-template-columns: minmax(0, 1fr);
     /* header | body | footer — no banner row, no takeaways row.
        minmax(0,1fr) (not bare 1fr): an over-tall body compresses instead of
        pushing the footer off-canvas */

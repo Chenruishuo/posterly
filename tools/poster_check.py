@@ -140,8 +140,10 @@ def build_parser() -> argparse.ArgumentParser:
         help="hard gate: a card/column/hero whose content is clipped by "
              "overflow:hidden|clip|scroll|auto by MORE than this many px "
              "(scrollHeight-clientHeight) FAILS -- clipped content is "
-             "silently lost in print while the box still looks aligned "
-             "(default 2.0; sub-pixel rounding tolerated).",
+             "silently lost in print while the box still looks aligned. "
+             "Also the tolerance for the poster-root canvas-overflow gate "
+             "(content spilling past the canvas), so raising it relaxes "
+             "both (default 2.0; sub-pixel rounding tolerated).",
     )
     pm.add_argument(
         "--max-intercard-gap", type=float,

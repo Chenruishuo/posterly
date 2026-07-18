@@ -594,6 +594,68 @@ def _measure_once(
         )
         return 1, True
 
+    # Canvas-overflow gate (HARD). The poster box is now confirmed the
+    # right size and origin -- but its CONTENT can still be wider/taller
+    # than the canvas and get sliced off at the page boundary, invisibly
+    # to every check above: the poster BOX stays 24x36 while its children
+    # spill past. This is the single most damaging silent failure -- an
+    # entire right (or bottom) strip of the poster vanishing in print --
+    # and nothing else catches it: canvas-fill/position read the poster
+    # box, the clip gate below scans only card/column/hero/band, and the
+    # spread/gap gates read vertical bottoms. `scrollWidth/Height`
+    # includes the overflowing content in BOTH overflow modes (hidden:
+    # clipped by the poster; visible: clipped by the page) -- verified in
+    # Chromium -- and stays == client for a well-formed poster, so any
+    # positive delta is a real off-canvas slice, not a mode artifact.
+    # MathJax's off-screen `mjx-assistive-mml` a11y nodes are clipped to
+    # 1px and do NOT inflate it (verified against math posters), so
+    # unlike the clip gate this can safely read the poster root.
+    #
+    # SCOPE: `scrollWidth/Height` in an LTR document only grows for
+    # overflow past the RIGHT/BOTTOM edge -- the direction the real bug
+    # produced. Content pushed off the LEFT/TOP by a negative offset is
+    # clipped WITHOUT inflating scrollWidth, so it is not caught here (a
+    # grossly displaced poster is caught by position-align above; a
+    # correctly-placed poster with a left-bled child stays an eyeball
+    # gap). Any positive delta is genuine root scrollable overflow -- most
+    # often the implicit-column case below, but equally e.g. a child
+    # sliding under a thick opaque border, or an off-canvas hidden /
+    # decorative layer; all are real "a fixed print canvas must not
+    # scroll" failures, which is exactly why this stays a hard gate.
+    #
+    # The classic trigger: a `.poster` grid that declares
+    # `grid-template-rows` but not `grid-template-columns`, so its single
+    # implicit `auto` column grows to a wide child's max-content and
+    # every full-width band overflows the canvas. Fix: pin the column
+    # axis with `grid-template-columns: minmax(0, 1fr)` (or a track set
+    # summing to the content width) -- the same minmax(0,.) defense the
+    # body rows already carry.
+    over_w = poster_box.get("scroll_w", 0) - poster_box.get("client_w", 0)
+    over_h = poster_box.get("scroll_h", 0) - poster_box.get("client_h", 0)
+    over_axes: list[str] = []
+    if over_w > args.max_clip_px:
+        over_axes.append(f"{over_w:.0f}px past the right edge")
+    if over_h > args.max_clip_px:
+        over_axes.append(f"{over_h:.0f}px past the bottom edge")
+    if over_axes:
+        _eprint(
+            "FAIL: the poster root has scrollable overflow -- content "
+            "extends past the canvas box and is clipped at the page "
+            "boundary (the box is the right size; the content spills "
+            "beyond it):\n"
+            "  " + ", ".join(over_axes) + ".\n"
+            f"(tolerance {args.max_clip_px:.0f} px). The usual cause is a "
+            "`.poster` grid that sets `grid-template-rows` but no "
+            "`grid-template-columns`: the implicit `auto` column grows to "
+            "a wide child's max-content and every full-width row overflows "
+            "the canvas. Fix: pin the column axis with "
+            "`grid-template-columns: minmax(0, 1fr)` (or a track set that "
+            "sums to the content width). Also check for a fixed-width "
+            "child (a table, a `width:` in the wrong unit, an un-wrapped "
+            "`nowrap` line) forcing the layout wider than the canvas."
+        )
+        return 1, True
+
     # Content-clipping gate (HARD). Everything below reads each element's
     # border-box edge -- but `overflow` other than `visible` DECOUPLES that
     # box from the real content extent: anything past the edge is clipped
