@@ -19,7 +19,7 @@
   <a href="https://tryposterly.com/blog"><img src="https://img.shields.io/badge/Read_the_blog-how_posterly_works-b45309?style=for-the-badge&logo=readthedocs&logoColor=white" alt="Read the posterly blog"></a>
 </p>
 
-posterly turns a paper into a print-ready conference poster at the exact canvas size you set — ICML, NeurIPS, ICLR, CVPR, or custom. Command-line checks catch overflow, misalignment, and off-palette styling before you print.
+p⊕sterly turns a paper into a print-ready conference poster at the exact canvas size you set — ICML, NeurIPS, ICLR, CVPR, or custom. Command-line checks catch overflow, misalignment, and off-palette styling before you print.
 
 **Two ways to use it:**
 
