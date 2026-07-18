@@ -24,46 +24,31 @@ A poster in `posterly` is **one HTML file** styled for an exact print canvas. Th
 
 ## Showcase
 
-Three real conference posters — built with `posterly` from **publicly-available papers** (the authors' own) and shipped here as worked examples. Every one passes `preflight`, `measure`, and `polish`; click a thumbnail for the print-ready PDF, or open the editable source under `examples/`.
-
-*Tooling: each was produced by **Claude Opus 4.7 / 4.8** (reasoning effort `xhigh`) driving `posterly`, with **GPT-5.5** (`xhigh`) as the secondary model for the paper-to-poster content audit.*
+**One paper, nine directions.** [*PowerFlow*](https://arxiv.org/abs/2603.18363) (ICML 2026), built from its public LaTeX source and run through `posterly` nine times. Content is held fixed — only the design changes, so the spread is pure visual identity. Every one clears every hard gate.
 
 <p align="center">
-  <a href="docs/showcase/powerflow_icml2026.pdf"><img src="docs/showcase/powerflow_icml2026.jpg" alt="PowerFlow — ICML 2026 poster" width="80%"></a><br>
-  <b>PowerFlow: Unlocking the Dual Nature of LLMs via Principled Distribution Matching</b><br>
-  ICML 2026 · Chen, Chen, Li, Huang (IIIS, Tsinghua) · <a href="https://arxiv.org/abs/2603.18363">arXiv</a> · <a href="https://github.com/Chenruishuo/PowerFlow">code</a> · <a href="examples/powerflow_icml2026/poster.html">source</a> · <a href="docs/showcase/powerflow_icml2026.pdf">PDF</a>
+  <img src="docs/showcase/powerflow_directions.jpg" alt="Nine PowerFlow posters — one per design direction" width="100%">
 </p>
+
+Open any direction as a print-ready PDF — in reading order, left to right and top to bottom:
 
 <p align="center">
-  <a href="docs/showcase/tdgfn_icml2026.pdf"><img src="docs/showcase/tdgfn_icml2026.jpg" alt="TD-GFN — ICML 2026 poster" width="80%"></a><br>
-  <b>Beyond the Proxy: Trajectory-Distilled Guidance for Offline GFlowNet Training (TD-GFN)</b><br>
-  ICML 2026 · Chen, Wang, Hu, Li, Huang (IIIS, Tsinghua) · <a href="https://arxiv.org/abs/2505.20110">arXiv</a> · <a href="https://github.com/Chenruishuo/TD-GFN">code</a> · <a href="examples/tdgfn_icml2026/poster.html">source</a> · <a href="docs/showcase/tdgfn_icml2026.pdf">PDF</a>
+  <b>Landscape · 60×36</b> —
+  <a href="docs/showcase/directions/evidence-board.pdf">Evidence board</a> ·
+  <a href="docs/showcase/directions/musical-score.pdf">Musical score</a> ·
+  <a href="docs/showcase/directions/theatre.pdf">Theatre</a> ·
+  <a href="docs/showcase/directions/orrery.pdf">Orrery</a> ·
+  <a href="docs/showcase/directions/certificate.pdf">Certificate</a> ·
+  <a href="docs/showcase/directions/escort-broadside.pdf">Escort broadside</a><br>
+  <b>Portrait · 24×36</b> —
+  <a href="docs/showcase/directions/control-panel.pdf">Control panel</a> ·
+  <a href="docs/showcase/directions/cartographic.pdf">Cartographic survey</a> ·
+  <a href="docs/showcase/directions/heat-treatment.pdf">Heat treatment</a>
 </p>
 
-<p align="center">
-  <a href="docs/showcase/optail_neurips2024.pdf"><img src="docs/showcase/optail_neurips2024.jpg" alt="OPT-AIL — NeurIPS 2024 poster" width="80%"></a><br>
-  <b>OPT-AIL: Provably &amp; Practically Efficient Adversarial Imitation Learning with General Function Approximation</b><br>
-  NeurIPS 2024 · Xu, Zhang, Chen, Sun, Yu (Nanjing University · Polixir.ai) · <a href="https://arxiv.org/abs/2411.00610">arXiv</a> · <a href="https://github.com/LAMDA-RL/OPT-AIL">code</a> · <a href="examples/optail_neurips2024/poster.html">source</a> · <a href="docs/showcase/optail_neurips2024.pdf">PDF</a>
-</p>
+How one paper becomes nine designs — the axis menu, the anti-convergence rules — is under [**Make your poster**](#make-your-poster).
 
-> [!TIP]
-> A **theory-heavy** paper — loss functions, optimism-regularized Bellman error, eluder coefficients, complexity tables, theorem boxes — all typeset via MathJax and clearing every gate. Drafted end-to-end (paper → print-ready PDF) in **1 h 11 m**.
-
-The ICML posters are four-column landscape; OPT-AIL is three-column. All carry the `data-measure-role` markup the gates read and double as the largest end-to-end fixtures in the repo: copy one, swap in your content, and re-render with `tools/render_preview.py examples/<name>/poster.html`.
-
----
-
-## Also built with Codex — community
-
-Proof the Codex path holds up outside our own tests: a community contributor drove `posterly` end-to-end with **Codex (GPT-5.5)** — no Claude in the loop — to turn their ICML 2026 paper into this poster.
-
-<p align="center">
-  <a href="docs/community/cflower_icml2026.pdf"><img src="docs/community/cflower_icml2026.jpg" alt="CFlower — ICML 2026 poster, built with Codex" width="80%"></a><br>
-  <b>Improving LLM-Based Recommenders with Conservative Generative Flow Networks (CFlower)</b><br>
-  ICML 2026 · Yu, Niu, Zhu, Zhang, Wang, Wang (USTC) · <a href="https://github.com/yuxuan9982/CFlower">code</a> · <a href="docs/community/cflower_icml2026.pdf">PDF</a>
-</p>
-
-Built one with Codex (or any other agent)? Open a PR or an issue — we'd love to feature it here.
+Want an editable starting point instead? `examples/` ships worked posters (an ICML landscape, a math-heavy NeurIPS) that clear every gate — copy one, swap in your content, re-render with `tools/render_preview.py examples/<name>/poster.html`.
 
 ---
 
@@ -137,7 +122,7 @@ The paper source is the only required input — hand over the LaTeX project dire
 - **Palette** — your lab/venue colors as the seed; without them one is derived from your logo, affiliation brand, or the paper's own figures (the shipped steel-blue is a last resort, not a default).
 - **Text density and block count** — two independent switches: Normal vs **Light** (fewer words, the space goes to larger paper figures) and Normal vs **Fewer** (fewer, larger cards — same content, less subdivided).
 
-**How the look is chosen.** posterly composes a design instead of picking a theme. The menu is **8 orthogonal axes** — layout skeleton, canvas, palette, typography, density, card surface & frame, section-heading joint, masthead — plus a pool of pluggable devices, distilled from a corpus of 80 ICML 2026 posters: `templates/DESIGN-AXES.md` is the menu (with explicit clash rules), `specimens/axes/` the rendered catalog of every option. Each candidate direction starts from a one-line *concept*, derives its axis picks from it, and designates exactly one *hero moment*. The agent renders 2–3 genuinely different candidates as small thumbnails and you pick by eye. The locked direction then travels with the poster — a `DESIGN DIRECTION` comment in `poster.html` plus `design_tokens.json` (hue centers, vendored fonts, dark-ground flag) that every gate run reads — so later edits and the style gate respect deliberate choices instead of "correcting" them. Building several posters in a batch? Anti-convergence rules force consecutive posters apart on the fingerprint axes.
+**How the look is chosen — and where you come in.** posterly composes a design rather than picking a theme, from **8 orthogonal axes** (layout, canvas, palette, type, density, card frame, heading joint, masthead) plus a device pool — `templates/DESIGN-AXES.md` is the menu with its clash rules, `specimens/axes/` the rendered catalog. Each candidate starts from a one-line *concept* and designates one *hero moment*. **This is the second point you steer** (after the upfront questions): the agent renders 2–3 genuinely different directions as thumbnails and you pick one by eye — or send them back to recompose. The look is chosen visually, never from a text list. The locked direction then rides in the poster — a `DESIGN DIRECTION` comment plus `design_tokens.json` that every gate reads — so later edits and the style gate don't "correct" it. In a batch, anti-convergence rules push consecutive posters apart.
 
 > [!NOTE]
 > Building straight from a **PDF** is untested. It may still work if your agent has a screenshot / figure-extraction tool, or if the poster doesn't need to reuse the paper's figures — if you try it, an issue with your result is welcome!
@@ -159,7 +144,7 @@ posterly/
 │   ├── powerflow_icml2026 ← real ICML 2026 poster (4-col landscape)
 │   ├── tdgfn_icml2026     ← real ICML 2026 poster (4-col landscape)
 │   └── optail_neurips2024 ← real NeurIPS 2024 poster (3-col, math-heavy)
-├── docs/showcase/       ← rendered PDFs + thumbnails for the showcase above
+├── docs/showcase/       ← the showcase montage + a print-ready PDF per direction
 └── tests/               ← pytest suite (canvas / preflight / polish / verify-final)
 ```
 
