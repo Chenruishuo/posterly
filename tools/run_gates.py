@@ -55,6 +55,7 @@ import argparse
 import datetime
 import json
 import os
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -431,7 +432,7 @@ def run_gate(
     summary, artifacts = _summarize_gate(
         gate, returncode, stdout, stderr, report_json_dir
     )
-    return {
+    entry = {
         "name": gate,
         "severity": severity,
         "status": status,
@@ -439,6 +440,27 @@ def run_gate(
         "summary": summary,
         "artifacts": artifacts,
     }
+    # posterly: a SOFT gate (polish) reports advisory findings -- WIDOW /
+    # ORPHAN / GLUE-CHAIN / TRACK etc. -- on stdout but exits 0, so its status
+    # is PASS and the top-level `warnings` counter (which only tallies
+    # WARN-*status* gates) never sees them; they get buried in the truncated
+    # tail. That is exactly how two real WIDOWs shipped behind a
+    # `PASS / warnings: 0` summary. Surface them: pull the gate's own advisory
+    # count and the individual `WARN:` lines onto the entry so both the human
+    # digest and the report show what a soft PASS is otherwise hiding. This is
+    # display-only -- it does NOT change pass/fail (`overall`/`hard_failures`).
+    if severity == "soft":
+        adv_lines = [ln.strip() for ln in stdout.splitlines()
+                     if ln.strip().startswith("WARN:")]
+        count = None
+        for ln in stdout.splitlines():
+            m = re.match(r"\s*warnings\s*:\s*(\d+)\s*$", ln)
+            if m:
+                count = int(m.group(1))   # last match = the summary tally
+        entry["advisories"] = count if count is not None else len(adv_lines)
+        if adv_lines:
+            entry["advisory_lines"] = adv_lines
+    return entry
 
 
 # --------------------------------------------------------------------------
@@ -458,6 +480,7 @@ def run_all(html_path: Path, opts: argparse.Namespace) -> dict[str, Any]:
     gates: list[dict[str, Any]] = []
     hard_failures = 0
     warnings = 0
+    soft_advisories = 0
 
     for gate in CANONICAL_ORDER:
         # posterly adaptation: the asset gate is OPT-IN. Without --manifest,
@@ -478,6 +501,7 @@ def run_all(html_path: Path, opts: argparse.Namespace) -> dict[str, Any]:
 
         entry = run_gate(gate, scripts_dir, html_path, opts, report_json_dir)
         gates.append(entry)
+        soft_advisories += entry.get("advisories", 0)
         is_hard = entry["severity"] == "hard"
         # measure's circuit breaker (exit 3) means "stop iterating NOW"
         # -- honouring it only under --fail-fast would immediately spend
@@ -528,6 +552,7 @@ def run_all(html_path: Path, opts: argparse.Namespace) -> dict[str, Any]:
         "overall": overall,
         "hard_failures": hard_failures,
         "warnings": warnings,
+        "soft_advisories": soft_advisories,
         "gates": gates,
     }
 
@@ -570,15 +595,31 @@ def _print_human_summary(report: dict[str, Any]) -> None:
     else:
         print(f"  canvas: UNRESOLVED (source: {canvas['source']})")
     for g in report["gates"]:
-        print(f"  {g['name']:9s} [{g['severity']:4s}] -> {g['status']}")
+        adv = g.get("advisories") or 0
+        tag = (f"   ({adv} advisor{'y' if adv == 1 else 'ies'})"
+               if adv else "")
+        print(f"  {g['name']:9s} [{g['severity']:4s}] -> {g['status']}{tag}")
         s = g.get("summary")
         if isinstance(s, dict) and s.get("gate_stderr_warnings"):
             for ln in s["gate_stderr_warnings"]:
                 print(f"            ! {ascii_safe(ln)}")
+        # A soft gate's advisories are PASS-status findings the top-line
+        # counters don't reflect -- print each (compact) so they're visible at
+        # a glance, capped so a widow-heavy poster can't flood the terminal.
+        adv_lines = g.get("advisory_lines") or []
+        _CAP = 12
+        for ln in adv_lines[:_CAP]:
+            snippet = ln if len(ln) <= 150 else ln[:147] + "..."
+            print(f"            ! {ascii_safe(snippet)}")
+        if len(adv_lines) > _CAP:
+            print(f"            ! ... {len(adv_lines) - _CAP} more "
+                  f"(run poster_check.py polish for the full list)")
     print(
         f"  overall: {report['overall']}   "
         f"hard_failures: {report['hard_failures']}   "
         f"warnings: {report['warnings']}"
+        + (f"   soft-advisories: {report['soft_advisories']}"
+           if report.get("soft_advisories") else "")
     )
 
 
