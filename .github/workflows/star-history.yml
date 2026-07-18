@@ -12,17 +12,15 @@ name: Star History
 
 on:
   schedule:
-    - cron: '0 0 * * *'      # daily at 00:00 UTC
-  watch:
-    types: [started]          # also refresh right after a new star
-  workflow_dispatch:          # manual "Run workflow" button (first run / ad-hoc)
+    - cron: '0 0 * * 0'      # weekly, Sunday 00:00 UTC — caps auto-commits at <=1/week
+  workflow_dispatch:          # manual "Run workflow" button for an on-demand refresh
 
 permissions:
   contents: write
 
 concurrency:
   group: star-history
-  cancel-in-progress: true    # collapse a burst of stars into one run
+  cancel-in-progress: true    # avoid overlapping runs (e.g. manual + scheduled)
 
 jobs:
   star-history:
