@@ -1,0 +1,35 @@
+name: Star History
+
+# Self-updating star-history chart, committed into the repo so it always loads
+# on the README (GitHub restricted the anonymous stargazers API in 2026, which
+# broke the hosted api.star-history.com/svg embed). The action reads this repo's
+# own stargazers with the workflow token, renders star-history's own vendored
+# renderer, and commits the SVGs under docs/star-history/ only when the star
+# data actually changes.
+#
+# The action is pinned to a full commit SHA (v1 @ 2026-07-18) rather than the
+# moving @v1 tag, so it can only ever run the exact reviewed code.
+
+on:
+  schedule:
+    - cron: '0 0 * * *'      # daily at 00:00 UTC
+  watch:
+    types: [started]          # also refresh right after a new star
+  workflow_dispatch:          # manual "Run workflow" button (first run / ad-hoc)
+
+permissions:
+  contents: write
+
+concurrency:
+  group: star-history
+  cancel-in-progress: true    # collapse a burst of stars into one run
+
+jobs:
+  star-history:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: narayann7/star-history-action@c2061675dacbf6f35d116e556015b8905843387f  # v1
+        with:
+          repos: ${{ github.repository }}
+          output-dir: docs/star-history

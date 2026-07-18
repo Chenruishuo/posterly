@@ -189,6 +189,9 @@ files stay individually MIT. Details: [NOTICE.md](NOTICE.md) and
 
 ## Star History
 
-<a href="https://star-history.com/#Chenruishuo/posterly&Date">
-  <img src="https://api.star-history.com/svg?repos=Chenruishuo/posterly&type=Date" alt="Star History Chart" width="70%">
-</a>
+<div align="center">
+
+<!-- star-history:start -->
+<!-- star-history:end -->
+
+</div>
