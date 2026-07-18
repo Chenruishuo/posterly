@@ -1,12 +1,12 @@
 [project]
 name = "posterly"
 version = "0.1.0"
-description = "Build academic conference posters as a single HTML/CSS file, rendered to print-ready PDF via headless Chromium. A Claude Code skill — not a hosted service, no signup."
+description = "Build academic conference posters as a single HTML/CSS file, rendered to print-ready PDF via headless Chromium. A coding-agent skill (Claude Code, Codex, and other skill-capable agents)."
 readme = "README.md"
 license = { text = "AGPL-3.0-only" }
 authors = [{ name = "Ruishuo Chen", email = "crs25@mails.tsinghua.edu.cn" }]
 requires-python = ">=3.10"
-keywords = ["poster", "academic", "conference", "claude-code", "skill", "html", "css", "playwright"]
+keywords = ["poster", "academic", "conference", "claude-code", "codex", "skill", "html", "css", "playwright"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Environment :: Console",
@@ -41,7 +41,7 @@ figures = [
 Homepage = "https://github.com/Chenruishuo/posterly"
 Issues   = "https://github.com/Chenruishuo/posterly/issues"
 
-# NOTE: posterly is distributed as a Claude Code skill (clone the repo
+# NOTE: posterly is distributed as a coding-agent skill (clone the repo
 # under ~/.claude/skills/posterly/), NOT as a pip-installable Python
 # package. This file exists ONLY to:
 #   1. Declare runtime + dev Python dependencies in a single canonical
