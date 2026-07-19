@@ -35,7 +35,7 @@ The [blog](https://tryposterly.com/blog) walks through how posterly turns a pape
 ## News
 
 - 🚀 **[tryposterly.com](https://tryposterly.com) is live** — website, [blog](https://tryposterly.com/blog), and the hosted cloud app, now in private beta (payments not yet enabled).
-- 🎨 **A much wider design range** — posterly now composes many more distinct design directions per paper. See the [blog](https://tryposterly.com/blog) and [`templates/DESIGN-AXES.md`](templates/DESIGN-AXES.md).
+- 🎨 **A *dramatically* wider design range** — posterly now composes many more distinct design directions per paper. See the [blog](https://tryposterly.com/blog) and [`templates/DESIGN-AXES.md`](templates/DESIGN-AXES.md).
 - ⭐ **~50 posters at ICML 2026** were made with posterly.
 
 ---

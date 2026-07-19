@@ -35,7 +35,7 @@ p⊕sterly 能把论文制作成可直接印刷的会议海报，尺寸与你设
 ## 最新动态
 
 - 🚀 **[tryposterly.com](https://tryposterly.com) 已上线** —— 网站、[博客](https://tryposterly.com/blog)和托管云应用均已上线，其中云应用处于内测阶段（支付功能尚未启用）。
-- 🎨 **设计多样性大幅提升** —— posterly 现在能针对同一篇论文组合出更多彼此明显不同的设计方向。详见[博客](https://tryposterly.com/blog)和 [`templates/DESIGN-AXES.md`](templates/DESIGN-AXES.md)。
+- 🎨 **设计多样性<em>极大地</em>提升** —— posterly 现在能针对同一篇论文组合出更多彼此明显不同的设计方向。详见[博客](https://tryposterly.com/blog)和 [`templates/DESIGN-AXES.md`](templates/DESIGN-AXES.md)。
 - ⭐ **ICML 2026 约 50 张海报** —— 现场展示的海报中约有 50 张使用 posterly 制作。
 
 ---
