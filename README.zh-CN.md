@@ -1,5 +1,3 @@
-<p align="center"><a href="README.md">English</a> · 简体中文</p>
-
 <h1 align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="docs/posterly-logo-dark.png">
@@ -21,6 +19,8 @@
   <a href="https://tryposterly.com/blog"><img src="https://img.shields.io/badge/Read_the_blog-how_posterly_works-b45309?style=for-the-badge&logo=readthedocs&logoColor=white" alt="阅读 posterly 博客"></a>
 </p>
 
+<p align="center"><a href="README.md">English</a> · 简体中文</p>
+
 p⊕sterly 能把论文制作成可直接印刷的会议海报，尺寸与你设置的画布完全一致——无论是 ICML、NeurIPS、ICLR、CVPR，还是自定义规格。打印前，命令行检查会找出内容溢出、元素错位和未使用指定配色等问题。
 
 **有两种使用方式：**
@@ -34,11 +34,9 @@ p⊕sterly 能把论文制作成可直接印刷的会议海报，尺寸与你设
 
 ## 最新动态
 
-**2026-07**
-
-- ICML 2026 现场展示的海报中，约有 50 张使用 posterly 制作。
-- 设计多样性和视觉完成度有了显著提升。posterly 现在能针对同一篇论文组合出更多彼此明显不同的设计方向，不再总是生成相似风格。详见[博客](https://tryposterly.com/blog)和 [`templates/DESIGN-AXES.md`](templates/DESIGN-AXES.md)。
-- [tryposterly.com](https://tryposterly.com) 已上线，其中包括一篇[介绍文章](https://tryposterly.com/blog)。托管云应用也已上线并开放内测，支付功能尚未启用。
+- 🚀 **[tryposterly.com](https://tryposterly.com) 已上线** —— 网站、[博客](https://tryposterly.com/blog)和托管云应用均已上线，其中云应用处于内测阶段（支付功能尚未启用）。
+- 🎨 **设计多样性大幅提升** —— posterly 现在能针对同一篇论文组合出更多彼此明显不同的设计方向。详见[博客](https://tryposterly.com/blog)和 [`templates/DESIGN-AXES.md`](templates/DESIGN-AXES.md)。
+- ⭐ **ICML 2026 约 50 张海报** —— 现场展示的海报中约有 50 张使用 posterly 制作。
 
 ---
 
