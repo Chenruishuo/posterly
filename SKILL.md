@@ -1,6 +1,5 @@
 ---
 name: posterly
-disable-model-invocation: true
 description: "Build an academic conference poster (ICML/NeurIPS/ICLR/CVPR/etc.) as a single HTML/CSS file and render it to print-ready PDF via headless Chromium. Use when user says \"做海报\", \"poster\", \"ICML/NeurIPS/ICLR poster\", or asks to design/edit a research poster."
 allowed-tools: Bash(*), Read, Write, Edit, Grep, Glob, Agent, AskUserQuestion, WebFetch, WebSearch
 ---
