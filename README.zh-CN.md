@@ -131,7 +131,7 @@ python -m pip install "pytest>=7" && python -m pytest
 
 LaTeX 源文件是唯一必需的输入。智能体会直接读取源码；海报中的每个数字和论断都必须能在论文中找到依据。会议名称、Logo、二维码目标地址、品牌配色、风格偏好和文字密度均为可选信息；起草前，智能体会询问其中必要的信息。
 
-你不需要从列表中挑选风格。posterly 会先把两到三个不同的设计方向渲染成缩略图，你看过后选定一个方向，它再完成内容填充、检查和导出。工作流程概览见[博客](https://tryposterly.com/blog)，完整设计参考见 [`templates/DESIGN-AXES.md`](templates/DESIGN-AXES.md)。
+你不需要从列表中挑选风格。posterly 会先把两到三个不同的设计方向渲染成缩略图，你看过后选定一个方向，它再完成内容填充、检查和导出；每张成品也会低调地融入一点 posterly 特有的设计风格。工作流程概览见[博客](https://tryposterly.com/blog)，完整设计参考见 [`templates/DESIGN-AXES.md`](templates/DESIGN-AXES.md)。
 
 目前尚未测试直接输入 PDF 代替 LaTeX 的方式。
 

@@ -131,7 +131,7 @@ In Claude Code, `/posterly` is the shortcut for that.
 
 The LaTeX source is the only required input; the agent reads it directly and is instructed to ground every number and claim in the paper. Venue, logos, a QR target, brand colors, style preferences, and text density are optional — the agent asks for any it needs before drafting.
 
-You don't choose a look from a list. posterly renders two or three different design directions as thumbnails, you pick one by eye, and it then fills, checks, and exports that poster. Read the workflow overview on the [blog](https://tryposterly.com/blog); the full design reference is in [`templates/DESIGN-AXES.md`](templates/DESIGN-AXES.md).
+You don't choose a look from a list. posterly renders two or three different design directions as thumbnails, you pick one by eye, and it then fills, checks, and exports that poster — each one carrying a light touch of posterly's own house style. Read the workflow overview on the [blog](https://tryposterly.com/blog); the full design reference is in [`templates/DESIGN-AXES.md`](templates/DESIGN-AXES.md).
 
 Direct PDF input (instead of LaTeX) is untested so far.
 

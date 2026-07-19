@@ -805,3 +805,78 @@ or the class is inert and the 4-tile strip orphans 3+1 (`style` rule 13 hard-fai
   </section>
   <!-- a long subtitle (if kept) goes here as a small horizontal caption, NOT in the rail -->
   ```
+
+### `corner-signature` — posterly identity mark, always-on (added 2026-07-19, user-checkpointed)
+
+The always-on half of posterly's **identity mark** (Axis 8 identity accessory): a tiny glyph-only
+⊕ registration mark in the poster's **bottom-right outer-padding safe zone**. Shipped live in
+every template; the driving agent applies it as a routine, non-narrated step.
+
+- **Purpose**: Mark the poster as posterly output (the author can recognize it) without touching
+  the design. It rides the poster's existing outer padding, so it never competes with content and
+  never moves a fingerprint axis. It is the identity accessory that **supersedes** the legacy
+  decorative `.ornament` text watermark under identity-v1 — leave `.ornament` disabled (preflight
+  fails a live `.ornament` while identity is on OR off).
+- **Allowed variants**: `.corner-sig.on-dark` (swaps to `--accent-light` ink so the mark stays
+  visible on an Axis-2 dark / colored ground). No other variants.
+- **Required data attributes**: `data-ps-mark="corner"` (preflight/polish key off it) +
+  `data-color-exempt="logo"` (it IS the posterly logo glyph — keeps style_check rule 11 and the
+  rule-4 hue gate honest). The poster root carries `data-posterly-contract="identity-v1"` and
+  `data-ps-identity="on"` (or `"off"` for anonymous — see below).
+- **Token usage**: `--ps-mark-ink` (the ⊕ ink; defaults to `var(--accent-deep)` so it adopts the
+  local palette) + `opacity: 0.5`. The shared `#psReg` `<symbol>` lives in the zero-size, absolute
+  `.ps-sprite` (never a grid cell) and is drawn via `<use href="#psReg">`.
+- **Inspected by**: `preflight` (exactly one when identity on; ZERO when identity off — the
+  anonymity reverse-check; referential integrity of `#psReg`), `polish` (renders visible + inside
+  the poster box — soft advisory only).
+- **Allowed fix operations**: (a) re-tint via `--ps-mark-ink`; add/remove `.on-dark`. Delete the
+  instance ONLY together with flipping `data-ps-identity="off"`. Do not reposition it out of the
+  padding safe zone.
+- **Anti-patterns**: enabling the superseded `.ornament` at all under identity-v1 (preflight FAIL —
+  it duplicates the corner on "on", leaks a watermark on "off"); moving it into the footer content
+  box / a full-bleed band / over a QR; deleting it while leaving `data-ps-identity="on"` (preflight
+  FAIL); hand-coloring it with a literal instead of `--ps-mark-ink`.
+
+**Anonymity.** A double-blind venue, or an author who wants no third-party mark, sets
+`data-ps-identity="off"` on the poster root at Step 0 and removes BOTH marks (and any live
+`.ornament` lab watermark); preflight then HARD-requires zero `data-ps-mark` elements and rejects a
+live `.ornament` (the gate cannot go green while the PDF stays marked).
+Decide it up front — a late switch changes copy / line-wrap and forces a gate re-run.
+
+### `woven-signature` — posterly identity mark, in-content (added 2026-07-19, user-checkpointed)
+
+The authoring half of the identity mark: exactly one ⊕ **riding existing content**, so a cropped
+corner still leaves a mark in the body. NOT a placeable standalone block — it is a *mark applied
+to content the agent already wrote*.
+
+- **Purpose**: A second, harder-to-remove identity layer. It hosts on something already present —
+  a best/target/★ marker, a terminal sentence period, an inline bullet, a wordmark's "o" (NEVER a
+  data character — no decimal point, digit, or operator; replacing the "." in 4.05 would copy out as
+  405) — and the agent picks the most natural host for THIS poster (that per-poster variance is what
+  keeps it from reading as a fixed fingerprint).
+- **Allowed variants**: none. It is a `<span data-ps-mark="woven" data-color-exempt="logo"
+  aria-hidden="true">` wrapping `<svg viewBox="0 0 100 100"><use href="#psReg"/></svg>`, added beside
+  or over existing content (the host character stays in the text).
+- **Required data attributes**: `data-ps-mark="woven"` + `data-color-exempt="logo"` +
+  `aria-hidden="true"`.
+- **Sizing**: never hand-size the `<svg>`. The template's `[data-ps-mark="woven"]` rule sizes it to
+  the host text (`~0.82em`) and inherits the host ink so it blends — a bare `viewBox`-only `<svg>`
+  with no CSS would render at the full column width.
+- **Token usage**: inherits the host element's ink (the `[data-ps-mark="woven"]` rule sets size
+  only) + the shared `#psReg` sprite.
+- **Inspected by**: `preflight` (at most one — a duplicate is a HARD fail), `polish` (soft advisory
+  when identity is on and none is present).
+- **Allowed fix operations**: (a)/(b) place / re-host the single mark on existing content.
+- **Anti-patterns**: using it as a section divider or ANY new structural element (that becomes a
+  fixed fingerprint — forbidden); more than one per poster (preflight FAIL); letting the ⊕ be the
+  SOLE carrier of a scientific claim (if it replaces the only "this row is best" signal the reader
+  loses the meaning — Ours/Best/target must stay readable from text or table styling); placing it
+  at a line end where it strands a runt (polish's widow check ignores the mark's width but still
+  judges the words).
+
+> Both halves share one `#psReg` symbol, so they are **two placement layers of one mark**, not two
+> independent safeguards (delete `#psReg` and both vanish). The corner uses the `--ps-mark-ink`
+> token; the woven mark instead inherits its host's ink. See DESIGN-AXES Axis 8 for the
+> anti-convergence carve-out. These marks are attribution +
+> an investigative lead — visible, hence removable / forgeable; unforgeable provenance is a
+> hosted-service (Ed25519) concern, out of scope here.

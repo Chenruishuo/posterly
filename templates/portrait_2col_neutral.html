@@ -54,6 +54,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="posterly">
 <title>POSTER TITLE — Venue Year</title>
 
 <!-- MathJax v3 for inline equations. CDN by default when the file is
@@ -157,6 +158,11 @@
     --shadow-screen: 0 0 60px rgba(0, 0, 0, 0.5);
     --shadow-card: 0 calc(2 * var(--u)) calc(6 * var(--u)) rgba(45, 95, 139, 0.05);
     --ornament-ink: rgba(45, 95, 139, 0.06);
+    /* Identity mark ink — the corner-signature ⊕ adopts the LOCAL accent so it
+       reads native (the woven-signature instead inherits its host's ink). The
+       glyph GEOMETRY, not the hue, is the posterly signature. Re-theme with the
+       palette like any other token. */
+    --ps-mark-ink: var(--accent-deep);
     /* Corner-radius scale. Every border-radius calc() multiplies by this;
        1 = the shipped soft look, 0 = square/flat (see templates/THEMES.md). */
     --rs: 1;
@@ -713,6 +719,43 @@
     user-select: none;
   }
 
+  /* Identity mark — corner-signature (Axis 8 identity accessory, ALWAYS ON).
+     Sits in the poster's outer-padding "safe zone" (bottom-right gutter),
+     clear of the content box; glyph-only ⊕. This SUPERSEDES the legacy
+     .ornament text watermark above -- leave that disabled (enabling both
+     just duplicates the corner mark). See COMPONENTS.md. */
+  .ps-sprite { position: absolute; width: 0; height: 0; overflow: hidden; }
+  .corner-sig {
+    position: absolute;
+    right: calc(4 * var(--u));
+    bottom: calc(3 * var(--u));
+    width: calc(7 * var(--u));
+    height: calc(7 * var(--u));
+    color: var(--ps-mark-ink);
+    opacity: 0.5;
+    pointer-events: none;
+    user-select: none;
+  }
+  .corner-sig svg { display: block; width: 100%; height: 100%; }
+  /* Dark / colored ground: swap to a light ink so the mark doesn't vanish.
+     Add `on-dark` to .corner-sig on an Axis-2 dark-base poster. */
+  .corner-sig.on-dark { color: var(--accent-light); }
+
+  /* Identity mark — woven-signature: ONE ⊕ riding EXISTING content (a best /
+     target / ★ marker, an inline bullet, a terminal sentence period, the
+     wordmark "o"). Sized to the HOST TEXT so it reads as an inline glyph, not
+     a block, and inherits the host ink so it blends. Placed per-poster (never
+     on a data character); aria-hidden; data-color-exempt="logo". See
+     COMPONENTS.md. */
+  [data-ps-mark="woven"] {
+    display: inline-block;
+    width: 0.82em;
+    height: 0.82em;
+    vertical-align: -0.14em;
+    line-height: 0;
+  }
+  [data-ps-mark="woven"] svg { display: block; width: 100%; height: 100%; }
+
   /* =========================================================
      UTILITIES — replace inline `style=` attributes in the markup.
      These exist so the template body can stay 100% inline-style-free
@@ -867,7 +910,21 @@
 </head>
 <body>
 
-<div class="poster" data-measure-role="poster">
+<div class="poster" data-measure-role="poster"
+     data-posterly-contract="identity-v1" data-ps-identity="on">
+
+  <!-- Identity sprite: the posterly ⊕ registration glyph, defined ONCE.
+       Zero-size + absolute so it never enters the grid or shifts layout.
+       data-color-exempt="logo" -- it IS the posterly logo mark, which keeps
+       style_check rule 11 (no decorative SVG) and the rule-4 hue gate honest.
+       Symbol id/viewBox/paths are byte-identical across all templates. -->
+  <svg class="ps-sprite" data-color-exempt="logo" aria-hidden="true"><defs>
+    <symbol id="psReg" viewBox="0 0 100 100">
+      <circle cx="50" cy="50" r="25" fill="none" stroke="currentColor" stroke-width="8"/>
+      <line x1="50" y1="7" x2="50" y2="93" stroke="currentColor" stroke-width="8"/>
+      <line x1="7" y1="50" x2="93" y2="50" stroke="currentColor" stroke-width="8"/>
+    </symbol>
+  </defs></svg>
 
   <!-- =========================== HEADER =========================== -->
   <header class="header" data-measure-role="header">
@@ -1083,11 +1140,19 @@
     </div>
   </div>
 
-  <!-- OPTIONAL identity accessory (Axis 8): faint corner watermark. OFF by
-       default -- the same corner mark on every poster is a fingerprint.
-       Enable (uncomment + reword) only when the locked direction calls for it:
+  <!-- LEGACY decorative watermark (Axis 8): a faint corner TEXT watermark,
+       SUPERSEDED by the always-on corner-signature below under identity-v1.
+       Keep it disabled: with data-ps-identity="on" the corner-signature is
+       the required identity mark (dropping it fails preflight), and in an
+       anonymous data-ps-identity="off" poster this lab watermark would itself
+       leak an identifying mark. Kept commented for reference only:
   <div class="ornament">LAB &middot; INSTITUTION</div>
   -->
+
+  <!-- Identity accessory (Axis 8) — corner-signature: posterly's ⊕ in the
+       bottom-right safe zone. Always on while data-ps-identity="on". -->
+  <span class="corner-sig" data-ps-mark="corner" data-color-exempt="logo"
+        aria-hidden="true"><svg viewBox="0 0 100 100"><use href="#psReg"/></svg></span>
 
 </div>
 

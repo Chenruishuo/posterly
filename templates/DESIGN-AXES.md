@@ -210,9 +210,25 @@ The richest axis in the corpus, and invisible until you look for it.
   sandwich — footer echoes the masthead band (63627, 64834, 64160).
 - **identity accessory**: logo wall / QR-CTA component with labeled tags
   (65372 "SCAN ME", 65748) / logo+QR side rail (65626, 66579) / faint corner
-  watermark (`.ornament`, shipped commented-out in the templates — the same
-  corner mark on every poster is a fingerprint, so enable it deliberately).
+  watermark (`.ornament`, a LEGACY option shipped commented-out — superseded by
+  the identity-v1 `corner-signature` below; leave it disabled).
 - All three sub-choices are independent (63030 = brand band + footer strip).
+
+**posterly identity mark — always-on, and deliberately exempt.** Distinct from
+the *decorative* `.ornament` is posterly's **identity mark**: the `⊕`
+registration glyph, shipped LIVE in every template as the `corner-signature`
+(bottom-right padding safe zone) plus an authoring-time `woven-signature` riding
+existing content (both catalogued in COMPONENTS.md). It is a **deliberately
+retained cross-poster invariant** — it does NOT count toward anti-convergence
+distance (that metric compares only the five visual fingerprint axes below, and
+the identity mark is none of them), but it does carry a **controlled,
+low-salience visual cost**. The corner mark (~7 mm, low-contrast, in the
+padding) stays below thumbnail-level design personality; the woven mark avoids
+reading as a fixed fingerprint only if its host, scale, local ground and semantics
+vary per poster — an authoring discipline nothing verifies. "Exempt from the metric" is not "perceptually invisible" — keep the
+woven host varied, and leave the decorative `.ornament` disabled (the
+`corner-signature` supersedes it under identity-v1). Anonymous venues set
+`data-ps-identity="off"` to remove both (SKILL.md Step 0).
 
 ## Devices pool (pick 0–2, all local & pluggable)
 

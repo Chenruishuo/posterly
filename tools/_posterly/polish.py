@@ -806,6 +806,19 @@ _POLISH_JS = r"""
     // visual line.
     const paras = [];
     let cur = {flat: '', segs: [], ops: []};
+    // The identity-glyph <svg>: holds a #psReg <use> (same href/xlink
+    // precedence as preflight -- an existing empty href is NOT a valid ref)
+    // inside a [data-ps-mark] element.
+    const isIdGlyphSvg = (n) => {
+      if (!n.matches('svg[data-ps-mark], [data-ps-mark] svg')) return false;
+      for (const x of n.querySelectorAll('use')) {
+        if (x.closest('svg') !== n) continue;  // n must be the use's OWNER
+        const h = x.hasAttribute('href') ? (x.getAttribute('href') || '')
+                : (x.getAttribute('xlink:href') || '');
+        if (h.trim() === '#psReg') return true;
+      }
+      return false;
+    };
     const tw = document.createTreeWalker(
       el, NodeFilter.SHOW_TEXT | NodeFilter.SHOW_ELEMENT);
     for (let n = tw.nextNode(); n; n = tw.nextNode()) {
@@ -821,7 +834,13 @@ _POLISH_JS = r"""
         // was filtered above). visibility:hidden opaques still occupy layout
         // but paint nothing -- a lone word next to one IS visually stranded,
         // so they must not vote.
-        if (n.matches && n.matches(OPAQUE)
+        // The posterly identity glyph -- the <svg> holding the #psReg <use>
+        // inside a [data-ps-mark] element -- is NOT prose media: a woven mark
+        // riding a line end (e.g. beside a terminal period) must not suppress
+        // the widow/runt check for that line. Exclude ONLY that <svg>: a
+        // different opaque element (a chart <svg> with no #psReg use) keeps
+        // its vote even if a mark attribute were misplaced on its container.
+        if (n.matches && n.matches(OPAQUE) && !isIdGlyphSvg(n)
             && getComputedStyle(n).visibility !== 'hidden') {
           cur.ops.push(n);
         }
@@ -1561,6 +1580,96 @@ _POLISH_JS = r"""
     contrastMap.forEach(v => contrasts.push(v));
   }
 
+  // Identity corner-signature: check the mark's rendered box, its OWN #psReg
+  // <use> and that use's owner <svg> (box/visibility), what the use resolves
+  // to (getBBox -- catches a dangling ref or display:none INSIDE the symbol),
+  // the instance-vs-viewport intersection (a shifted use is clipped away),
+  // the effective ink alpha, and the ancestor opacity chain. NOT covered
+  // (stay manual): visibility/opacity/stroke/fill set INSIDE the symbol,
+  // visibility:collapse, occlusion, and same-colour-on-same-ground. Null when
+  // the poster carries no corner mark (legacy poster -- no advisory).
+  let cornerSig = null;
+  {
+    const pv = document.querySelector('[data-measure-role="poster"]');
+    // Scope to the poster root so a stray corner mark elsewhere in the document
+    // can't stand in for the real one.
+    const el = (pv || document).querySelector('[data-ps-mark="corner"]');
+    if (el) {
+      const r = el.getBoundingClientRect();
+      const cs = getComputedStyle(el);
+      const pr = pv ? pv.getBoundingClientRect() : null;
+      // The EXACT identity use -- same href/xlink precedence as preflight --
+      // and ITS owner <svg>. NOT just the first svg/use inside the mark: a
+      // chart <svg> before the glyph, or an unrelated dangling <use> before
+      // the real one, would make the probe read the wrong element (false
+      // negatives AND false positives).
+      const XL = 'http://www.w3.org/1999/xlink';
+      let u = null;
+      for (const x of el.querySelectorAll('use')) {
+        const h = x.hasAttribute('href') ? (x.getAttribute('href') || '')
+            : (x.getAttributeNS(XL, 'href') || x.getAttribute('xlink:href') || '');
+        if (h.trim() === '#psReg') { u = x; break; }
+      }
+      const g = u ? u.closest('svg')
+                  : (el.matches('svg') ? el : el.querySelector('svg'));
+      const gr = g ? g.getBoundingClientRect() : null;
+      const gcs = g ? getComputedStyle(g) : null;
+      // What the <use> resolves to: getBBox() reflects the referenced
+      // symbol's geometry -- 0x0 when the target is missing or its shapes
+      // are display:none (which no outer-box check can see). Throws when not
+      // rendered -> 0. The instance must also intersect its <svg> viewport
+      // when that viewport clips (a shifted <use x="10000"> is cut away;
+      // with overflow:visible it still paints), and must intersect the
+      // POSTER either way (an owner svg positioned off-page takes the glyph
+      // with it while the wrapper box stays put).
+      let ubw = null, ubh = null, uIn = true;
+      if (u) {
+        try { const b = u.getBBox(); ubw = b.width; ubh = b.height; }
+        catch (e) { ubw = 0; ubh = 0; }
+        const ov = (p, q) => p.right > q.left && p.left < q.right &&
+                             p.bottom > q.top && p.top < q.bottom;
+        const ur = u.getBoundingClientRect();
+        const clips = g ? (gcs ? gcs.overflow : 'hidden') !== 'visible' : false;
+        uIn = (!g || !clips || ov(ur, g.getBoundingClientRect()))
+              && (!pr || ov(ur, pr));
+      }
+      // Effective ink alpha (⊕ strokes use currentColor -> the svg's color).
+      // Alpha from a 4-component rgba() -- rgb() is opaque; don't misread its
+      // blue channel as alpha -- or from a modern "... / <alpha>)" form
+      // (oklch()/color() keep their syntax in computed style). 'transparent'
+      // computes to alpha 0.
+      const col = (gcs || cs).color || '';
+      const am = col.match(
+          /^rgba\(\s*[\d.]+\s*,\s*[\d.]+\s*,\s*[\d.]+\s*,\s*([\d.]+)\s*\)/i);
+      const sm = col.match(/\/\s*([\d.]+)(%?)\s*\)\s*$/);
+      const inkAlpha = col === 'transparent' ? 0
+          : am ? parseFloat(am[1])
+          : sm ? (sm[2] ? parseFloat(sm[1]) / 100 : parseFloat(sm[1]))
+          : 1;
+      // Effective opacity: multiply from the painted glyph up through EVERY
+      // ancestor to the document root (opacity does not inherit) -- an
+      // opacity:0 on the inner svg, an intermediate container, or even
+      // body/a wrapper ABOVE the poster all blank the glyph on the PDF.
+      let effOp = 1;
+      for (let n = g || el; n; n = n.parentElement) {
+        effOp *= parseFloat(getComputedStyle(n).opacity || '1');
+      }
+      cornerSig = {
+        w: Math.round(r.width), h: Math.round(r.height),
+        vis: cs.visibility, disp: cs.display, op: parseFloat(cs.opacity),
+        hasGlyph: !!u && !!g,
+        gw: gr ? Math.round(gr.width) : 0, gh: gr ? Math.round(gr.height) : 0,
+        gvis: gcs ? gcs.visibility : 'hidden',
+        gdisp: gcs ? gcs.display : 'none',
+        ubw: ubw, ubh: ubh, uIn: uIn,
+        inkAlpha: inkAlpha, effOp: effOp,
+        inside: pr ? (r.left >= pr.left - 1 && r.top >= pr.top - 1 &&
+                      r.right <= pr.right + 1 && r.bottom <= pr.bottom + 1)
+                   : true,
+      };
+    }
+  }
+
   return {figures, orphans, cols, cards, innerVoids, trackVoids, flexbr,
           besideVoids, widows, glueChains, wrapCensus, contrasts,
           logos, qrs, header_w: headerW, header_h: headerH,
@@ -1569,7 +1678,7 @@ _POLISH_JS = r"""
           header_content_right: headerContentRight,
           header_content_top: headerContentTop,
           header_content_bottom: headerContentBottom, headerBlocks,
-          bannerImgs};
+          bannerImgs, cornerSig};
 }
 """
 
@@ -2505,6 +2614,63 @@ def report_polish(data: dict, args: argparse.Namespace,
             f"margin-inline:auto, not text-align). See banner-figure in "
             f"COMPONENTS.md."
         )
+
+    # ---- Identity mark (identity-v1) advisories (SOFT nudges) ----
+    # preflight already HARD-enforces corner PRESENCE, the anonymity
+    # reverse-check, and at-most-one woven. Polish only nudges: (1) the woven
+    # authoring mark when it's absent, and (2) confirms the always-on corner
+    # actually renders (a clipped / hidden corner silently defeats G1).
+    # Placement-quality / collision / legibility are deferred. Legacy posters
+    # (no data-ps-identity) get no advisory.
+    try:
+        _id_html = html_path.read_text(encoding="utf-8", errors="ignore")
+    except OSError:
+        _id_html = ""
+    # Structure-aware scan (shared with preflight) so a woven example inside
+    # a comment or an inert <template> can neither fake nor suppress the
+    # advisory.
+    if _preflight.identity_woven_missing(_id_html):
+        warns.append(
+            "IDENTITY/WOVEN: no woven identity mark "
+            "(data-ps-mark=\"woven\") -- add one registration-mark glyph "
+            "riding EXISTING content (a best/target marker, a terminal "
+            "period, an inline bullet, ...); it is the second identity "
+            "layer beyond the always-on corner signature. Never let it "
+            "solely carry a scientific claim (Ours/Best/target must stay "
+            "readable from text or table styling)."
+        )
+    _cs = data.get("cornerSig")
+    if _cs is not None:
+        _ink = _cs.get("inkAlpha")
+        _eff = _cs.get("effOp")
+        _ubw = _cs.get("ubw")
+        _ubh = _cs.get("ubh")
+        if (_cs.get("w", 0) < 1 or _cs.get("h", 0) < 1
+                or _cs.get("vis") == "hidden" or _cs.get("disp") == "none"
+                or (_cs.get("op") or 0) <= 0
+                or not _cs.get("hasGlyph", True)
+                or _cs.get("gw", 0) < 1 or _cs.get("gh", 0) < 1
+                or _cs.get("gvis") == "hidden" or _cs.get("gdisp") == "none"
+                or (_ubw is not None and _ubw < 0.5)
+                or (_ubh is not None and _ubh < 0.5)
+                or not _cs.get("uIn", True)
+                or (_ink if _ink is not None else 1) <= 0
+                or (_eff if _eff is not None else 1) <= 0):
+            warns.append(
+                "IDENTITY/CORNER: the corner signature is present in markup "
+                "but does not paint (zero-size / hidden / display:none / "
+                "opacity 0 on it or an ancestor / transparent ink / no #psReg "
+                "use, or the reference resolves to nothing, is display:none "
+                "inside the symbol, or is shifted outside its viewport) -- it "
+                "would not appear on the PDF. Restore its size, visibility "
+                "and ink."
+            )
+        elif not _cs.get("inside", True):
+            warns.append(
+                "IDENTITY/CORNER: the corner signature renders outside the "
+                "poster box -- reposition it into the bottom-right padding "
+                "safe zone."
+            )
 
     print(f"[polish] {ascii_safe(html_path.name)}")
     print(f"  figures checked     : {len(data.get('figures', []))}")
