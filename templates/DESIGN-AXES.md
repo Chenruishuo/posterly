@@ -298,4 +298,7 @@ skeleton, canvas, frame-line, section-heading joint, masthead — and must not
 reuse the previous poster's concept statement. The shipped default (4-col
 landscape / 2-col portrait skeleton · white · soft card · plain headings ·
 centered masthead) counts as one combo — do not let every poster collapse
-back to it.
+back to it. A single poster outside any wave follows the same spirit: the
+default combo may be locked only with a recorded one-line justification in
+the `DESIGN DIRECTION` block, and a tie between candidates breaks toward the
+distinctive one, not the home position.
