@@ -1,3 +1,5 @@
+<p align="center">English · <a href="README.zh-CN.md">简体中文</a></p>
+
 <h1 align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="docs/posterly-logo-dark.png">
@@ -27,6 +29,16 @@ p⊕sterly turns a paper into a print-ready conference poster at the exact canva
 - **Hosted app.** [**tryposterly.com**](https://tryposterly.com) runs it for you — currently in **private beta**, payments not yet enabled.
 
 The [blog](https://tryposterly.com/blog) walks through how posterly turns a paper into a checked, print-ready poster.
+
+---
+
+## News
+
+**2026-07**
+
+- Around 50 posters presented at ICML 2026 were made with posterly.
+- A substantial update improved design diversity and visual craft. posterly now composes many more distinct directions for each paper instead of converging on a uniform look. See the [blog](https://tryposterly.com/blog) and [`templates/DESIGN-AXES.md`](templates/DESIGN-AXES.md) for details.
+- [tryposterly.com](https://tryposterly.com) is now live, including one [introductory blog article](https://tryposterly.com/blog). The hosted cloud app is also live and open for private beta. Payments are not yet enabled.
 
 ---
 
