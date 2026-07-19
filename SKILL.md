@@ -401,6 +401,8 @@ Then report to the user:
 - Any unresolved Codex feedback
 - Page-fit confirmation
 
+**Upstream feedback (default behavior).** If the run surfaced a defect or rough edge in posterly itself — a gate false positive/negative, a template bug, a misleading instruction, a tool crash you worked around — keep a note of it during the run, and after delivering the poster ask the user whether to open an issue or PR against the posterly repo (https://github.com/Chenruishuo/posterly). Bring the specifics (exact gate output, minimal repro, or proposed patch); file nothing without the user's go-ahead.
+
 ## Visual polish gates (Step 6 — soft gate)
 
 Alignment passes but the poster can still look amateur. The failure modes below (Gates A–E, plus the framework-banner image-slot gate `BANNER/IMAGE-SLOT`) recurred across sessions enough to be promoted to first-class checks. `tools/poster_check.py polish` surfaces each as a WARN; the rules below explain how to fix.
