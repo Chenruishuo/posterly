@@ -55,6 +55,15 @@ Gates the hard alignment gate cannot see:
     images/gradients is skipped (verify those on the rendered crop). The
     recurring incident class: an inline emphasis/highlight class that sets
     a background but inherits text color from a different ground.
+  - **SYMBOL-CASE: uppercase transform vs lowercase Greek.** A text run
+    whose computed ``text-transform`` is ``uppercase`` and that holds
+    lowercase Greek (or the micro sign, which uppercases to a Latin-M
+    lookalike ``Μ``) paints the symbol as its capital — ``α`` renders as
+    ``Α``, glyph-identical to Latin ``A`` in most faces (``SHARPEN α>1``
+    prints as ``SHARPEN A>1``) — while the SOURCE stays correct, so only
+    the rendered sheet shows the corruption. Wrap the symbol in a
+    ``text-transform: none`` span (templates ship ``.tt-none``) or drop
+    the transform on that element.
 
 Warns by default; ``--strict`` to exit non-zero. Hard-fails if the
 poster has no ``[data-measure-role]`` markup at all — a polish PASS on
@@ -1670,8 +1679,129 @@ _POLISH_JS = r"""
     }
   }
 
+  // ---- Symbol case corruption: text-transform:uppercase vs lowercase
+  //      Greek. The transform remaps the CODE POINT (alpha -> capital
+  //      Alpha, a Latin-A lookalike in most faces), so "SHARPEN α>1"
+  //      paints as "SHARPEN A>1" while the source stays correct -- nothing
+  //      but the rendered sheet shows it (shipped twice before this scan).
+  //      One entry per innermost text-node parent, chars deduped. Math-
+  //      alphanumeric code points (U+1D6FC...) carry no case mapping and
+  //      cannot break, so they are not scanned.
+  const symbolCase = [];
+  {
+    const scRoot = document.querySelector('[data-measure-role="poster"]')
+                || document.body;
+    // Any Greek-script char (covers accented / Greek Extended / variant
+    // letterforms) plus the micro sign U+00B5 (Common script, so the
+    // property class misses it -- yet "5 µs" uppercases to "5 ΜS", a
+    // Latin-M lookalike). The per-char toUpperCase() !== c filter below is
+    // the real arbiter -- only chars the transform actually changes count,
+    // so uppercase Greek falls out on its own.
+    const GREEK_LC = /[µ\p{Script=Greek}]/gu;
+    const perEl = new Map();
+    const scTw = document.createTreeWalker(scRoot, NodeFilter.SHOW_TEXT);
+    for (let tn = scTw.nextNode(); tn; tn = scTw.nextNode()) {
+      const raw = tn.nodeValue || '';
+      const hits = raw.match(GREEK_LC);
+      if (!hits) continue;
+      const el = tn.parentElement;
+      if (!el) continue;
+      // Unpainted text cannot corrupt: script/style/template/noscript, and
+      // MathJax's screen-reader-only MML mirror (the VISUAL glyphs of CHTML
+      // output are CSS-generated content this walker never sees anyway).
+      if (el.closest('script, style, template, noscript,'
+                     + ' mjx-assistive-mml')) continue;
+      const cs = getComputedStyle(el);
+      if ((cs.textTransform || '').indexOf('uppercase') === -1) continue;
+      // Judge paint by the TEXT NODE's boxes (a Range survives
+      // display:contents parents, where the element itself has no rects)
+      // and require a REAL box (font-size:0 collapses every rect to zero).
+      const rg = document.createRange();
+      rg.selectNodeContents(tn);
+      let boxed = false;
+      for (const r of rg.getClientRects()) {
+        if (r.width > 0 && r.height > 0) { boxed = true; break; }
+      }
+      if (!boxed) continue;
+      // Visibility: the element's own USED value must decide (a
+      // visibility:visible child really paints inside a hidden ancestor),
+      // plus the ancestor opacity/display channels. checkVisibility()
+      // covers the normal tree in one call (both option spellings for
+      // Chromium compat) -- but display:contents breaks it twice over: it
+      // reports false for a boxless contents element whose TEXT still
+      // paints (exactly the case the Range above supports), and opacity:0
+      // ON a boxless node does not actually apply (the text paints;
+      // Chromium's checkVisibility still reports hidden). So a contents
+      // node anywhere on the chain routes to the manual equivalent: used
+      // visibility on the element + an ancestor opacity:0 walk that SKIPS
+      // boxless contents nodes; ancestor display:none needs no walk (it
+      // already left no Range boxes).
+      let hasContents = false;
+      for (let e = el; e; e = e.parentElement) {
+        if (getComputedStyle(e).display === 'contents') {
+          hasContents = true;
+          break;
+        }
+      }
+      if (el.checkVisibility && !hasContents) {
+        if (!el.checkVisibility({checkOpacity: true, checkVisibilityCSS: true,
+                                 opacityProperty: true,
+                                 visibilityProperty: true})) continue;
+      } else {
+        if (cs.visibility === 'hidden' || cs.visibility === 'collapse') {
+          continue;
+        }
+        let opZero = false;
+        for (let e = el; e; e = e.parentElement) {
+          const es = getComputedStyle(e);
+          if (es.display === 'contents') continue;   // boxless: no effect
+          if (parseFloat(es.opacity) === 0) {
+            opZero = true;
+            break;
+          }
+        }
+        if (opZero) continue;
+      }
+      // Fully transparent ink paints nothing -- unless a shadow or stroke
+      // with a real alpha still draws the glyph shape (computed shadow /
+      // stroke COLORS are checked, not just presence: a transparent
+      // shadow is no paint either; an unparsable shadow color
+      // conservatively counts as paint). Residual limitation, accepted:
+      // text clipped away by an ancestor's height:0 + overflow:hidden
+      // still counts as painted -- geometry hit-testing is out of scope
+      // for a soft lint, and the Step-5 render eyeball owns the
+      // paint-level tail.
+      const ts = cs.textShadow || 'none';
+      const tsColors = ts === 'none' ? [] : (ts.match(/rgba?\([^)]*\)/g) || null);
+      const shadowPaints = ts !== 'none'
+        && (tsColors === null
+            || tsColors.some(c2 => alphaOfColor(c2) >= 0.05));
+      const strokePaints = (parseFloat(cs.webkitTextStrokeWidth) || 0) > 0
+        && alphaOfColor(cs.webkitTextStrokeColor || '') >= 0.05;
+      if (alphaOfColor(cs.color || '') < 0.05
+          && !shadowPaints && !strokePaints) continue;
+      const chars = hits.filter(c => c.toUpperCase() !== c);
+      if (!chars.length) continue;
+      let e = perEl.get(el);
+      if (!e) {
+        const cl = ((el.getAttribute('class') || '').trim()
+                      .split(/\s+/)[0]) || '';
+        e = {tag: el.tagName.toLowerCase(), cls: cl, chars: new Set(),
+             sample: raw.replace(/\s+/g, ' ').trim().slice(0, 40)};
+        perEl.set(el, e);
+      }
+      chars.forEach(c => e.chars.add(c));
+    }
+    perEl.forEach(e => {
+      if (symbolCase.length >= 24) return;   // payload cap, far above real use
+      symbolCase.push({tag: e.tag, cls: e.cls,
+                       chars: Array.from(e.chars).join(''),
+                       sample: e.sample});
+    });
+  }
+
   return {figures, orphans, cols, cards, innerVoids, trackVoids, flexbr,
-          besideVoids, widows, glueChains, wrapCensus, contrasts,
+          besideVoids, widows, glueChains, wrapCensus, contrasts, symbolCase,
           logos, qrs, header_w: headerW, header_h: headerH,
           header_cx: headerCx,
           header_content_left: headerContentLeft,
@@ -2323,6 +2453,26 @@ def report_polish(data: dict, args: argparse.Namespace,
             f"(use the matching *-ink token), then re-render and look."
         )
 
+    # ---- Symbol case corruption: uppercase transform vs lowercase Greek ----
+    # The probe reports rendered text runs whose computed text-transform is
+    # `uppercase` and that hold lowercase Greek: the paint remaps the code
+    # point (alpha -> capital Alpha, a Latin-A lookalike) while the SOURCE
+    # stays correct, so only the rendered sheet shows the corruption.
+    for sc in data.get("symbolCase", []):
+        cls = str(sc.get("cls", ""))
+        cls_attr = f" class='{ascii_safe(cls)}'" if cls else ""
+        warns.append(
+            f"SYMBOL-CASE: <{ascii_safe(sc['tag'])}{cls_attr}> is "
+            f"text-transform:uppercase and holds lowercase Greek / "
+            f"micro-sign glyphs ({ascii_safe(sc['chars'])}) -- the paint "
+            f"remaps them to capitals "
+            f"(alpha renders as a Latin-A lookalike) while the source reads "
+            f"correct (sample: '{ascii_safe(sc['sample'])}'). Wrap the symbol "
+            f"in a span with text-transform:none (templates ship a `.tt-none` "
+            f"utility in BASE DEFENSES) or drop the uppercase transform on "
+            f"this element."
+        )
+
     # ---- Gate D: <br> inside a flex container ----
     # A <br> that is a direct child of a flex container is blockified into
     # a flex item and creates NO line break, so intended multi-line text
@@ -2683,6 +2833,7 @@ def report_polish(data: dict, args: argparse.Namespace,
     print(f"  inner-void cards    : {len(data.get('innerVoids', []))}")
     print(f"  tracks w/ void geom : {len(data.get('trackVoids', []))}")
     print(f"  contrast pairs (<7) : {len(data.get('contrasts', []))}")
+    print(f"  case-corrupt runs   : {len(data.get('symbolCase', []))}")
     print(f"  beside-text floats  : {len(data.get('besideVoids', []))}")
     print(f"  flex/<br> parents   : {len(data.get('flexbr', []))}")
     print(f"  header logos        : {len(data.get('logos', []))}")

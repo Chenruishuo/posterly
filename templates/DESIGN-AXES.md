@@ -146,6 +146,17 @@ technique; there is no portrait corpus yet.
   URLs (66427, 66466, 67122).
 - Font families must be on the style-gate whitelist or declared via the
   `--tokens` `fonts:` extension; vendor any webfont locally (never a CDN).
+- **Condensed poster faces are giant-word faces — split the duty into two
+  spacing tiers.** An ultra-condensed, tight-sidebearing display face (Anton
+  and its Bebas-style kin) is built for one or two short words set huge; its
+  native tracking is too tight for a multi-word masthead, and an uppercase
+  multi-word setting always needs positive tracking on top. When such a face
+  carries the title, give the *title tier* `letter-spacing: .03–.06em` and
+  `line-height ≥ 1.0`, while the *giant-word tier* (a lone display word or
+  symbol) may keep the native tight set or even negative tracking — same
+  face, two breathing registers. If you don't want to manage tiers, keep the
+  condensed face for the giant words only and set the title in a
+  normal-width companion face.
 
 ## Axis 5 — Density & rhythm
 

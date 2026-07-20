@@ -890,3 +890,32 @@ def test_widow_banner_gets_fill_message(
     assert "17%" in combined
     assert "prose widows        : 1" in combined
     assert rc == 0                                  # soft: warn-only
+
+
+def test_symbol_case_warns_and_stays_ascii(
+    tmp_path, monkeypatch, capsys
+) -> None:
+    # A canned symbolCase entry -> a SYMBOL-CASE warning naming the element,
+    # the offending Greek (escaped -- output must stay ASCII), the sample,
+    # and the .tt-none escape hatch; counted in the summary; still soft.
+    data = {
+        "symbolCase": [
+            {"tag": "div", "cls": "wf-word", "chars": "α",
+             "sample": "SHARPEN α > 1"},
+        ],
+    }
+    combined, rc = _run(monkeypatch, tmp_path, capsys, data)
+    combined.encode("ascii")                        # Greek arrives escaped
+    assert "SYMBOL-CASE" in combined
+    assert "wf-word" in combined
+    assert "SHARPEN" in combined
+    assert "tt-none" in combined
+    assert "case-corrupt runs   : 1" in combined
+    assert rc == 0                                  # soft: warn-only
+
+
+def test_symbol_case_absent_is_silent(tmp_path, monkeypatch, capsys) -> None:
+    combined, rc = _run(monkeypatch, tmp_path, capsys, {})
+    assert "SYMBOL-CASE" not in combined
+    assert "case-corrupt runs   : 0" in combined
+    assert rc == 0

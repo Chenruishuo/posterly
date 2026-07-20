@@ -204,6 +204,11 @@
   p, li, dd, figcaption,
   .body-text, .caption, .callout, .section-title { text-wrap: pretty; }
   .title { text-wrap: balance; }
+  /* Case-safety: lowercase Greek under text-transform:uppercase paints
+     as its capital (α -> Α, a Latin-A lookalike -- "SHARPEN α>1" prints
+     as "SHARPEN A>1"). Wrap the symbol: <span class="tt-none">α</span>.
+     polish flags misses as SYMBOL-CASE. */
+  .tt-none { text-transform: none; }
 
   html, body {
     background: var(--bg-screen);
@@ -431,7 +436,7 @@
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: calc(12 * var(--u));
-    /* No overflow:hidden here — it would clip card shadows (pitfall #6).
+    /* No overflow:hidden here — it would clip card shadows (pitfall #7).
        .poster already clips at the page boundary; min-height:0 is the
        grid-blowout guard. */
     min-height: 0;
