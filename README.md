@@ -26,7 +26,9 @@ p⊕sterly turns a paper into a print-ready conference poster at the exact canva
 **Two ways to use it:**
 
 - **Open-source skill (this repo).** Clone it and drive it from a coding agent — Claude Code, Codex, or any agent that supports skills. Runs on your machine; needs no posterly account.
-- **Hosted app.** [**tryposterly.com**](https://tryposterly.com) runs it for you — currently in **private beta**, payments not yet enabled.
+- **Hosted service.** [**tryposterly.com**](https://tryposterly.com) runs it for you — **now open to everyone**, pay-as-you-go ([pricing](https://tryposterly.com/pricing)).
+
+If you don't run a coding agent, or wouldn't trust yours with this, and you want posterly at its best without the setup, use the hosted service. It costs money, and every order comes with a receipt.
 
 The [blog](https://tryposterly.com/blog) walks through how posterly turns a paper into a checked, print-ready poster.
 
@@ -34,7 +36,8 @@ The [blog](https://tryposterly.com/blog) walks through how posterly turns a pape
 
 ## News
 
-- 🚀 **[tryposterly.com](https://tryposterly.com) is live** — website, [blog](https://tryposterly.com/blog), and the hosted cloud app, now in private beta (payments not yet enabled).
+- 🎉 **The hosted service is open to everyone** — no invite, no waitlist. Pay-as-you-go, itemized receipt per order; see [pricing](https://tryposterly.com/pricing).
+- 🚀 **[tryposterly.com](https://tryposterly.com) is live** — website, [blog](https://tryposterly.com/blog), and the hosted cloud service. ~~Private beta; payments not yet enabled.~~
 - 🎨 **A *dramatically* wider design range** — posterly now composes many more distinct design directions per paper. See the [blog](https://tryposterly.com/blog) and [`templates/DESIGN-AXES.md`](templates/DESIGN-AXES.md).
 - ⭐ **~50 posters at ICML 2026** were made with posterly.
 

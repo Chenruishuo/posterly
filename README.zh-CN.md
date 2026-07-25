@@ -26,7 +26,9 @@ p⊕sterly 能把论文制作成可直接印刷的会议海报，尺寸与你设
 **有两种使用方式：**
 
 - **开源 skill（本仓库）。** 克隆仓库后，通过编程智能体使用——Claude Code、Codex 或任何支持 skill 的智能体均可。它在本机运行，不需要 posterly 账户。
-- **托管应用。** [**tryposterly.com**](https://tryposterly.com) 可以替你运行 posterly——目前处于**内测**阶段，支付功能尚未启用。
+- **托管服务。** [**tryposterly.com**](https://tryposterly.com) 可以替你运行 posterly——**现已面向所有人开放**，按次付费（见[定价](https://tryposterly.com/pricing)）。
+
+如果你不在使用/不够信任自己的 coding agent，想要复刻最好的体验，且不介意为此付费（我们会提供 receipt），就请使用托管服务。
 
 [博客](https://tryposterly.com/blog)中的介绍文章说明了 posterly 如何把论文变成经过检查、可直接印刷的海报。
 
@@ -34,7 +36,8 @@ p⊕sterly 能把论文制作成可直接印刷的会议海报，尺寸与你设
 
 ## 最新动态
 
-- 🚀 **[tryposterly.com](https://tryposterly.com) 已上线** —— 网站、[博客](https://tryposterly.com/blog)和托管云应用均已上线，其中云应用处于内测阶段（支付功能尚未启用）。
+- 🎉 **托管服务面向所有人开放** —— 不需要邀请，也没有等待名单。按次付费，每笔订单附明细收据，详见[定价](https://tryposterly.com/pricing)。
+- 🚀 **[tryposterly.com](https://tryposterly.com) 已上线** —— 网站、[博客](https://tryposterly.com/blog)和托管云服务均已上线。~~云服务处于内测阶段，支付功能尚未启用。~~
 - 🎨 **设计多样性<em>极大地</em>提升** —— posterly 现在能针对同一篇论文组合出更多彼此明显不同的设计方向。详见[博客](https://tryposterly.com/blog)和 [`templates/DESIGN-AXES.md`](templates/DESIGN-AXES.md)。
 - ⭐ **ICML 2026 约 50 张海报** —— 现场展示的海报中约有 50 张使用 posterly 制作。
 
