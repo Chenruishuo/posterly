@@ -36,10 +36,10 @@ The [blog](https://tryposterly.com/blog) walks through how posterly turns a pape
 
 ## News
 
-- 🎉 **The hosted service is open to everyone** — no invite, no waitlist. Pay-as-you-go, itemized receipt per order; see [pricing](https://tryposterly.com/pricing).
-- 🚀 **[tryposterly.com](https://tryposterly.com) is live** — website, [blog](https://tryposterly.com/blog), and the hosted cloud service. ~~Private beta; payments not yet enabled.~~
-- 🎨 **A *dramatically* wider design range** — posterly now composes many more distinct design directions per paper. See the [blog](https://tryposterly.com/blog) and [`templates/DESIGN-AXES.md`](templates/DESIGN-AXES.md).
-- ⭐ **~50 posters at ICML 2026** were made with posterly.
+- **2026-07-25** · 🎉 **The hosted service is open to everyone** — no invite, no waitlist. Pay-as-you-go, itemized receipt per order; see [pricing](https://tryposterly.com/pricing).
+- **2026-07-19** · 🎨 **A *dramatically* wider design range** — posterly now composes many more distinct design directions per paper. See the [blog](https://tryposterly.com/blog) and [`templates/DESIGN-AXES.md`](templates/DESIGN-AXES.md).
+- **2026-07-18** · 🚀 **[tryposterly.com](https://tryposterly.com) is live** — website, [blog](https://tryposterly.com/blog), and the hosted cloud service. ~~Private beta; payments not yet enabled.~~
+- **2026-07-05 – 07-12** · ⭐ **~50 posters at ICML 2026** were made with posterly.
 
 ---
 

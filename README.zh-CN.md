@@ -36,10 +36,10 @@ p⊕sterly 能把论文制作成可直接印刷的会议海报，尺寸与你设
 
 ## 最新动态
 
-- 🎉 **托管服务面向所有人开放** —— 不需要邀请，也没有等待名单。按次付费，每笔订单附明细收据，详见[定价](https://tryposterly.com/pricing)。
-- 🚀 **[tryposterly.com](https://tryposterly.com) 已上线** —— 网站、[博客](https://tryposterly.com/blog)和托管云服务均已上线。~~云服务处于内测阶段，支付功能尚未启用。~~
-- 🎨 **设计多样性<em>极大地</em>提升** —— posterly 现在能针对同一篇论文组合出更多彼此明显不同的设计方向。详见[博客](https://tryposterly.com/blog)和 [`templates/DESIGN-AXES.md`](templates/DESIGN-AXES.md)。
-- ⭐ **ICML 2026 约 50 张海报** —— 现场展示的海报中约有 50 张使用 posterly 制作。
+- **2026-07-25** · 🎉 **托管服务面向所有人开放** —— 不需要邀请，也没有等待名单。按次付费，每笔订单附明细收据，详见[定价](https://tryposterly.com/pricing)。
+- **2026-07-19** · 🎨 **设计多样性<em>极大地</em>提升** —— posterly 现在能针对同一篇论文组合出更多彼此明显不同的设计方向。详见[博客](https://tryposterly.com/blog)和 [`templates/DESIGN-AXES.md`](templates/DESIGN-AXES.md)。
+- **2026-07-18** · 🚀 **[tryposterly.com](https://tryposterly.com) 已上线** —— 网站、[博客](https://tryposterly.com/blog)和托管云服务均已上线。~~云服务处于内测阶段，支付功能尚未启用。~~
+- **2026-07-05 – 07-12** · ⭐ **ICML 2026 约 50 张海报** —— 现场展示的海报中约有 50 张使用 posterly 制作。
 
 ---
 
