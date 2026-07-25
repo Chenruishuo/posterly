@@ -350,11 +350,13 @@ Catches: LaTeX residue (`\ref{`, `\cite{`, `\textbf{`, lone `\ `), bare `<` insi
 
 ```bash
 python <skill>/tools/render_preview.py poster.html
-pdftoppm -r 100 poster_preview.pdf poster_check -png -f 1 -l 1
+pdftoppm -r 150 poster_preview.pdf poster_check -png -f 1 -l 1
 # then Read the resulting PNG
 ```
 
-For dense regions, crop with PIL and read the slice — full poster at r=100 is ~6000 px wide; useful regions (header, banner, takeaways, one column) at full res reveal text wrapping issues invisible in the thumbnail.
+For dense regions, crop with PIL and read the slice — full poster at r=150 is ~9000 px wide; useful regions (header, banner, takeaways, one column) at full res reveal text wrapping issues invisible in the thumbnail.
+
+**Never judge typography from a raster below 150 DPI** (150 is also pdftoppm's own default; the old `-r 100` here was below it). The rasterizer rounds every glyph advance to a whole pixel, so low-DPI body text picks up uneven letter spacing that does not exist in the PDF. Measured on a 24×36 poster at 12 pt body: at r=100, 4 of 26 letter pairs merged into single blobs and the tightest gap read 0.72 pt against a true 1.20 pt; by r=150 every pair separates again, though the gaps only converge on their true widths by r=300. So r=150 is the working floor — good for layout, wrapping, overflow, and for the Step 7 deliverable — but if you need to adjudicate a fine kerning or letter-collision question, re-render that region at r=300 or read the PDF. Never take a typography verdict from the thumbnail or a 100-DPI render.
 
 Beyond defect-hunting, hold the render against its own `DESIGN DIRECTION` block once: at thumbnail size the locked hero moment should be the first place the eye lands (a competing loud element is a quiet-it fix in Step 6, not a redesign), and the sheet should still read as its concept statement rather than as parts from different posters.
 
@@ -395,8 +397,20 @@ python <skill>/tools/poster_check.py verify-final poster_preview.pdf \
 
 Checks: page count == 1, dimensions match canvas, file size ≤ limit. `--canvas` accepts inch dimensions (`60x36in`) or named sizes (`A0 portrait`, `A1 landscape`). By default rejects swapped W/H unless the PDF declares `Page rot ∈ {90, 270}` or you pass `--allow-rotated`. `--from-html <path>` reads `@page { size: … }` from the HTML so they can't drift apart.
 
+**Then export the deliverable PNG — 150 DPI, same resolution as the Step 5 render:**
+
+```bash
+pdftoppm -r 150 -singlefile -png poster_preview.pdf poster   # -> poster.png
+```
+
+The PDF is the print artifact; the PNG is what gets dropped into slides, chats, and web pages. 150 is the floor that clears the letter-merging threshold from Step 5 — at 12 pt body every letter pair separates again — and it is deliberately no higher: it keeps a 60×36 canvas at 9000×5400 (49 MP), fast to rasterize and openable everywhere. `-singlefile` is what makes the output `poster.png` rather than `poster-1.png`.
+
+Never hand over `*_preview.png` (a 0.35× thumbnail, ~34 DPI) as the deliverable. The Step 5 inspection render is the same resolution as this export, so reuse it rather than rasterizing twice if it is still on disk — just make sure the delivered file is named `poster.png`.
+
+Raise the DPI only for a small canvas meant to be read close up, and know the ceiling: 300 DPI on a 60×36 is 194 MP, which trips PIL's default `MAX_IMAGE_PIXELS` guard (~179 MP) with a `DecompressionBombError` and takes minutes to rasterize.
+
 Then report to the user:
-- File path of PDF
+- File path of PDF and of the 150-DPI PNG
 - Final spread (px) and gap-to-footer range
 - Any unresolved Codex feedback
 - Page-fit confirmation
