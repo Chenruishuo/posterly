@@ -2,7 +2,7 @@
 name: posterly
 disable-model-invocation: true
 description: "Build an academic conference poster (ICML/NeurIPS/ICLR/CVPR/etc.) as a single HTML/CSS file and render it to print-ready PDF via headless Chromium. Use when user says \"做海报\", \"poster\", \"ICML/NeurIPS/ICLR poster\", or asks to design/edit a research poster."
-allowed-tools: Bash(*), Read, Write, Edit, Grep, Glob, AskUserQuestion, WebFetch, WebSearch
+allowed-tools: Bash(*), Read, Write, Edit, Grep, Glob, Agent, AskUserQuestion, WebFetch, WebSearch
 ---
 
 # posterly — HTML/CSS Academic Poster Workflow
@@ -150,7 +150,9 @@ The draft must be audited for paper-to-poster fidelity. Past sessions caught rea
 
 1. **External LLM reviewer with file access (best).** If you have Codex MCP, GPT-5 with file access, another Claude session, or any reviewer that can `Read` paper source files, use that. Recommended defaults if you have Codex MCP: `model="gpt-5.6-sol"`, `model_reasoning_effort="xhigh"`, `sandbox="danger-full-access"` (read-only audit — the sandbox often fails to start in containers / nested namespaces, and the audit only reads files anyway). Send the evidence pack + reviewer prompt below.
 
-2. **Self-audit (fallback).** Walk every numeric claim on the poster and find its `file:line` in the paper source. Build the claim → evidence table by hand. Slower, easier to miss things, but better than skipping.
+2. **Fresh subagent (second best).** No external reviewer? Spawn one that can `Read` the paper source and give it the same evidence pack + prompt (Claude Code: `Agent` with an explicit `model`; Codex: `spawn_agent`). Two conditions, or it's worthless: **fresh context** (not a fork of yourself — a fork re-runs your blind spots) and a model **no weaker than the one drafting the poster** (pass it explicitly; a cheaper auditor mostly agrees with what it's shown). Fresh eyes, not cross-model independence — this does **not** satisfy Step 6.5.
+
+3. **Self-audit (last resort).** Walk every numeric claim on the poster and find its `file:line` in the paper source. Build the claim → evidence table by hand. Slower, easier to miss things, but better than skipping.
 
 **Evidence pack the reviewer needs:**
 1. The current `poster.html` (full)
@@ -377,7 +379,7 @@ Other polish:
   - **`balance`** only on **short, centered** display text (titles, captions, one-line takeaways ≤ 2 lines); it evens the ragged edge.
   - **Never `balance` on multi-sentence prose** (banner TL;DR, long takeaways), and especially not with `text-align: left`. Near a 2↔3-line threshold, balance shortens and hyphenates the **first** line to "even" the block, producing a crammed-left / big-gap-right banner. For prose that should fill its box, use **`text-wrap: pretty`** (fills each line, only protects the last-line orphan) or plain natural wrap.
 
-**Step 6.5 — Final review (strongly recommended)**: once `run_gates.py` is all-green and polish warnings are zero-or-waived, send the rendered PDF (or its high-res PNG slices) AND the HTML to the same kind of reviewer used in Step 1.5 (external LLM if available, self-audit otherwise). Same evidence-pack rule. The reviewer prompt focuses on four things distinct from Step 1.5:
+**Step 6.5 — Final review (strongly recommended)**: once `run_gates.py` is all-green and polish warnings are zero-or-waived, send the rendered PDF (or its high-res PNG slices) AND the HTML to the same kind of reviewer used in Step 1.5 (external LLM if available, fresh subagent next, self-audit last). Same evidence-pack rule. The reviewer prompt focuses on four things distinct from Step 1.5:
 1. **Visual rhetoric**: does the poster's narrative carry? Are the headline numbers prominent? Is the framework banner readable from 2 m?
 2. **Residue**: any `\ref{`, `\cite{`, leftover `TODO`, raw `<` in math, missing image, broken QR link.
 3. **Final claim audit**: re-check numbers and overclaims AFTER content has been polished — polish often introduces new claims ("a key advantage of…") that were not in the original draft.
@@ -611,7 +613,7 @@ Limits (hand-check these on the rendered crop): text over **images, gradients, o
 
 ## When to call an external LLM reviewer (three checkpoints)
 
-The skill works fine without an *external* reviewer — a self-audit is the mandatory floor (Step 1.5) — but a second pair of eyes reliably catches paper-to-poster fidelity bugs you'd otherwise find next to the print station. Three checkpoints, each documented at its home:
+The skill works fine without an *external* reviewer — a subagent or self audit is the mandatory floor (Step 1.5) — but a second pair of eyes reliably catches paper-to-poster fidelity bugs you'd otherwise find next to the print station. Three checkpoints, each documented at its home:
 
 1. **Content critique** — Step 1.5 (claim → evidence audit; the canonical reviewer settings *and* the prompt template live there).
 2. **Theorem & equation pass** — the quick check right after Step 3 (preconditions survived the scaffold; equations actually render).
