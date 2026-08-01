@@ -850,7 +850,7 @@ corner still leaves a mark in the body. NOT a placeable standalone block — it 
 to content the agent already wrote*.
 
 - **Purpose**: A second, harder-to-remove identity layer. It hosts on something already present —
-  a best/target/★ marker, a terminal sentence period, an inline bullet, a wordmark's "o" (NEVER a
+  a best/target/★ marker, an inline bullet, a wordmark's "o" (NEVER a
   data character — no decimal point, digit, or operator; replacing the "." in 4.05 would copy out as
   405) — and the agent picks the most natural host for THIS poster (that per-poster variance is what
   keeps it from reading as a fixed fingerprint).
