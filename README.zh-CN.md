@@ -26,7 +26,7 @@ p⊕sterly 能把论文制作成可直接印刷的会议海报，尺寸与你设
 **有两种使用方式：**
 
 - **开源 skill（本仓库）。** 克隆仓库后，通过编程智能体使用——Claude Code、Codex 或任何支持 skill 的智能体均可。它在本机运行，不需要 posterly 账户。
-- **托管服务。** [**tryposterly.com**](https://tryposterly.com) 可以替你运行 posterly——**现已面向所有人开放**，按次付费（见[定价](https://tryposterly.com/pricing)）。
+- **托管服务。** [**tryposterly.com**](https://tryposterly.com) 可以替你运行 posterly，**现已面向所有人开放**，按次付费，分两档引擎：Claude + GPT（最佳实践）与价格只有四分之一的 GPT 单独档（见[定价](https://tryposterly.com/pricing)）。
 
 如果你不在使用/不够信任自己的 coding agent，想要复刻最好的体验，且不介意为此付费（我们会提供 receipt），就请使用托管服务。
 
@@ -36,6 +36,8 @@ p⊕sterly 能把论文制作成可直接印刷的会议海报，尺寸与你设
 
 ## 最新动态
 
+- **2026-08-04** · 💸 **GPT 单独档，价格降到四分之一。** 得益于 GPT-5.6-sol 出色的目标导向优化能力，我们做出了一套让 GPT 单独跑完整条海报制作链路的配方，用显著更少的轮次收敛。质量闸完全一致，价格是 Claude + GPT 档的 25%；代价是牺牲少许设计感和细节的到位程度。详见[定价](https://tryposterly.com/pricing)和[作品集](https://tryposterly.com/gallery)。
+- **2026-08-04** · 💳 **微信支付已开通**，结账时与银行卡并列可选。
 - **2026-07-25** · 🎉 **托管服务面向所有人开放** —— 不需要邀请，也没有等待名单。按次付费，每笔订单附明细收据，详见[定价](https://tryposterly.com/pricing)。
 - **2026-07-19** · 🎨 **设计多样性<em>极大地</em>提升** —— posterly 现在能针对同一篇论文组合出更多彼此明显不同的设计方向。详见[博客](https://tryposterly.com/blog)和 [`templates/DESIGN-AXES.md`](templates/DESIGN-AXES.md)。
 - **2026-07-18** · 🚀 **[tryposterly.com](https://tryposterly.com) 已上线** —— 网站、[博客](https://tryposterly.com/blog)和托管云服务均已上线。~~云服务处于内测阶段，支付功能尚未启用。~~

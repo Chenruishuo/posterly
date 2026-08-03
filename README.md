@@ -26,7 +26,7 @@ p⊕sterly turns a paper into a print-ready conference poster at the exact canva
 **Two ways to use it:**
 
 - **Open-source skill (this repo).** Clone it and drive it from a coding agent — Claude Code, Codex, or any agent that supports skills. Runs on your machine; needs no posterly account.
-- **Hosted service.** [**tryposterly.com**](https://tryposterly.com) runs it for you — **now open to everyone**, pay-as-you-go ([pricing](https://tryposterly.com/pricing)).
+- **Hosted service.** [**tryposterly.com**](https://tryposterly.com) runs it for you, **now open to everyone**, pay-as-you-go, in two engine tiers: Claude + GPT (best practice) and GPT-only at a quarter of the price ([pricing](https://tryposterly.com/pricing)).
 
 If you don't run a coding agent, or wouldn't trust yours with this, and you want posterly at its best without the setup, use the hosted service. It costs money, and every order comes with a receipt.
 
@@ -36,6 +36,8 @@ The [blog](https://tryposterly.com/blog) walks through how posterly turns a pape
 
 ## News
 
+- **2026-08-04** · 💸 **A GPT-only tier at a quarter of the price.** GPT-5.6-sol optimizes hard toward a stated goal, which made a recipe possible in which GPT alone runs the whole pipeline and converges in far fewer rounds. Same hard gates, 25% of the Claude + GPT price; the cost is a little design flair and a little care in the small details. See [pricing](https://tryposterly.com/pricing) and the [gallery](https://tryposterly.com/gallery).
+- **2026-08-04** · 💳 **WeChat Pay is enabled**, alongside cards at checkout.
 - **2026-07-25** · 🎉 **The hosted service is open to everyone** — no invite, no waitlist. Pay-as-you-go, itemized receipt per order; see [pricing](https://tryposterly.com/pricing).
 - **2026-07-19** · 🎨 **A *dramatically* wider design range** — posterly now composes many more distinct design directions per paper. See the [blog](https://tryposterly.com/blog) and [`templates/DESIGN-AXES.md`](templates/DESIGN-AXES.md).
 - **2026-07-18** · 🚀 **[tryposterly.com](https://tryposterly.com) is live** — website, [blog](https://tryposterly.com/blog), and the hosted cloud service. ~~Private beta; payments not yet enabled.~~
