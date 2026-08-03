@@ -806,6 +806,69 @@ or the class is inert and the 4-tile strip orphans 3+1 (`style` rule 13 hard-fai
   <!-- a long subtitle (if kept) goes here as a small horizontal caption, NOT in the rail -->
   ```
 
+### `card--legend` — fieldset-legend section title (Axis 7 joint) (added 2026-08-03, user-checkpointed)
+- **Purpose**: the Axis-7 **fieldset-legend** heading joint — the `.section-title` rides the
+  card's TOP BORDER like an HTML `<fieldset>` legend, its chip visually "breaking" the border
+  line. This recipe is the ONLY sanctioned implementation. Never hand-roll it with a tuned
+  negative margin (`margin-top: calc(-19 * var(--u))` and the like): a hard-coded pull-up is
+  calibrated to exactly one line-count — the moment the title wraps, the first line floats fully
+  outside the card — and it reserves nothing for the protruding half, so the chip lands inside
+  whatever sits above (`measure`'s protruding-content collision gate hard-fails that; it was a
+  live 2026-08-03 field failure — four title chips overprinting the banner).
+- **Contract / recipe**: add `card--legend` to the `.card`; keep the standard
+  `.section-title > .num + .st-text` markup. Two moving parts, both load-bearing:
+  1. the title centres itself on the border via `transform: translateY(-50%)` — self-height-
+     relative, so the straddle stays centred if the text unexpectedly wraps — after a small
+     CONSTANT relative `top` offset cancels the card's own top border + padding (those don't
+     scale with the title, so a constant is correct). Relative positioning is load-bearing:
+     unlike a negative margin, it does not pull the following body content upward;
+  2. the card reserves the protruding half via `margin-top`: clearance **≥ half the tallest
+     legend title in the row** (≥ 12u for the shipped one-line title), ON TOP of the
+     surrounding row gap. `measure`'s intercard-gap gate uses the card's visible envelope
+     (including this protruding chip), so the reserved border-box clearance is not
+     misclassified as an empty >50px void.
+  ```css
+  /* fieldset-legend joint: the section title rides the card's top border */
+  .card.card--legend { margin-top: calc(12 * var(--u)); }  /* reserved clearance >= chip half-height */
+  .card--legend > .section-title {
+    /* Landscape constant = top border (1u) + padding-top (4u).
+       Portrait pads 5u, so use -6u there. card--compact pads 3u in every
+       scaffold, so override it to -4u. This moves paint only: */
+    position: relative;
+    top: calc(-5 * var(--u));
+    transform: translateY(-50%);   /* ...then self-centre on the border, any line count */
+    background: inherit;           /* match tinted/highlight cards automatically */
+    width: max-content; max-width: 100%;
+    padding: 0 calc(5 * var(--u));
+  }
+  .card--legend.card--compact > .section-title { top: calc(-4 * var(--u)); }
+  ```
+  The title's in-flow box still occupies its full height, so the card's body content starts at
+  the SAME y as with a plain in-card title — converting a card to `card--legend` shifts only the
+  title's paint and the card's own top edge, so column bottoms (and the measure spread) are
+  undisturbed apart from the deliberate `margin-top`. The visible chip-to-body air is the
+  normal top inset plus about half a title-height; if that reads too tall, trim with a small
+  negative `margin-bottom` on the title, then re-run `measure` because that deliberately moves
+  the body/card bottom — never weaken the `-50%`.
+- **Required data attributes**: same as `card` (`data-measure-role="card"`). No exemption
+  attribute exists or is needed: with the clearance in place the chip protrudes into RESERVED
+  space, so the collision gate stays silent by geometry, not by opt-out.
+- **Token usage**: inherits `numbered-card` tokens. The chip ground MUST equal the card's own
+  ground; `background: inherit` in the recipe does this for plain, `.tinted`, and `.highlight`
+  cards — a mismatched chip floats on a visibly continuous border and the "broken border"
+  illusion collapses. Requires a real card
+  border (Axis 6 `frame-line ≠ none`, clash rule 2).
+- **Inspected by**: `measure` (card geometry + the protruding-content collision gate), `style`
+  (rules 6/8 via `.section-title`), `polish`.
+- **Allowed fix operations**: (a), (b), (c), (e), (f); clearance retune via the card
+  `margin-top` (b).
+- **Anti-patterns**: a hand-rolled negative-margin pull-up (breaks on wrap; overprints the
+  section above — the exact failure this entry replaces); a legend title that wraps to >1 line
+  (shorten it, or fall back to the plain in-card title); `overflow: hidden` on the card (clips
+  the chip's top half); a chip background that doesn't match the card ground; borrowing the
+  recipe without the `margin-top` clearance ("it fits on MY canvas" — until a banner lands
+  above it).
+
 ### `corner-signature` — posterly identity mark, always-on (added 2026-07-19, user-checkpointed)
 
 The always-on half of posterly's **identity mark** (Axis 8 identity accessory): a tiny glyph-only

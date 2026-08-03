@@ -12,7 +12,9 @@ every ``[data-measure-role]`` element, and reports two numbers:
 
 Non-negotiables built in: an empty column hard-fails (fallback to
 column.bottom is risky); missing footer-strip/footer hard-fails; a
-MathJax typeset error / timeout / silent CDN block hard-fails.
+MathJax typeset error / timeout / silent CDN block hard-fails; content
+escaping a card's box (a negative-margin "legend" title, a transformed
+chip) that lands inside a neighbouring section hard-fails.
 """
 from __future__ import annotations
 
@@ -48,33 +50,214 @@ DEFAULT_MAX_INTERCARD_GAP = 50.0
 #: disable) for shadowless custom themes.
 DEFAULT_MIN_INTERCARD_GAP = 12.0
 
+#: Tolerance for the protruding-content collision gate. Content may
+#: escape its card's border-box (an edge-riding legend title, a chip on
+#: the frame) and reach INTO another section's box by at most this many
+#: px before the gate fails. Big enough to absorb sub-pixel rounding and
+#: hairline border kisses; far below any visible overprint (the field
+#: failure this pins was a ~30 px overlap at print scale).
+DEFAULT_MAX_COLLISION_PX = 3.0
+
 
 def intercard_gaps(cards: list[dict]) -> list[float]:
-    """Vertical gaps between consecutive *rows* of cards in one column.
+    """Visible vertical gaps between consecutive card rows in one column.
 
-    Cards are grouped into rows by vertical-overlap chaining (sorted by
-    top; a card whose top sits above the current row's bottom joins that
-    row), so two half-width cards sitting side by side count as ONE row
-    and don't produce a bogus negative/huge "gap". Returns one gap per
-    consecutive row pair. Pure function so the grouping rule is
-    unit-testable without Chromium.
+    A card's extent includes any layout-visible descendant bbox that escapes
+    it. This keeps an edge-riding legend honest in both directions: its
+    reserved border-box clearance does not look like a phantom void, while
+    an unreserved chip reduces (or negates) the real visible gap. Cards are
+    grouped into rows by border-box vertical-overlap chaining, so two
+    half-width cards sitting side by side count as one row without letting
+    colliding protrusions merge genuinely stacked rows. Returns one gap per
+    consecutive row pair. Pure function so the grouping rule is unit-testable
+    without Chromium.
     """
     if len(cards) < 2:
         return []
-    rows: list[list[float]] = []  # [top, bottom] per row
-    for c in sorted(cards, key=lambda c: c["y"]):
-        if rows and c["y"] < rows[-1][1]:
-            rows[-1][1] = max(rows[-1][1], c["bottom"])
+    rows: list[dict[str, float]] = []
+    for card in sorted(cards, key=lambda item: item["y"]):
+        visible_top = card["y"]
+        visible_bottom = card["bottom"]
+        for box in card.get("prot_boxes") or []:
+            visible_top = min(visible_top, box["top"])
+            visible_bottom = max(visible_bottom, box["bottom"])
+        # Row membership stays based on border boxes. Otherwise two stacked
+        # rows whose protrusions collide would be merged and the negative
+        # visible gap we need to report would disappear.
+        if rows and card["y"] < rows[-1]["border_bottom"]:
+            rows[-1]["border_bottom"] = max(
+                rows[-1]["border_bottom"], card["bottom"]
+            )
+            rows[-1]["visible_top"] = min(
+                rows[-1]["visible_top"], visible_top
+            )
+            rows[-1]["visible_bottom"] = max(
+                rows[-1]["visible_bottom"], visible_bottom
+            )
         else:
-            rows.append([c["y"], c["bottom"]])
-    return [rows[i][0] - rows[i - 1][1] for i in range(1, len(rows))]
+            rows.append(
+                {
+                    "border_bottom": card["bottom"],
+                    "visible_top": visible_top,
+                    "visible_bottom": visible_bottom,
+                }
+            )
+    return [
+        rows[i]["visible_top"] - rows[i - 1]["visible_bottom"]
+        for i in range(1, len(rows))
+    ]
+
+
+#: Roles a protruding card can collide with. Deliberately excludes the
+#: structural containers (poster, body, column, banner-less wrappers):
+#: a card always sits inside those, so an intersection with them is
+#: normal nesting, not an overprint.
+_COLLISION_ROLES = frozenset(
+    {"header", "banner", "hero", "band", "card", "footer-strip", "footer"}
+)
+
+
+def _escaped_fragments(
+    card: dict[str, Any], box: dict[str, Any]
+) -> list[tuple[str, float, float, float, float, float]]:
+    """Rectangles of ``box`` that lie outside ``card``.
+
+    The four returned strips partition the escaped area, assigning corner
+    overflow to the top/bottom strip.  Keeping the in-card part out of the
+    collision test is load-bearing: a descendant can escape on one side but
+    overlap a measured element with a completely different, in-card part of
+    its bbox.
+    """
+    out: list[tuple[str, float, float, float, float, float]] = []
+    if box["top"] < card["y"]:
+        out.append(
+            (
+                "above",
+                card["y"] - box["top"],
+                box["left"],
+                box["top"],
+                box["right"],
+                min(box["bottom"], card["y"]),
+            )
+        )
+    if box["bottom"] > card["bottom"]:
+        out.append(
+            (
+                "below",
+                box["bottom"] - card["bottom"],
+                box["left"],
+                max(box["top"], card["bottom"]),
+                box["right"],
+                box["bottom"],
+            )
+        )
+    inner_top = max(box["top"], card["y"])
+    inner_bottom = min(box["bottom"], card["bottom"])
+    if inner_bottom > inner_top and box["left"] < card["x"]:
+        out.append(
+            (
+                "left of",
+                card["x"] - box["left"],
+                box["left"],
+                inner_top,
+                min(box["right"], card["x"]),
+                inner_bottom,
+            )
+        )
+    if inner_bottom > inner_top and box["right"] > card["right"]:
+        out.append(
+            (
+                "right of",
+                box["right"] - card["right"],
+                max(box["left"], card["right"]),
+                inner_top,
+                box["right"],
+                inner_bottom,
+            )
+        )
+    return out
+
+
+def protrusion_collisions(
+    data: list[dict[str, Any]],
+    tol: float = DEFAULT_MAX_COLLISION_PX,
+) -> list[str]:
+    """Overprints between content escaping a card and a sibling section.
+
+    Each card carries ``prot_boxes`` -- the raw bboxes of layout-visible
+    descendants sticking out of its border box (see ``_MEASURE_JS``).
+    When such a box reaches into another section's box (header, banner,
+    another card, ...) by more than ``tol`` on both axes, print shows
+    the two overprinted. Tested per escaped box, NOT as one union
+    rectangle, so a chip riding the card's top-left never phantom-
+    collides with a neighbour that only faces the card's right edge.
+    The classic trigger: a hand-tuned negative margin pulling a
+    "fieldset-legend" section title above its card with no clearance
+    reserved, so the title chip lands inside the banner above
+    (2026-08-03 field failure, ~30 px deep).
+
+    DOM ancestors recorded by the browser probe are skipped: a band or
+    hero wrapping the card is not a neighbour. Geometric containment is
+    deliberately insufficient -- an unrelated positioned sibling can
+    contain the card's bbox and still overprint it. Cards with no escaped
+    boxes are skipped outright, so a plain poster costs nothing. One line
+    per (card, neighbour) pair, reporting the largest escaped-fragment
+    overlap. Pure function so the rule is unit-testable without Chromium.
+    """
+    problems: list[str] = []
+    for c in data:
+        if c.get("role") != "card":
+            continue
+        boxes = c.get("prot_boxes") or []
+        if not boxes:
+            continue
+        ancestor_node_idxs = frozenset(c.get("ancestor_node_idxs") or [])
+        for b in data:
+            if b is c or b.get("role") not in _COLLISION_ROLES:
+                continue
+            if b.get("node_idx") in ancestor_node_idxs:
+                continue
+            worst: tuple[
+                float, float, dict[str, Any], str, float
+            ] | None = None
+            for p in boxes:
+                for side, depth, left, top, right, bottom in (
+                    _escaped_fragments(c, p)
+                ):
+                    ow = min(right, b["right"]) - max(left, b["x"])
+                    oh = min(bottom, b["bottom"]) - max(top, b["y"])
+                    if ow <= tol or oh <= tol:
+                        continue
+                    if worst is None or ow * oh > worst[0] * worst[1]:
+                        worst = (ow, oh, p, side, depth)
+            if worst is None:
+                continue
+            ow, oh, p, side, depth = worst
+            ident = f"card#{c.get('card_idx', -1)}"
+            anchor = ascii_safe((c.get("anchor") or "").strip())
+            if anchor:
+                ident += f' "{anchor}"'
+            pcls = ascii_safe(p.get("cls") or "")
+            pid = f"<{p.get('tag', '?')}" + (
+                f' class="{pcls}"' if pcls else ""
+            ) + ">"
+            bcls = ascii_safe(b.get("cls") or "")
+            bid = f"{b['role']} <{b.get('tag', '?')}" + (
+                f' class="{bcls}"' if bcls else ""
+            ) + ">"
+            problems.append(
+                f"{ident}: {pid} protrudes {depth:.0f}px {side} the "
+                f"card and overlaps {bid} by {ow:.0f}x{oh:.0f}px"
+            )
+    return problems
 
 
 _MEASURE_JS = r"""
 () => {
   const nodes = Array.from(document.querySelectorAll('[data-measure-role]'));
+  const nodeIndex = new Map(nodes.map((node, idx) => [node, idx]));
   let cardOrdinal = 0;
-  return nodes.map(n => {
+  return nodes.map((n, nodeIdx) => {
     const r = n.getBoundingClientRect();
     const cs = window.getComputedStyle(n);
     const role = n.getAttribute('data-measure-role') || '';
@@ -84,8 +267,23 @@ _MEASURE_JS = r"""
     // HTML the agent greps. This is a LOCATOR, not verbatim source.
     let anchor = '';
     let cardIdx = -1;
+    const ancestorNodeIdxs = [];
+    // LAYOUT-VISIBLE descendants escaping the card's border box (negative
+    // margin, transform, absolute offset), as raw bboxes. Read by the
+    // protruding-content collision gate, which tests each escaped box
+    // against neighbouring sections -- per-box, not as one union
+    // rectangle, so a chip riding the top-left can never phantom-
+    // collide with a neighbour that only faces the card's right edge.
+    // Document order means parents precede children, so a child inside
+    // an already-collected escape box (or the card itself) is skipped
+    // before the (comparatively expensive) computed-style reads.
+    const protBoxes = [];
     if (role === 'card') {
       cardIdx = cardOrdinal++;
+      for (let a = n.parentElement; a; a = a.parentElement) {
+        const ancestorIdx = nodeIndex.get(a);
+        if (ancestorIdx !== undefined) ancestorNodeIdxs.push(ancestorIdx);
+      }
       const src = n.querySelector('.section-title') || n;
       const clone = src.cloneNode(true);
       clone.querySelectorAll(
@@ -93,6 +291,25 @@ _MEASURE_JS = r"""
       ).forEach(e => e.remove());
       anchor = (clone.textContent || '')
         .replace(/\s+/g, ' ').trim().slice(0, 60);
+      const inside = (dr, bx) =>
+        dr.top >= bx.top - 0.5 && dr.left >= bx.left - 0.5 &&
+        dr.right <= bx.right + 0.5 && dr.bottom <= bx.bottom + 0.5;
+      for (const d of n.querySelectorAll('*')) {
+        const dr = d.getBoundingClientRect();
+        if (dr.width < 1 || dr.height < 1) continue;
+        if (inside(dr, r) || protBoxes.some(p => inside(dr, p))) continue;
+        // MathJax's off-screen a11y nodes sit at weird offsets but are
+        // invisible; never let them register as escapes.
+        if (d.closest('mjx-assistive-mml, script, style')) continue;
+        const ds = window.getComputedStyle(d);
+        if (ds.display === 'none' || ds.visibility === 'hidden') continue;
+        protBoxes.push({
+          top: dr.top, left: dr.left,
+          right: dr.right, bottom: dr.bottom,
+          tag: d.tagName.toLowerCase(),
+          cls: (typeof d.className === 'string' ? d.className : ''),
+        });
+      }
     }
     return {
       role: role,
@@ -100,8 +317,11 @@ _MEASURE_JS = r"""
       cls:  n.className || '',
       anchor: anchor,
       card_idx: cardIdx,
+      node_idx: nodeIdx,
+      ancestor_node_idxs: ancestorNodeIdxs,
       x: r.left, y: r.top, w: r.width, h: r.height,
       bottom: r.bottom, right: r.right,
+      prot_boxes: protBoxes,
       // For the content-clipping gate: the computed overflow plus the
       // scroll-vs-client deltas. `overflow != visible` decouples the
       // border-box (read above) from the real content extent; a positive
@@ -718,6 +938,36 @@ def _measure_once(
         )
         return 1, True
 
+    # Protruding-content collision gate (HARD). The clip gate above
+    # catches content HIDDEN past a box edge; this catches the opposite
+    # failure -- content that VISIBLY escapes its card and lands inside a
+    # neighbouring section, overprinting it. The spread/footer/clip gates
+    # still read border-boxes, so without this a negative-margin "fieldset-legend"
+    # section title riding a card's top border can sit 30 px deep inside
+    # the banner above while spread/gap/clip all PASS (2026-08-03 field
+    # failure: a hand-tuned `margin-top: -19u` legend with no clearance
+    # reserved -- every column's title chip overprinted the banner).
+    coll_tol = float(
+        getattr(args, "max_collision_px", DEFAULT_MAX_COLLISION_PX)
+    )
+    coll_problems = protrusion_collisions(data, coll_tol)
+    if coll_problems:
+        _eprint(
+            "FAIL: content escapes its card's box and overlaps a "
+            "neighbouring section -- print overprints the two:\n"
+            + "\n".join("  " + p for p in coll_problems)
+            + f"\n(tolerance {coll_tol:.0f} px). An element that "
+            "deliberately rides a card edge (a legend title, a chip on "
+            "the frame) needs clearance >= its protrusion reserved on "
+            "that side. For a fieldset-legend section title, use the "
+            "catalogued `card--legend` recipe (templates/COMPONENTS.md): "
+            "the title centres itself on the border via translateY(-50%) "
+            "and the card reserves the protruding half via margin-top. "
+            "Never hand-tune a negative margin -- it is calibrated to one "
+            "line-count and reserves nothing above."
+        )
+        return 1, True
+
     columns, heros, footer_strips, footers = group_layout(data)
 
     empty_cols = [
@@ -740,6 +990,9 @@ def _measure_once(
     # in the wild: 98-135 px voids against a 22.7 px design row-gap, with
     # polish's relative-threshold warn silent.) Gate: every gap between
     # consecutive stacked card rows must stay under --max-intercard-gap.
+    # Rows use their visible vertical envelope (card + escaped descendants),
+    # not only the border-box: reserved room for an edge-riding legend is
+    # occupied visual space, not a whitespace void.
     # The same band has a floor: a gap under --min-intercard-gap buries
     # the card's drop shadow (`0 2u 6u` in the shipped templates) under
     # the next card, fusing the stack into one slab.

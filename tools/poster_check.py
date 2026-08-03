@@ -146,6 +146,17 @@ def build_parser() -> argparse.ArgumentParser:
              "both (default 2.0; sub-pixel rounding tolerated).",
     )
     pm.add_argument(
+        "--max-collision-px", type=float,
+        default=_measure.DEFAULT_MAX_COLLISION_PX,
+        help="hard gate: content escaping its card's box (a "
+             "negative-margin legend title, a chip riding the frame) "
+             "may reach into a neighbouring card/banner/header by at "
+             "most this many px before print overprints the two "
+             "(default 3.0). Deliberate edge-riding elements need "
+             "clearance reserved instead -- see COMPONENTS.md "
+             "`card--legend`.",
+    )
+    pm.add_argument(
         "--max-intercard-gap", type=float,
         default=_measure.DEFAULT_MAX_INTERCARD_GAP,
         help="hard gate: max whitespace between consecutive stacked "

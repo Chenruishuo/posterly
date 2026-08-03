@@ -262,9 +262,18 @@ cross-panel process connector (67218, 63844).
 1. Capacity gate: content volume × layout × density must satisfy the minimum
    font/padding floors. If it doesn't fit, change an axis or cut content;
    never shrink body text.
-2. Fieldset/ribbon joints need a real border (`frame-line ≠ none`); side tabs
-   need reserved margin; a vertical rail needs band-row structure and track
-   width.
+2. Fieldset/ribbon joints need a real border (`frame-line ≠ none`) **and
+   reserved clearance above every card that carries one** — ≥ half the title
+   chip's rendered height, on top of the surrounding row gap (the first body
+   row sits closest to the banner/header, where the default grid gap is far
+   too small; an unreserved chip lands inside the section above, and
+   `measure`'s collision gate hard-fails the overprint). Implement via the
+   catalogued `card--legend` recipe (COMPONENTS.md) — never a hand-tuned
+   negative margin — and keep legend titles to ONE line (the transform still
+   centres a wrapped chip, but the first line then sits fully outside the
+   card and the required half-height clearance grows). Side tabs need
+   reserved margin; a vertical rail needs band-row
+   structure and track width.
 3. Masthead mode must match Axis-1 reserved geometry (display-title column
    masthead → layout has a title track; title-in-stage → layout has a stage).
 4. Neon paint → low-luminance ground + luminous outline or glow. Never on
