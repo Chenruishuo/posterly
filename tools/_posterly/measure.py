@@ -252,6 +252,49 @@ def protrusion_collisions(
     return problems
 
 
+# Dangling numeric-utility detector (subset of style_check rule 14) run
+# against the live CSSOM: utility-shaped class tokens in the DOM that no
+# stylesheet selector ever mentions. The iterate loop runs `measure` alone
+# between full gate runs, which is exactly when an undefined `w-NN` bites
+# (class="w-93" with no .w-93 rule -> the <img> width silently no-ops, the
+# figure collapses, and the loop chases phantom gap numbers). Judged on
+# selectorText only, so strings/comments can't fake a definition; over-
+# inclusive by design (`img:not(.w-93)` counts as defining .w-93) -- this
+# is a fast-fail net, style_check rule 14 stays authoritative. Logo
+# subtrees are exempt (vendor exports carry arbitrary class names -- the
+# same carve-out as style rules 13/14).
+_DANGLING_UTIL_JS = r"""
+() => {
+  const UTIL = /^(?:w|h|fs|m[tblr]?|p[tblr]?|[mp][xy]|gap|sr|sz)-\d+$/;
+  const used = new Set();
+  for (const el of document.querySelectorAll('[class]')) {
+    if (el.closest('[data-color-exempt="logo"]')) continue;
+    for (const tok of el.classList) if (UTIL.test(tok)) used.add(tok);
+  }
+  if (!used.size) return [];
+  const defined = new Set();
+  const walk = (rules) => {
+    for (const r of rules) {
+      if (r.selectorText) {
+        for (const m of r.selectorText.matchAll(/\.([A-Za-z][\w-]*)/g)) {
+          defined.add(m[1]);
+        }
+      }
+      let sub = null;
+      try { sub = r.cssRules; } catch (e) {}
+      if (sub && sub.length) walk(sub);
+    }
+  };
+  for (const sh of document.styleSheets) {
+    let rules = null;
+    try { rules = sh.cssRules; } catch (e) { continue; }
+    walk(rules);
+  }
+  return Array.from(used).filter((t) => !defined.has(t)).sort();
+}
+"""
+
+
 _MEASURE_JS = r"""
 () => {
   const nodes = Array.from(document.querySelectorAll('[data-measure-role]'));
@@ -720,6 +763,27 @@ def _measure_once(
                 "inline assets, or raise --mathjax-timeout-ms."
             )
             return 1, False
+
+        # Fast dangling-utility guard: fail before the geometry probe --
+        # with a collapsed figure every number below is garbage, and this
+        # is the tool the iterate loop actually runs (style_check only
+        # runs on full gate rounds).
+        dangling = page.evaluate(_DANGLING_UTIL_JS)
+        if dangling:
+            browser.close()
+            shown = ", ".join(dangling[:6]) + (
+                " ..." if len(dangling) > 6 else "")
+            _eprint(
+                f"FAIL: numeric utility class(es) used with no matching "
+                f"CSS rule: {shown}. An undefined width/size utility "
+                f"silently no-ops -- `class=\"w-93\"` with no `.w-93` "
+                f"rule strips the <img> width and collapses the figure, "
+                f"so every gap/spread number would be phantom. Define "
+                f"the class (e.g. `.w-93 {{ width: 93%; }}`) or use one "
+                f"the stylesheet already ships (style_check rule 14 is "
+                f"the authoritative check)."
+            )
+            return 1, True
 
         data = page.evaluate(_MEASURE_JS)
         # Optional merged polish pass on the SAME rendered page -- one
