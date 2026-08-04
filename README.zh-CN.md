@@ -178,6 +178,7 @@ posterly/
 - 模板约定——[`templates/README.md`](templates/README.md)
 - 设计选项——[`templates/DESIGN-AXES.md`](templates/DESIGN-AXES.md)
 - 配色与 token 参考——[`templates/THEMES.md`](templates/THEMES.md)
+- 文案去 AI 味指南——[`templates/WRITING.md`](templates/WRITING.md)
 - 完整智能体工作流程——[`SKILL.md`](SKILL.md)
 
 （`examples/hello_world` 是用于安装和测试的最小样例，不适合作为通用起点。）

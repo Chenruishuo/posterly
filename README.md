@@ -178,6 +178,7 @@ For manual editing, copy the closest scaffold from [`templates/`](templates/) an
 - Template contracts — [`templates/README.md`](templates/README.md)
 - Design options — [`templates/DESIGN-AXES.md`](templates/DESIGN-AXES.md)
 - Palette and token reference — [`templates/THEMES.md`](templates/THEMES.md)
+- Copy voice / de-AI style pass — [`templates/WRITING.md`](templates/WRITING.md)
 - Full agent workflow — [`SKILL.md`](SKILL.md)
 
 (`examples/hello_world` is a minimal install/test fixture, not a general starting point.)
