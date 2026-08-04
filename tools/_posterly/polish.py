@@ -25,7 +25,7 @@ Gates the hard alignment gate cannot see:
     Long running prose (> the char cap) and GENERIC blocks -- any block-ish
     element holding worded text, discovered by geometry so custom-skeleton
     class names are covered -- are judged by the conservative bar only: a
-    stranded SINGLE word under the runt width. (3) ``GLUE-CHAIN``: >= 3
+    stranded tail of at most two words under the runt width. (3) ``GLUE-CHAIN``: >= 3
     words fused with ``&nbsp;`` (the lazy widow "fix") -- the unbreakable
     unit wraps early as a whole and tears a hole in the line above; stat /
     math / list idioms are exempt (< 3 prose words, or a pure separator
@@ -698,8 +698,8 @@ _POLISH_JS = r"""
   //       skeletons author their own classes (.band-lede, .mh-sub, ...), so a
   //       class whitelist goes blind exactly where wave-2's widows happened
   //       (a stranded 'Matching' in a custom masthead subtitle). Generic
-  //       blocks are judged by the CONSERVATIVE bar only (single stranded
-  //       word), so unknown block types can't flood the report.
+  //       blocks are judged by the CONSERVATIVE bar only (a stranded tail of
+  //       at most TWO words), so unknown block types can't flood the report.
   const candidates = [];
   const wlSet = new Set();
   document.querySelectorAll(WIDOW_SEL).forEach(el => {
@@ -907,8 +907,8 @@ _POLISH_JS = r"""
       // Long running prose used to be SKIPPED outright (norm.length > cap) --
       // which is exactly how a 262-char .body-text shipped a stranded
       // 'AIME24/25).' last line. Long prose (and every generic, unlisted-class
-      // block) is now judged by the CONSERVATIVE bar instead: only a stranded
-      // SINGLE word flags -- short multi-word tails are normal in long prose.
+      // block) is now judged by the CONSERVATIVE bar instead: a stranded tail
+      // of one or two words flags; longer tails are normal in long prose.
       const extremeOnly = generic || norm.length > cap;
       // Tokenise on \S+ (JS `\s` includes U+00A0, so `&nbsp;` is a SEPARATOR
       // here -- a glued pair is two tokens). Token COUNT no longer decides;
@@ -1062,12 +1062,15 @@ _POLISH_JS = r"""
       // the banner bar rather than silently falling back to the runt bar.
       const isBanner = !!el.closest('.fb-text');
       const threshold = isBanner ? BANNER_FILL_FRAC : RUNT_FRAC;
-      // Conservative bar for long prose / generic blocks: judge ONLY a
-      // stranded SINGLE word (one text token on the last line, still under
-      // the runt width). Multi-word short tails are normal in long running
-      // prose and unknowable in unlisted block types -- flagging them there
-      // would flood; a lone stranded word is bad in ANY block type.
-      if (extremeOnly && last.tis.size > 1) return;
+      // Conservative bar for long prose / generic blocks: judge only a
+      // SHORT stranded tail -- one or two text tokens on the last line, still
+      // under the runt width. Two, not one: real-world runts are mostly
+      // two-token sentence ends ("at once.", "expected length.", a URL plus
+      // an arrow) and the single-token bar walked straight past them (the
+      // xiongan footer/prop-body misses). Tails of 3+ words stay exempt:
+      // those are normal typography in long running prose and unknowable in
+      // unlisted block types -- flagging them would flood.
+      if (extremeOnly && last.tis.size > 2) return;
       if (measure > 0 && (lastW / measure) < threshold) {
         const ord = Array.from(last.tis).sort((a, b) => a - b);
         widows.push({
@@ -2236,7 +2239,7 @@ def report_polish(data: dict, args: argparse.Namespace,
                 f"step, if it shifts the wrap (also makes the block bolder), without "
                 f"overflowing the banner or colliding with the stats; (c) expand the "
                 f"wording with a few truthful, on-message words (keep .fb-text under "
-                f"~400 chars -- past that the gate only judges a single stranded word, not banner fill); (d) trim it to one-fewer "
+                f"~400 chars -- past that the gate only judges a short stranded tail, not banner fill); (d) trim it to one-fewer "
                 f"full line. Keep the change proportionate -- don't push one lever to an "
                 f"extreme (e.g. a blown-up font) just to clear the gate, and never force "
                 f"it with text-align: justify / text-align-last or letter-spacing "
@@ -2246,11 +2249,11 @@ def report_polish(data: dict, args: argparse.Namespace,
         else:
             mode = w.get("mode", "std")
             if mode == "long":
-                where = (" (long running prose -- judged by the single-"
-                         "stranded-word bar only)")
+                where = (" (long running prose -- judged by the short-tail "
+                         "bar: a stranded one- or two-word last line)")
             elif mode == "generic":
-                where = (" (unlisted block type, judged by the single-"
-                         "stranded-word bar; a lone stranded word reads "
+                where = (" (unlisted block type, judged by the short-tail "
+                         "bar: a stranded one- or two-word last line reads "
                          "wrong in ANY block)")
             else:
                 where = ""

@@ -117,7 +117,35 @@ def test_generic_widow_survives_inline_block_chip(tmp_path, capsys) -> None:
     """
     out = _run(tmp_path, capsys, _SHELL.format(css=css, header="", body=body))
     assert "WIDOW: <div class='custom-lede'>" in out
-    assert "single-stranded-word bar" in out
+    assert "short-tail bar" in out
+
+
+def test_widow_short_tail_bar_catches_two_tokens_not_three(
+        tmp_path, capsys) -> None:
+    # 2026-08 xiongan miss: real widows are mostly TWO-token sentence ends
+    # ("at once.", "expected length.") -- the old single-word conservative
+    # bar walked straight past them, in generic blocks and >220-char prose
+    # alike. Three-word tails stay exempt (normal typography, not runts).
+    css = """
+      .custom-note { width: 400px; }
+      .card p.longprose { width: 400px; }
+    """
+    w = "M" * 22  # one token ~fills the 400px measure; no two share a line
+    body = f"""
+      <div class="custom-note">{w} {w} at once.</div>
+      <div class="custom-note">{w} {w} in the end.</div>
+      <div class="card" data-measure-role="card">
+        <p class="longprose">{w} {w} {w} {w} {w} {w} {w} {w} {w} {w} so far.</p>
+      </div>
+    """
+    out = _run(tmp_path, capsys, _SHELL.format(css=css, header="", body=body))
+    # generic block, 2-token tail -> flags; 3-token tail -> exempt
+    assert out.count("WIDOW: <div class='custom-note'>") == 1
+    assert "('at once.')" in out
+    assert "short-tail bar" in out
+    # whitelisted prose past the 220-char cap, 2-token tail -> flags too
+    assert "WIDOW: <p class='longprose'>" in out
+    assert "long running prose" in out
 
 
 def test_glue_chain_flags_prose_but_not_stat_or_list_idioms(
