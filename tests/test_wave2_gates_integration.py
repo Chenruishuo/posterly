@@ -148,6 +148,22 @@ def test_widow_short_tail_bar_catches_two_tokens_not_three(
     assert "long running prose" in out
 
 
+def test_widow_short_tail_bar_not_evaded_by_nbsp_glue(
+        tmp_path, capsys) -> None:
+    # Codex review of d5b48ca: gluing a previous word down with the
+    # documented 2-token &nbsp; fix must not turn a 2-token runt into an
+    # exempt 3-token last line -- glued pairs count as ONE unit for the
+    # short-tail bar, so the width test still decides.
+    css = ".custom-note { width: 400px; }"
+    w = "M" * 22
+    body = f"""
+      <div class="custom-note">{w} {w} so&nbsp;at once.</div>
+    """
+    out = _run(tmp_path, capsys, _SHELL.format(css=css, header="", body=body))
+    assert "WIDOW: <div class='custom-note'>" in out
+    assert "('so at once.')" in out
+
+
 def test_glue_chain_flags_prose_but_not_stat_or_list_idioms(
         tmp_path, capsys) -> None:
     css = ".card p { width: 460px; }"

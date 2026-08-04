@@ -1070,9 +1070,22 @@ _POLISH_JS = r"""
       // xiongan footer/prop-body misses). Tails of 3+ words stay exempt:
       // those are normal typography in long running prose and unknowable in
       // unlisted block types -- flagging them would flood.
-      if (extremeOnly && last.tis.size > 2) return;
+      // Count in GLUE UNITS, not raw tokens: an &nbsp;-glued pair is the
+      // documented widow fix, and it must not double as an escape hatch --
+      // gluing "happens&nbsp;at" to pull a word down would otherwise turn a
+      // 2-token runt into an exempt 3-token line without filling anything
+      // (Codex review of d5b48ca). Adjacent last-line tokens joined by pure
+      // U+00A0 in the flat text collapse into one unit, so a glued tail is
+      // still judged by the width test and clears only when it truly fills.
+      const ord = Array.from(last.tis).sort((a, b) => a - b);
+      let units = ord.length;
+      for (let k = 0; k + 1 < ord.length; k++) {
+        if (ord[k + 1] !== ord[k] + 1) continue;
+        const gap = para.flat.slice(toks[ord[k]].e, toks[ord[k + 1]].s);
+        if (/^\u00A0+$/.test(gap)) units -= 1;
+      }
+      if (extremeOnly && units > 2) return;
       if (measure > 0 && (lastW / measure) < threshold) {
-        const ord = Array.from(last.tis).sort((a, b) => a - b);
         widows.push({
           tag: el.tagName.toLowerCase(),
           cls: el.className || '',
@@ -2253,8 +2266,8 @@ def report_polish(data: dict, args: argparse.Namespace,
                          "bar: a stranded one- or two-word last line)")
             elif mode == "generic":
                 where = (" (unlisted block type, judged by the short-tail "
-                         "bar: a stranded one- or two-word last line reads "
-                         "wrong in ANY block)")
+                         "bar: a stranded one- or two-word last line is "
+                         "almost always a runt -- confirm by eye)")
             else:
                 where = ""
             warns.append(
