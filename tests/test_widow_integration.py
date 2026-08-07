@@ -61,6 +61,13 @@ _HTML = """<!DOCTYPE html>
   .card { padding: 10px; }
   .callout, .caption { width: 240px; font-size: 30px; line-height: 1.3; }
   .mono { width: 16ch; font-family: monospace; }   /* exact 15ch / 5ch split */
+  /* Table cases: fixed layout + an explicit width pins each cell to 16ch, so
+     the cell splits exactly like a .mono block (auto layout would widen the
+     cell to the card and never wrap). */
+  table.cells { table-layout: fixed; width: 16ch; border-spacing: 0;
+                font-family: monospace; font-size: 30px; line-height: 1.3; }
+  table.cells td, table.cells th { padding: 0; text-align: left;
+                                   font-weight: 400; }
 </style></head>
 <body>
   <div data-measure-role="poster">
@@ -161,6 +168,58 @@ _HTML = """<!DOCTYPE html>
            a regression to text-only width would wrongly flag this. "tx" is
            glued to a 170px math box; the 15ch mono penult is the measure. -->
       <div class="callout mono" id="t">Tfullextentwide tx&nbsp;<mjx-container style="display:inline-block;width:170px;height:28px;vertical-align:middle"></mjx-container></div>
+      <!-- U-W: table CELLS. A cell holding a real phrase strands runts like any
+           paragraph (the KDD 'Trajectory + units -> next location' incident) and
+           IS judged now, on the conservative short-tail bar and from
+           CELL_MIN_WORDS (4) words up. Cells used to be excluded wholesale, so
+           that runt shipped and came back as a customer revision. Monospace
+           inside a fixed 16ch cell makes each split exact and
+           font-metric-independent, as in case R. -->
+      <table class="cells"><tbody>
+        <!-- U: 4 words; the 15ch penult strands a 5ch tail = 33% of the
+             measure, below the 35% cut -> FLAG (the shipped incident's shape). -->
+        <tr><td>a b Umeasurewidth15 flagU</td></tr>
+        <!-- V: the SAME runt geometry (4ch tail on a 15ch measure = 27%) but
+             only 3 words -- under CELL_MIN_WORDS the break is column-width
+             driven and there is nothing to reword -> NO widow. Pins the word
+             bar: without it this flags. -->
+        <tr><td>b Vmeasurewidth15 vskp</td></tr>
+        <!-- W: the 'DSTAGNN<br>PEMSD4' header idiom -- two one-token segments,
+             neither of which wraps -> NO widow. Guards against nagging about
+             every stacked header cell. -->
+        <tr><th>Wskipheader<br>Wskiprow</th></tr>
+        <!-- Y: 4 TOKENS but only 3 WORDS ('->' is punctuation), with a 27% tail
+             -> still a label, NO widow. Pins that the bar counts words: with a
+             raw toks.length test this flags (Codex review). -->
+        <tr><td>b Ymeasure15 -&gt; yskp</td></tr>
+      </tbody></table>
+      <!-- X: an UNLISTED block holding prose AND an inline table. Admitting
+           cells made the inner <td> a candidate too, and the innermost-only
+           rule then deleted this block -- losing its widow/glue/census pass
+           (Codex review). The runt is in the block's own text, and its last
+           line is pure text (the table sits mid-content), so it must flag. -->
+      <div id="x" style="width:16ch;font-family:monospace;font-size:30px;line-height:1.3"
+        >Xmeasurewidth15
+         <table style="display:inline-table;width:20px;height:20px"><tr><td>zz</td></tr></table>
+         Xmeasurewidth15 flagX</div>
+      <!-- Z: a cell of a NESTED table. Walking past only ONE enclosing table
+           left the outer one blocking every text node here, so the cell was
+           admitted and never judged (Codex review). -->
+      <table class="cells"><tbody><tr><td>
+        <table class="cells"><tbody><tr><td>a b Zmeasurewidth15 flagZ</td></tr></tbody></table>
+      </td></tr></tbody></table>
+      <!-- AB: the <caption> of a table NESTED in a cell is not cell content --
+           it keeps the old opaque skip, so its wrapped text is not judged. -->
+      <table class="cells"><tbody><tr><td>
+        <table class="cells"><caption>a b ABmeasurewidth15 abskp</caption></table>
+      </td></tr></tbody></table>
+      <!-- AA: a whitelisted block whose inline table holds a `.card p`. Pool
+           (1) skipped this .callout as a non-leaf and pool (2) then dropped it
+           as whitelisted, so its OWN runt went unjudged -- a pool-(1) leaf
+           inside a cell is a separate text flow (Codex review). -->
+      <div class="callout mono" id="aa">Ameasurewidth15
+         <table style="display:inline-table"><tr><td><p>pp</p></td></tr></table>
+         Ameasurewidth15 flgAA</div>
     </div>
   </div>
   </div>
@@ -189,8 +248,10 @@ def test_widow_geometry_end_to_end(tmp_path, capsys) -> None:
     # in the 220-400 band), H (tall opaque vs tolerance), I (<br> inside table),
     # J (hidden trailing svg stays pure text), K (unspaced-math token Range),
     # L (short TWO-word last line), P (text+math last line), R (33% < new 35%
-    # cut). Eleven in all.
-    assert "prose widows        : 11" in combined
+    # cut), U (a phrase in a TABLE CELL), X (a block holding prose + an inline
+    # table keeps its own pass), Z (a nested table's cell), AA (a whitelisted
+    # block whose inline table holds a pool-(1) leaf). Fifteen in all.
+    assert "prose widows        : 15" in combined
     assert "flagA." in combined                            # A
     assert "flagD." in combined                            # D first segment
     assert "flagF." in combined                            # F math early
@@ -202,6 +263,11 @@ def test_widow_geometry_end_to_end(tmp_path, capsys) -> None:
     assert "is L2." in combined                            # L two-word runt
     assert "flagP" in combined                             # P text + inline math
     assert "flagR" in combined                             # R 33% < 35% cut
+    assert "flagU" in combined                             # U phrase in a cell
+    assert "WIDOW (table cell)" in combined                # ...with the cell message
+    assert "flagX" in combined                             # X prose + inline table
+    assert "flagZ" in combined                             # Z nested table's cell
+    assert "flgAA" in combined                             # AA leaf inside a cell
     # Do NOT flag:
     # B: &nbsp; glues the marker to the wide penult -> wide last line.
     assert "noflagB." not in combined
@@ -226,3 +292,17 @@ def test_widow_geometry_end_to_end(tmp_path, capsys) -> None:
     # T: tiny word fused to a WIDE inline equation -> text+math fills the line
     # -> must NOT flag (pins lastW = full extent, not text-only).
     assert "Tfullextentwide" not in combined
+    # V: a 3-word cell label with U's exact runt geometry -> under
+    # CELL_MIN_WORDS, so column width (not copy) owns the break -> no widow.
+    assert "vskp" not in combined
+    # W: the stacked <br> header idiom -> two one-token segments -> no widow.
+    assert "Wskip" not in combined
+    # Y: 4 tokens but 3 words -> under CELL_MIN_WORDS -> no widow.
+    assert "yskp" not in combined
+    # AB: a <caption> of a table nested in a cell is not cell content -> the
+    # opaque skip still hides it (pins that inCell needs the SAME table).
+    assert "abskp" not in combined
+    # Cells stay out of the TEXT-WRAP census: U wraps and has enough words, so
+    # it would appear in the sample as a bare <td> if it were counted -- the
+    # templates' wrap defenses never covered td/th, so that would be a false nag.
+    assert "<td>" not in combined and "<th>" not in combined

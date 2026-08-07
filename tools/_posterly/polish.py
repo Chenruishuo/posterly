@@ -25,7 +25,9 @@ Gates the hard alignment gate cannot see:
     Long running prose (> the char cap) and GENERIC blocks -- any block-ish
     element holding worded text, discovered by geometry so custom-skeleton
     class names are covered -- are judged by the conservative bar only: a
-    stranded tail of at most two words under the runt width. (3) ``GLUE-CHAIN``: >= 3
+    stranded tail of at most two words under the runt width. TABLE cells ride
+    that bar too, from four words up (a shorter label breaks where the column
+    width says it must, not where the copy does). (3) ``GLUE-CHAIN``: >= 3
     words fused with ``&nbsp;`` (the lazy widow "fix") -- the unbreakable
     unit wraps early as a whole and tears a hole in the line above; stat /
     math / list idioms are exempt (< 3 prose words, or a pure separator
@@ -679,6 +681,10 @@ _POLISH_JS = r"""
   // NOT by justification / letter-spacing padding, nor by pushing one lever to an
   // extreme (e.g. a blown-up font) just to pass. Still a soft warning, never a hard fail.
   const BANNER_FILL_FRAC = 0.80;
+  // A table cell is judged only from this many words up: below it the break is
+  // the column's width, not the copy, so there is nothing to reword and the
+  // warning would just nag about every narrow label column.
+  const CELL_MIN_WORDS = 4;
   const WIDOW_SEL = '.callout, .body-text, .caption, .section-title,'
                   + ' .card p, .card li, .fb-text';
   // Glue chains: >=3 words fused with &nbsp; form one unbreakable unit that
@@ -702,11 +708,21 @@ _POLISH_JS = r"""
   //       at most TWO words), so unknown block types can't flood the report.
   const candidates = [];
   const wlSet = new Set();
+  // Does el hold a pool-(1) leaf in its OWN text flow? A nested table is a
+  // separate flow -- el treats that table as opaque, so a prose leaf inside a
+  // CELL must not disqualify el, or the block's own text goes unjudged.
+  const hasWlLeaf = (el) => {
+    for (const q of el.querySelectorAll(WIDOW_SEL)) {
+      const t = q.closest('table');
+      if (!t || !el.contains(t)) return true;
+    }
+    return false;
+  };
   document.querySelectorAll(WIDOW_SEL).forEach(el => {
     // Scan only the most specific prose leaf: if this element CONTAINS another
     // candidate (a .callout wrapping a <p class="body-text">), skip it -- the
     // descendant is scanned on its own, so we never double-report one widow.
-    if (el.querySelector(WIDOW_SEL)) return;
+    if (hasWlLeaf(el)) return;
     wlSet.add(el);
     candidates.push({el, generic: false});
   });
@@ -736,10 +752,11 @@ _POLISH_JS = r"""
       if (!/[\p{L}\p{N}]{2}/u.test(tn.nodeValue || '')) continue;
       let el = tn.parentElement;
       if (!el) continue;
-      // Math/SVG internals are not prose; TABLE cells wrap short lines by
-      // design (the widow contract doesn't fit them -- contrast still covers
-      // their text via the separate scan below).
-      if (el.closest('mjx-container, .MathJax, math, svg, table,'
+      // Math/SVG internals are not prose. TABLE cells used to be excluded here
+      // too ("cells wrap short lines by design") -- too broad: a cell holding a
+      // phrase strands a runt like any paragraph. They are admitted and held to
+      // the cell bar below (CELL_MIN_WORDS + the conservative short-tail rule).
+      if (el.closest('mjx-container, .MathJax, math, svg,'
                      + ' script, style')) continue;
       while (el && el !== root && !isBlocky(el)) el = el.parentElement;
       if (el) candSet.add(el);
@@ -748,14 +765,25 @@ _POLISH_JS = r"""
     // block child would judge a "last line" that isn't visually last.
     const hasCandDesc = new Set();
     candSet.forEach(el => {
+      // A cell's claim stops at its own table: a block holding prose AND an
+      // inline table must keep its own widow/glue/census pass, and an inner
+      // table's cell must not delete the outer cell (Codex review).
+      const tbl = el.closest('table');
       for (let p = el.parentElement; p; p = p.parentElement) {
+        if (tbl && !tbl.contains(p)) break;
         if (candSet.has(p)) hasCandDesc.add(p);
       }
     });
     candSet.forEach(el => {
       if (hasCandDesc.has(el)) return;
-      if (wlSet.has(el) || el.closest(WIDOW_SEL)) return;  // pool (1) owns it
-      if (el.querySelector(WIDOW_SEL)) return;             // wraps a pool-(1) leaf
+      if (wlSet.has(el)) return;                           // pool (1) owns it
+      // ...but pool (1)'s claim ALSO stops at a table: a whitelisted block
+      // holding an inline table treats that table as opaque, so its cells
+      // would otherwise fall between the two pools and go unjudged.
+      const wlAnc = el.closest(WIDOW_SEL);
+      const tblOwn = el.closest('table');
+      if (wlAnc && (!tblOwn || tblOwn.contains(wlAnc))) return;
+      if (hasWlLeaf(el)) return;                           // wraps a pool-(1) leaf
       if (el.closest('[data-vrail-title]')) return;        // deliberate stack
       candidates.push({el, generic: true});
     });
@@ -806,6 +834,11 @@ _POLISH_JS = r"""
     // caption (231 chars) and a 269-char banner .fb-text (whose last line filled
     // only 17% of the measure) were never measured.
     const cap = (el.matches('.caption, .callout') || el.closest('.fb-text')) ? 400 : 220;
+    // `closest`, not `matches`: the candidate may be a <p> inside the cell. The
+    // cell must be in the candidate's OWN table, or a <caption> of a table
+    // nested in a cell would count as cell content and lose its old skip.
+    const cellOf = el.closest('td, th');
+    const inCell = !!cellOf && cellOf.closest('table') === el.closest('table');
 
     // Split the element's own text into `<br>`-delimited paragraphs, each
     // keeping a flat string + a DOM map (so a word split across inline tags
@@ -828,6 +861,26 @@ _POLISH_JS = r"""
       }
       return false;
     };
+    // Opaque-interior test, relative to THIS candidate. An opaque root at or
+    // below el is structure to skip, as before. An opaque root ABOVE el means
+    // el sits inside a figure/math subtree and isn't prose -- with exactly one
+    // exception: the <table> hosting a CELL candidate, whose text is what we
+    // came to judge (a bare closest() matched it and dropped every text node
+    // in the cell, leaving it admitted but never judged). The exception is
+    // narrow on purpose: it applies only to a cell (not to, say, a <caption>,
+    // whose scan would be an unvalidated widening), and the walk continues past
+    // EVERY enclosing table -- one `if` left a nested table's cell blocked by
+    // the outer table -- stopping at the first non-table opaque, so a cell
+    // inside an <svg>/math subtree is still not prose.
+    const inOpaque = (node) => {
+      let o = node && node.closest(OPAQUE);
+      if (!o) return false;
+      if (el.contains(o)) return true;                  // at or below el (el itself included)
+      while (inCell && o && o.tagName === 'TABLE') {
+        o = o.parentElement && o.parentElement.closest(OPAQUE);
+      }
+      return !!o;
+    };
     const tw = document.createTreeWalker(
       el, NodeFilter.SHOW_TEXT | NodeFilter.SHOW_ELEMENT);
     for (let n = tw.nextNode(); n; n = tw.nextNode()) {
@@ -837,7 +890,7 @@ _POLISH_JS = r"""
         // would orphan the trailing text into a 1-token segment and mask a
         // real widow). Skip everything below an opaque root; the root itself
         // passes this test and is recorded.
-        if (n.parentElement && n.parentElement.closest(OPAQUE)) continue;
+        if (inOpaque(n.parentElement)) continue;
         if (n.tagName === 'BR') { paras.push(cur); cur = {flat: '', segs: [], ops: []}; continue; }
         // Record the OUTERMOST opaque element (nested <svg> in <mjx-container>
         // was filtered above). visibility:hidden opaques still occupy layout
@@ -858,9 +911,10 @@ _POLISH_JS = r"""
       // Skip the section-number badge (.num): a flex item whose center-y would
       // corrupt line grouping and whose digit would fuse into the first token.
       if (n.parentElement && n.parentElement.closest('.num')) continue;
-      // Text living INSIDE an opaque element (a <table> cell, MathML token)
-      // is represented by the opaque rect, not the token stream.
-      if (n.parentElement && n.parentElement.closest(OPAQUE)) continue;
+      // Text living INSIDE an opaque element (a nested table's cell, a MathML
+      // token) is represented by the opaque rect, not the token stream. Text in
+      // el's OWN cell, when el IS the cell, is the prose under test.
+      if (inOpaque(n.parentElement)) continue;
       const v = n.nodeValue;
       if (!v) continue;
       cur.segs.push({node: n, base: cur.flat.length, text: v});
@@ -909,7 +963,8 @@ _POLISH_JS = r"""
       // 'AIME24/25).' last line. Long prose (and every generic, unlisted-class
       // block) is now judged by the CONSERVATIVE bar instead: a stranded tail
       // of one or two words flags; longer tails are normal in long prose.
-      const extremeOnly = generic || norm.length > cap;
+      // A cell rides that same conservative bar.
+      const extremeOnly = generic || inCell || norm.length > cap;
       // Tokenise on \S+ (JS `\s` includes U+00A0, so `&nbsp;` is a SEPARATOR
       // here -- a glued pair is two tokens). Token COUNT no longer decides;
       // the WIDTH test below does. The recommended `&nbsp;` glue still helps,
@@ -926,6 +981,10 @@ _POLISH_JS = r"""
       // treated as a one-word paragraph, not a wrap -- same verdict as case
       // "Short." (the text never wrapped, so nothing was stranded BY a wrap).
       if (toks.length < 2) return;
+      // WORDS, not tokens: `+` and `->` tokenise but don't read as words, so
+      // `Input + state -> output` is a 3-word label, not a phrase.
+      if (inCell && toks.filter(t => /[\p{L}\p{N}]/u.test(t.t)).length
+                    < CELL_MIN_WORDS) return;
 
       const rectsFor = (a, b) => {
         // PER-TEXT-NODE ranges: a single Range spanning from one text node to
@@ -1020,7 +1079,10 @@ _POLISH_JS = r"""
       if (lines.length < 2) return;                           // single visual line: nothing to widow
       // Census: this block genuinely WRAPS, so it either carries wrap
       // protection (text-wrap: pretty / balance) or it doesn't. Once per el.
-      if (!censusCounted) {
+      // Cells stay OUT of the census: the templates' text-wrap defenses never
+      // covered td/th, so a normally-wrapping table would trip TEXT-WRAP and
+      // tell the agent it dropped a protection that was never there.
+      if (!censusCounted && !inCell) {
         censusCounted = true;
         wrapCensus.push({
           cls: el.className || '', tag: el.tagName.toLowerCase(),
@@ -1059,8 +1121,10 @@ _POLISH_JS = r"""
       // prose keeps the RUNT_FRAC runt bar. `closest` (not `matches`) so banner
       // text nested in a sub-candidate (.body-text/.caption inside .fb-text, which
       // would make the gate scan the child, not the .fb-text parent) still gets
-      // the banner bar rather than silently falling back to the runt bar.
-      const isBanner = !!el.closest('.fb-text');
+      // the banner bar rather than silently falling back to the runt bar. A CELL
+      // inside a banner is not the banner: it would take the 80% fill bar (and
+      // the banner's fix advice) for what is a table label.
+      const isBanner = !inCell && !!el.closest('.fb-text');
       const threshold = isBanner ? BANNER_FILL_FRAC : RUNT_FRAC;
       // Conservative bar for long prose / generic blocks: judge only a
       // SHORT stranded tail -- one or two text tokens on the last line, still
@@ -1094,7 +1158,8 @@ _POLISH_JS = r"""
           lines: lines.length,
           text: (norm.length > 60) ? ('...' + norm.slice(-57)) : norm,
           banner: isBanner,   // banner -> "fill the rectangle" message; else the runt message
-          mode: generic ? 'generic' : (extremeOnly ? 'long' : 'std'),
+          mode: inCell ? 'cell'
+              : (generic ? 'generic' : (extremeOnly ? 'long' : 'std')),
         });
       }
     });
@@ -2257,6 +2322,26 @@ def report_polish(data: dict, args: argparse.Namespace,
                 f"extreme (e.g. a blown-up font) just to clear the gate, and never force "
                 f"it with text-align: justify / text-align-last or letter-spacing "
                 f"padding. Re-render and look after. "
+                f"Context: '{ascii_safe(w['text'])}'."
+            )
+        elif w.get("mode") == "cell":
+            # A table cell has its own fix menu: the prose "reword first" order
+            # assumes a sentence you can expand, while a cell is a label sitting
+            # in a column whose width you also control.
+            warns.append(
+                f"WIDOW (table cell): <{ascii_safe(w['tag'])} "
+                f"class='{ascii_safe(w['cls'])}'> wraps and strands "
+                f"'{ascii_safe(w['word'])}' on a last line filling only "
+                f"{int(w['frac'])}% of the cell's typeset width -- a runt, in a "
+                f"cell the eye reads as a phrase (SKILL.md Gate B). Fix by "
+                f"whichever costs the layout least: (a) rebalance the break -- "
+                f"text-wrap: balance on the cell evens its two lines; (b) shorten "
+                f"the label (a table cell may drop articles and repeat less than "
+                f"a sentence); (c) widen that column (or narrow a neighbour) so "
+                f"the phrase fits one line; (d) &nbsp;-glue the last two tokens, "
+                f"last resort as ever. Re-run measure after: if this cell is "
+                f"what makes its row two lines tall, unwrapping it shortens the "
+                f"row and moves the card bottom. "
                 f"Context: '{ascii_safe(w['text'])}'."
             )
         else:
