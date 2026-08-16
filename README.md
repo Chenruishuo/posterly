@@ -30,10 +30,10 @@ p⊕sterly turns a paper into a print-ready conference poster at the exact canva
 
 If you don't run a coding agent, or wouldn't trust yours with this, and you want posterly at its best without the setup, use the hosted service. It costs money, and every order comes with a receipt.
 
-«[!IMPORTANT]
-Do not run posterly above "high" effort. This applies to GPT-5.6 Sol and other GPT models, and to Claude Opus as well. At higher effort levels, these models tend to overthink, second-guess, or drift away from posterly's required workflow, which can lead to substantially worse poster results.
-
-Use "high" as the maximum recommended effort level.»
+> [!IMPORTANT]
+> **Do not run posterly above `high` effort.** This applies to GPT-5.6 Sol and other GPT models, and to Claude Opus as well. At higher effort levels, these models tend to overthink, second-guess, or drift away from posterly's required workflow, which can lead to substantially worse poster results.
+>
+> **Use `high` as the maximum recommended effort level.**
 
 The [blog](https://tryposterly.com/blog) walks through how posterly turns a paper into a checked, print-ready poster.
 
