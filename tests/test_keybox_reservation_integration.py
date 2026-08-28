@@ -121,11 +121,12 @@ _TRAILING_HTML = f"""<!DOCTYPE html>
   .card {{ border: 2px solid #888; padding: 20px; height: 1500px; }}
   .card + .card {{ margin-top: 24px; }}
   {_KEYBOX_CSS}
-  /* margin-top sized so the callout's PAINTED box ends ~60px above
-     the card's inner bottom (~4% trailing, under the 10% threshold):
-     the box bump, not the text inside it, is what must count. */
+  /* margin-top sized so the callout's PAINTED box ends ~30px above
+     the card's inner bottom (~2% trailing, under the 10% ratio AND the
+     60px absolute companion): the box bump, not the text inside it, is
+     what must count. */
   .callout {{ background: #dde6f2; border-left: 8px solid #345;
-              padding: 16px; margin-top: 1300px; }}
+              padding: 16px; margin-top: 1330px; }}
   p {{ font-size: 28px; line-height: 1.4; }}
 </style></head>
 <body>

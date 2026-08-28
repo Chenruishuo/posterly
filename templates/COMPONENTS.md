@@ -560,10 +560,16 @@ this checkpoint — with an equal-cell fallback story.
   failure-geometry → fix-geometry on the same axes).
 - **Contract**: both `<img>` carry `data-source="paper"` + `data-asset-id` + `.w-45`/`.w-50`
   (each 42–48% of the card); combined target 8–12% of body.
-- **Inspected by**: asset (provenance + per-figure + total bands), polish FIG gates.
+- **Inspected by**: asset (provenance + per-figure + total bands), polish FIG gates;
+  members tagged `data-crop-lock` additionally by FIG/PAIR-GEOMETRY.
 - **Allowed fix ops**: asset fixes (re-crop), width within band, swap member figures.
 - **Anti-patterns**: pairing unrelated figures; before/after labels in extra hues (use
   text labels with accent/emph only).
+- **Note**: duo membership does NOT imply shared crop geometry — two related but
+  differently-composed figures may legitimately differ in AR. When the pair IS a set of
+  geometric twins (matched panels off one composite figure), tag both
+  `data-crop-lock="<group>"` (SKILL.md Step 2 crop hygiene) so polish verifies the
+  crop geometry stayed consistent.
 
 ### `result-table` derived column (`th.derived` / `td.derived`)
 - **Purpose**: a DERIVED arithmetic column (e.g. Δ = Ours − Baseline) next to verbatim

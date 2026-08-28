@@ -133,6 +133,31 @@ DEFAULT_BESIDE_VOID_RATIO = 0.30
 DEFAULT_CARD_INNER_VOID = 0.08
 DEFAULT_CARD_INNER_VOID_PX = 24.0
 
+# Side-by-side track bottoms (Gate C, fourth sibling: CARD/TRACK-MISALIGN).
+# Inside one card, a single-row group of >=2 content columns marked `.track`
+# whose content bottoms end far apart strands a void at the short column's
+# foot. Every gate above is blind there: CARD/TRAILING reads only the card's
+# own bottom (set by the TALLEST track), the inner-void walk deliberately
+# merges side-by-side children into one row, and TRACK/INNER-VOID runs only
+# on header/footer roles. Fires when the bottom misalignment is
+# >= max(PX, RATIO x the track group's content span -- tallest track's
+# content bottom to the tracks' common top; deliberately NOT the box
+# height, so bottom padding / min-height reservations can't dilute it). Only elements
+# explicitly classed `.track` participate -- a keybox tile row, a flow-strip
+# or a band-head is not a content column and must not be judged as one.
+DEFAULT_TRACK_MISALIGN_PX = 24.0
+DEFAULT_TRACK_MISALIGN_RATIO = 0.04
+
+# Declared crop-lock groups (FIG/PAIR-GEOMETRY). Images sharing a
+# `data-crop-lock="<group>"` attribute declare that they were cut with the
+# SAME crop-box geometry (matched panels off one composite paper figure, or
+# a same-scale visual comparison pair). Their natural aspect ratios must
+# then agree within this relative tolerance -- rasterisation rounding only;
+# a real mis-crop (one panel cut 7 px shorter, slicing its label row) is an
+# order of magnitude bigger. AR-only on purpose: the same crop exported at
+# two DPIs stays legal.
+DEFAULT_PAIR_AR_TOL = 0.005
+
 # Header-logo gates (Gate E). Same single-source pattern as above: the
 # CLI defaults in poster_check.py import these, and the getattr fallbacks
 # in cmd_polish reuse them. Calibrated against the template size classes
@@ -194,6 +219,10 @@ DEFAULT_TALL_MAX_RATIO = 0.70
 DEFAULT_SQUARE_MIN_RATIO = 0.55
 DEFAULT_MAX_SPACE_BETWEEN_FILL = 0.05
 DEFAULT_MAX_CARD_TRAILING = 0.10
+# Absolute companion to the ratio above: on a big canvas a 10% ratio lets
+# a physically large void through (a real A0 band shipped 9.0% = ~20 mm of
+# blank). Trailing >= this many px warns regardless of ratio; 0 disables.
+DEFAULT_MAX_CARD_TRAILING_PX = 60.0
 
 # Composed-contrast gate (Gate G). style_check verifies DECLARED token pairs;
 # this verifies the COMPOSED result at render time -- the recurring incident
@@ -239,6 +268,7 @@ _POLISH_JS = r"""
           card_index: ci,
           role: 'card',
           src: img.getAttribute('src') || '',
+          asset_id: img.getAttribute('data-asset-id') || '',
           alt: img.getAttribute('alt') || '',
           fig_layout: img.getAttribute('data-fig-layout') || '',
           // object-fit + side offsets let the Python gate see picture-level
@@ -279,6 +309,7 @@ _POLISH_JS = r"""
           card_index: -1,
           role: 'hero',
           src: img.getAttribute('src') || '',
+          asset_id: img.getAttribute('data-asset-id') || '',
           alt: img.getAttribute('alt') || '',
           fig_layout: img.getAttribute('data-fig-layout') || '',
           obj_fit: window.getComputedStyle(img).objectFit || '',
@@ -311,6 +342,7 @@ _POLISH_JS = r"""
           card_index: -1,
           role: 'band',
           src: img.getAttribute('src') || '',
+          asset_id: img.getAttribute('data-asset-id') || '',
           alt: img.getAttribute('alt') || '',
           fig_layout: img.getAttribute('data-fig-layout') || '',
           obj_fit: window.getComputedStyle(img).objectFit || '',
@@ -326,6 +358,27 @@ _POLISH_JS = r"""
         });
       });
     });
+
+  // ---- 1b) Declared crop-lock groups (FIG/PAIR-GEOMETRY) ----
+  // Images sharing data-crop-lock="<group>" declare identical crop-box
+  // geometry (matched panels off one composite paper figure); the Python
+  // side compares their natural aspect ratios. src is clipped here so an
+  // inline data URI never rides the JSON payload.
+  const cropLocks = [];
+  document.querySelectorAll('img[data-crop-lock]').forEach(img => {
+    const gid = (img.getAttribute('data-crop-lock') || '').trim();
+    if (!gid) return;
+    const rawSrc = img.getAttribute('src') || '';
+    cropLocks.push({
+      group: gid,
+      asset_id: img.getAttribute('data-asset-id') || '',
+      src: rawSrc.startsWith('data:')
+        ? ('<inline data URI, ' + rawSrc.length + ' chars>')
+        : rawSrc.slice(-80),
+      natural_w: img.naturalWidth || 0,
+      natural_h: img.naturalHeight || 0,
+    });
+  });
 
   // ---- 2) Orphan-prone text elements ----
   const sel = '[class*="stat"], [class*="num"], .num, .takeaway-num,'
@@ -384,6 +437,87 @@ _POLISH_JS = r"""
   // the card's bottom edge so it passes; Gate C only looks BETWEEN cards.
   // Skip cards that distribute space on purpose (space-* / center / end)
   // -- that is Gate C's territory or an intentional layout.
+  // Bottom-most rendered CONTENT inside `root` = max over three sources
+  // (each kept via `maxB`, so adding a source can only RAISE the content
+  // bottom, never hide a void):
+  //   (1) TEXT, via Range -- a plain-text tail that wraps onto a line
+  //       BELOW an inline <span>/<b>/<code> is invisible to an element
+  //       scan (its parent <p> has element children so it's skipped,
+  //       and the inline leaf sits on an earlier line) -> undershoot.
+  //   (2) REPLACED media (img/svg/canvas/...) -- even when it has child
+  //       nodes (e.g. <svg> wrapping <path>s) and so isn't a leaf.
+  //   (3) LEAF element boxes (no element children) -- re-covers a pure-
+  //       CSS diagram node (an empty <div> bar/box) that carries no
+  //       text and isn't replaced, which (1)+(2) alone would miss.
+  // Non-leaf, non-replaced CONTAINERS are skipped: a stretched wrapper
+  // box would over-measure to the root bottom and mask the void.
+  // Absolutely/fixed-positioned subtrees are skipped: a corner badge /
+  // QR / watermark sits at the bottom but is NOT the normal-flow content
+  // bottom -- counting it would mask a top-packed void (false negative).
+  // Shared by (4) card trailing and (4b) side-by-side track bottoms.
+  const flowContentBottom = (root, startB) => {
+    const inAbs = (node) => {
+      let el = node.nodeType === 1 ? node : node.parentElement;
+      while (el && el !== root) {
+        const pos = window.getComputedStyle(el).position;
+        if (pos === 'absolute' || pos === 'fixed') return true;
+        el = el.parentElement;
+      }
+      return false;
+    };
+    let maxB = startB;
+    const bump = (r) => {
+      if (r && r.height > 0 && r.bottom > maxB) maxB = r.bottom;
+    };
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+    for (let tn = walker.nextNode(); tn; tn = walker.nextNode()) {
+      if (!tn.nodeValue || !tn.nodeValue.trim()) continue;
+      if (inAbs(tn)) continue;
+      const rng = document.createRange();
+      rng.selectNodeContents(tn);
+      const rects = rng.getClientRects();
+      for (let i = 0; i < rects.length; i++) bump(rects[i]);
+    }
+    const REPLACED = /^(IMG|SVG|CANVAS|VIDEO|IFRAME|HR|OBJECT|EMBED)$/;
+    root.querySelectorAll('*').forEach(el => {
+      if (inAbs(el)) return;
+      // tagName is upper-case for HTML, but case-preserved (lower) for
+      // SVG elements -- normalise before the replaced-tag test.
+      if (!REPLACED.test(el.tagName.toUpperCase())) {
+        if (el.children.length) {
+          return;  // a non-replaced container: skip (only leaves + media)
+        }
+        // A text-bearing leaf with NO visible paint of its own
+        // (transparent bg, no border/shadow): its visual content is
+        // exactly its text, which the Range walk above already
+        // measured. Counting the whole box would let a tall reserved
+        // box (e.g. the keybox label's `min-height: 2lh` slot) read
+        // as "content" and mask a real trailing void. A PAINTED leaf
+        // (callout pill, tinted bar) keeps the box bump -- its
+        // background visibly extends to the box edge.
+        if ((el.textContent || '').trim()) {
+          const ls = window.getComputedStyle(el);
+          const bg = ls.backgroundColor || '';
+          // An invisible box paints nothing regardless of bg/border.
+          const invisible = ls.visibility === 'hidden'
+            || parseFloat(ls.opacity) === 0;
+          const painted = !invisible && (
+            (bg && bg !== 'transparent'
+                && bg !== 'rgba(0, 0, 0, 0)')
+            || (ls.backgroundImage && ls.backgroundImage !== 'none')
+            || (ls.boxShadow && ls.boxShadow !== 'none')
+            || (parseFloat(ls.borderTopWidth) || 0) > 0
+            || (parseFloat(ls.borderRightWidth) || 0) > 0
+            || (parseFloat(ls.borderBottomWidth) || 0) > 0
+            || (parseFloat(ls.borderLeftWidth) || 0) > 0);
+          if (!painted) return;
+        }
+      }
+      bump(el.getBoundingClientRect());
+    });
+    return maxB;
+  };
+
   const cards = [];
   document.querySelectorAll('[data-measure-role="card"]')
     .forEach((card, ci) => {
@@ -396,90 +530,100 @@ _POLISH_JS = r"""
       const padB = parseFloat(cs.paddingBottom) || 0;
       const padT = parseFloat(cs.paddingTop) || 0;
       const borderB = parseFloat(cs.borderBottomWidth) || 0;
-
-      // Is `node` inside an absolutely/fixed-positioned subtree within the
-      // card? A corner badge / QR / watermark sits at the card bottom but
-      // is NOT the normal-flow content bottom -- counting it would mask a
-      // top-packed void above it (false negative). Walk parents to card.
-      const inAbs = (node) => {
-        let el = node.nodeType === 1 ? node : node.parentElement;
-        while (el && el !== card) {
-          const pos = window.getComputedStyle(el).position;
-          if (pos === 'absolute' || pos === 'fixed') return true;
-          el = el.parentElement;
-        }
-        return false;
-      };
-
-      // Bottom-most rendered CONTENT = max over three sources (each kept
-      // via `maxB`, so adding a source can only RAISE the content bottom,
-      // never hide a void):
-      //   (1) TEXT, via Range -- a plain-text tail that wraps onto a line
-      //       BELOW an inline <span>/<b>/<code> is invisible to an element
-      //       scan (its parent <p> has element children so it's skipped,
-      //       and the inline leaf sits on an earlier line) -> undershoot.
-      //   (2) REPLACED media (img/svg/canvas/...) -- even when it has child
-      //       nodes (e.g. <svg> wrapping <path>s) and so isn't a leaf.
-      //   (3) LEAF element boxes (no element children) -- re-covers a pure-
-      //       CSS diagram node (an empty <div> bar/box) that carries no
-      //       text and isn't replaced, which (1)+(2) alone would miss.
-      // Non-leaf, non-replaced CONTAINERS are skipped: a stretched wrapper
-      // box would over-measure to the card bottom and mask the void.
-      let maxB = cr.top + padT;
-      const bump = (r) => {
-        if (r && r.height > 0 && r.bottom > maxB) maxB = r.bottom;
-      };
-      const walker = document.createTreeWalker(card, NodeFilter.SHOW_TEXT);
-      for (let tn = walker.nextNode(); tn; tn = walker.nextNode()) {
-        if (!tn.nodeValue || !tn.nodeValue.trim()) continue;
-        if (inAbs(tn)) continue;
-        const rng = document.createRange();
-        rng.selectNodeContents(tn);
-        const rects = rng.getClientRects();
-        for (let i = 0; i < rects.length; i++) bump(rects[i]);
-      }
-      const REPLACED = /^(IMG|SVG|CANVAS|VIDEO|IFRAME|HR|OBJECT|EMBED)$/;
-      card.querySelectorAll('*').forEach(el => {
-        if (inAbs(el)) return;
-        // tagName is upper-case for HTML, but case-preserved (lower) for
-        // SVG elements -- normalise before the replaced-tag test.
-        if (!REPLACED.test(el.tagName.toUpperCase())) {
-          if (el.children.length) {
-            return;  // a non-replaced container: skip (only leaves + media)
-          }
-          // A text-bearing leaf with NO visible paint of its own
-          // (transparent bg, no border/shadow): its visual content is
-          // exactly its text, which the Range walk above already
-          // measured. Counting the whole box would let a tall reserved
-          // box (e.g. the keybox label's `min-height: 2lh` slot) read
-          // as "content" and mask a real trailing void. A PAINTED leaf
-          // (callout pill, tinted bar) keeps the box bump -- its
-          // background visibly extends to the box edge.
-          if ((el.textContent || '').trim()) {
-            const ls = window.getComputedStyle(el);
-            const bg = ls.backgroundColor || '';
-            // An invisible box paints nothing regardless of bg/border.
-            const invisible = ls.visibility === 'hidden'
-              || parseFloat(ls.opacity) === 0;
-            const painted = !invisible && (
-              (bg && bg !== 'transparent'
-                  && bg !== 'rgba(0, 0, 0, 0)')
-              || (ls.backgroundImage && ls.backgroundImage !== 'none')
-              || (ls.boxShadow && ls.boxShadow !== 'none')
-              || (parseFloat(ls.borderTopWidth) || 0) > 0
-              || (parseFloat(ls.borderRightWidth) || 0) > 0
-              || (parseFloat(ls.borderBottomWidth) || 0) > 0
-              || (parseFloat(ls.borderLeftWidth) || 0) > 0);
-            if (!painted) return;
-          }
-        }
-        bump(el.getBoundingClientRect());
-      });
-
+      const maxB = flowContentBottom(card, cr.top + padT);
       cards.push({
         card_index: ci,
         card_h: cr.height,
         trailing_px: (cr.bottom - padB - borderB) - maxB,
+      });
+    });
+
+  // ---- 4b) Side-by-side track bottoms (CARD/TRACK-MISALIGN) ----
+  // A card's content often splits into 2-3 side-by-side columns (a figure
+  // track beside a chip track, twin table tracks). The card's height is set
+  // by the TALLEST one, so a short track strands a void at its own foot
+  // that no other gate sees: CARD/TRAILING reads the card bottom (hugged by
+  // the tall track), the inner-void walk merges side-by-side children into
+  // one row, TRACK/INNER-VOID covers only header/footer roles, and measure
+  // reads only whole-column bottoms. Participation is by explicit contract
+  // -- >=2 direct children of one container classed `.track` -- never by
+  // scanning arbitrary grid/flex rows (a keybox tile row, a flow-strip, a
+  // band-head are horizontal but are not content columns and their bottoms
+  // legitimately differ). Rendered geometry then CONFIRMS the tracks form
+  // one visual row (tops aligned, horizontal spans distinct, flex rows
+  // nowrap): a wrapped/stacked "row" is skipped, not judged -- comparing
+  // bottoms across two stacked rows would be meaningless.
+  const trackGroups = [];
+  const tgRoot = document.querySelector('[data-measure-role="poster"]')
+              || document;
+  const seenTG = new Set();
+  tgRoot.querySelectorAll('.card, [data-measure-role="card"]')
+    .forEach((card, cardIdx) => {
+      if (seenTG.has(card)) return;
+      seenTG.add(card);
+      const boxes = new Set();
+      const consider = (box) => {
+        let n = 0;
+        for (const c of box.children) {
+          if (c.classList && c.classList.contains('track')) n++;
+        }
+        if (n >= 2) boxes.add(box);
+      };
+      consider(card);
+      card.querySelectorAll('*').forEach(consider);
+      boxes.forEach(box => {
+        const bs = window.getComputedStyle(box);
+        if ((bs.display === 'flex' || bs.display === 'inline-flex')
+            && !(/^row/.test(bs.flexDirection || 'row')
+                 && (bs.flexWrap || 'nowrap') === 'nowrap')) {
+          return;
+        }
+        const kids = Array.from(box.children).filter(c => {
+          if (!(c.classList && c.classList.contains('track'))) return false;
+          const pos = window.getComputedStyle(c).position;
+          if (pos === 'absolute' || pos === 'fixed') return false;
+          const r = c.getBoundingClientRect();
+          return r.height > 0 && r.width > 0;
+        });
+        if (kids.length < 2) return;
+        const rects = kids.map(c => c.getBoundingClientRect());
+        const tops = rects.map(r => r.top);
+        if (Math.max(...tops) - Math.min(...tops) > 2) return;
+        const order = rects.slice().sort((a, b) => a.left - b.left);
+        for (let i = 1; i < order.length; i++) {
+          if (order[i].left < order[i - 1].right - 2) return;
+        }
+        const bottoms = kids.map(
+          (c, i) => flowContentBottom(c, rects[i].top));
+        const gTop = Math.min(...tops);
+        const gBottom = Math.max(...bottoms);
+        if (gBottom <= gTop) return;
+        const short = bottoms.indexOf(Math.min(...bottoms));
+        // Box keeps the first-class labelling of the inner-void walk; the
+        // short track gets its FULL class list plus its left-to-right
+        // ordinal -- every track is `.track` by contract, so a first-class
+        // label alone cannot say WHICH column is short.
+        const lab = (el) => el.tagName.toLowerCase()
+          + ((((el.getAttribute('class') || '').trim().split(/\s+/)[0]) || '')
+             ? '.' + (el.getAttribute('class') || '').trim().split(/\s+/)[0]
+             : '');
+        const labFull = (el) => {
+          const cls = (el.getAttribute('class') || '').trim().split(/\s+/)
+            .filter(Boolean).join('.');
+          return el.tagName.toLowerCase() + (cls ? '.' + cls : '');
+        };
+        const leftIdx = kids.map((c, i) => i)
+          .sort((a, b) => rects[a].left - rects[b].left);
+        trackGroups.push({
+          card_index: cardIdx,
+          card_cls: (card.getAttribute('class') || ''),
+          box_label: lab(box),
+          n_tracks: kids.length,
+          group_h: gBottom - gTop,
+          misalign: Math.max(...bottoms) - Math.min(...bottoms),
+          short_label: labFull(kids[short]),
+          short_pos: leftIdx.indexOf(short) + 1,
+        });
       });
     });
 
@@ -649,6 +793,7 @@ _POLISH_JS = r"""
     besideVoids.push({
       wrap_index: wi,
       src: img.getAttribute('src') || '',
+      asset_id: img.getAttribute('data-asset-id') || '',
       fig_bottom: fr.bottom,
       fig_h: fr.height,
       text_bottom: (textBottom === -Infinity) ? null : textBottom,
@@ -1881,7 +2026,8 @@ _POLISH_JS = r"""
     });
   }
 
-  return {figures, orphans, cols, cards, innerVoids, trackVoids, flexbr,
+  return {figures, cropLocks, orphans, cols, cards, trackGroups,
+          innerVoids, trackVoids, flexbr,
           besideVoids, widows, glueChains, wrapCensus, contrasts, symbolCase,
           logos, qrs, header_w: headerW, header_h: headerH,
           header_cx: headerCx,
@@ -2041,6 +2187,24 @@ def cmd_polish(args: argparse.Namespace) -> int:
     return report_polish(data, args, html_path)
 
 
+def _fig_label(f: dict) -> str:
+    """Short, report-safe identifier for a figure record: the
+    ``data-asset-id`` when the poster carries one, else the src -- with an
+    inline data URI collapsed to a stub and a long path clipped. A real
+    poster's FIG/WIDE once printed a whole ~500k-char base64 URI into the
+    report, drowning every other finding; no warning may echo a raw src.
+    """
+    aid = str(f.get("asset_id") or "").strip()
+    if aid:
+        return aid
+    src = str(f.get("src") or "")
+    if src.startswith("data:"):
+        return f"<inline data URI, {len(src)} chars>"
+    if len(src) > 60:
+        return "..." + src[-57:]
+    return src
+
+
 def report_polish(data: dict, args: argparse.Namespace,
                   html_path: Path) -> int:
     """Apply the visual-polish gates (A-F) to data gathered by
@@ -2082,7 +2246,7 @@ def report_polish(data: dict, args: argparse.Namespace,
         )
         if (nw <= 0 or nh <= 0) and not is_svg:
             warns.append(
-                f"FIG/BROKEN: '{ascii_safe(f['src'])}' has zero natural "
+                f"FIG/BROKEN: '{ascii_safe(_fig_label(f))}' has zero natural "
                 "size -- the image failed to load (missing file, 404, or "
                 "an unreachable remote URL); it will be blank in print."
             )
@@ -2153,7 +2317,7 @@ def report_polish(data: dict, args: argparse.Namespace,
                         and symmetric):
                     warns.append(
                         f"{role.upper()}/STAGE-LETTERBOX: "
-                        f"'{ascii_safe(f['src'])}' "
+                        f"'{ascii_safe(_fig_label(f))}' "
                         f"(AR={ar:.2f}) fills only {fill * 100:.0f}% of its "
                         f"{role}-stage width -- the stage is "
                         f"{stage_ar:.1f}:1, "
@@ -2197,7 +2361,7 @@ def report_polish(data: dict, args: argparse.Namespace,
         ratio = content_w / cw
         if ar > 1.3 and ratio < args.wide_min_ratio:
             warns.append(
-                f"FIG/WIDE: '{ascii_safe(f['src'])}' (AR={ar:.2f}) at "
+                f"FIG/WIDE: '{ascii_safe(_fig_label(f))}' (AR={ar:.2f}) at "
                 f"{ratio * 100:.0f}% of card width -- "
                 f"{args.wide_min_ratio * 100:.0f}% is the defect FLOOR, "
                 f"not the target: a figure that owns its card reads "
@@ -2207,14 +2371,14 @@ def report_polish(data: dict, args: argparse.Namespace,
             )
         elif ar < 0.8 and ratio > args.tall_max_ratio:
             warns.append(
-                f"FIG/TALL: '{ascii_safe(f['src'])}' (AR={ar:.2f}) at "
+                f"FIG/TALL: '{ascii_safe(_fig_label(f))}' (AR={ar:.2f}) at "
                 f"{ratio * 100:.0f}% of card width -- a tall figure this "
                 f"wide gets awkward; shrink to 45-60%, or use a verified "
                 f"float/beside-text wrap layout."
             )
         elif ar < 0.8 and ratio < tall_min:
             warns.append(
-                f"FIG/TALL-SMALL: '{ascii_safe(f['src'])}' (AR={ar:.2f}) at "
+                f"FIG/TALL-SMALL: '{ascii_safe(_fig_label(f))}' (AR={ar:.2f}) at "
                 f"{ratio * 100:.0f}% of card width -- a tall figure this "
                 f"narrow renders small with wide side margins. Enlarge "
                 f"toward 45-60%, or wrap text around it with a verified "
@@ -2223,10 +2387,46 @@ def report_polish(data: dict, args: argparse.Namespace,
             )
         elif 0.8 <= ar <= 1.3 and ratio < args.square_min_ratio:
             warns.append(
-                f"FIG/SQUARE: '{ascii_safe(f['src'])}' (AR={ar:.2f}) at "
+                f"FIG/SQUARE: '{ascii_safe(_fig_label(f))}' (AR={ar:.2f}) at "
                 f"{ratio * 100:.0f}% of card width -- square figures "
                 f"sit better at {args.square_min_ratio * 100:.0f}-75%."
             )
+
+    # ---- Gate A1b: declared crop-lock pairs (FIG/PAIR-GEOMETRY) ----
+    # AR-only comparison: the same crop box exported at two DPIs stays
+    # legal; a mis-crop (one matched panel cut a few px shorter, slicing
+    # its label row) shows up as an AR mismatch far above rasterisation
+    # rounding. Zero-natural images are FIG/BROKEN's finding, not ours.
+    pair_tol = getattr(args, "pair_ar_tol", DEFAULT_PAIR_AR_TOL)
+    lock_groups: dict[str, list[dict]] = {}
+    for m in data.get("cropLocks", []):
+        if float(m.get("natural_w", 0)) > 0 and float(
+                m.get("natural_h", 0)) > 0:
+            lock_groups.setdefault(str(m.get("group", "")), []).append(m)
+    for gid, members in sorted(lock_groups.items()):
+        if len(members) < 2:
+            continue
+        ars = [float(m["natural_w"]) / float(m["natural_h"])
+               for m in members]
+        rel = max(ars) / min(ars) - 1.0
+        if rel <= pair_tol:
+            continue
+        listing = "; ".join(
+            f"{ascii_safe(_fig_label(m))} "
+            f"{m['natural_w']:.0f}x{m['natural_h']:.0f} (AR="
+            f"{float(m['natural_w']) / float(m['natural_h']):.3f})"
+            for m in members)
+        warns.append(
+            f"FIG/PAIR-GEOMETRY: crop-lock group '{ascii_safe(gid)}' "
+            f"declares shared crop geometry, but source aspect ratios "
+            f"differ by {rel * 100:.1f}% (allowed "
+            f"{pair_tol * 100:.1f}%): {listing}. Re-crop the matched "
+            f"panels with the SAME crop-box geometry and inspect all four "
+            f"edges for cut glyphs, axis labels or lines -- a few-px "
+            f"shortfall usually means an edge row of the source was "
+            f"sliced. Equal-width mounts of unequal ARs also render at "
+            f"unequal heights, misaligning the pair's bottoms."
+        )
 
     # ---- Gate A2: beside-text float void ----
     # A figure floated beside text whose wrapping text stops short of the
@@ -2245,7 +2445,7 @@ def report_polish(data: dict, args: argparse.Namespace,
         tb = bv.get("text_bottom")
         if tb is None:
             warns.append(
-                f"FIG/BESIDE-TEXT-VOID: '{ascii_safe(bv.get('src', ''))}' "
+                f"FIG/BESIDE-TEXT-VOID: '{ascii_safe(_fig_label(bv))}' "
                 f"floats beside text but has NO wrapping text beside it -- a "
                 f"text-less float just leaves an L-shaped void. Center the "
                 f"figure (.figure) with text full-width below instead."
@@ -2256,7 +2456,7 @@ def report_polish(data: dict, args: argparse.Namespace,
         ratio = deficit / fig_h
         if ratio > beside_void and deficit > 1.5 * max(line_h, 1.0):
             warns.append(
-                f"FIG/BESIDE-TEXT-VOID: '{ascii_safe(bv.get('src', ''))}' -- "
+                f"FIG/BESIDE-TEXT-VOID: '{ascii_safe(_fig_label(bv))}' -- "
                 f"the wrapping text stops {ratio * 100:.0f}% of the figure's "
                 f"height short of its bottom, leaving an L-shaped void beside "
                 f"the figure's lower half. Best fix: lengthen the text with "
@@ -2433,13 +2633,19 @@ def report_polish(data: dict, args: argparse.Namespace,
             )
 
     # ---- Gate C (one card): trailing whitespace below the last line ----
+    # Ratio OR absolute px: on a big canvas the 10% ratio alone lets a
+    # physically large void through (a real A0 band shipped 9.0% = ~20 mm
+    # blank, one point under the ratio bar).
+    tr_px_floor = getattr(
+        args, "max_card_trailing_px", DEFAULT_MAX_CARD_TRAILING_PX)
     for c in data.get("cards", []):
         ch = float(c["card_h"])
         tr = float(c["trailing_px"])
         if ch <= 0 or tr <= 0:
             continue
         ratio = tr / ch
-        if ratio > args.max_card_trailing:
+        if ratio > args.max_card_trailing or (
+                tr_px_floor > 0 and tr >= tr_px_floor):
             warns.append(
                 f"CARD/TRAILING: card {c['card_index']} fills only "
                 f"{100 - ratio * 100:.0f}% of its height -- {tr:.0f} px "
@@ -2449,6 +2655,39 @@ def report_polish(data: dict, args: argparse.Namespace,
                 f"with real content, grow a figure, or shrink the canvas. "
                 f"See Gate C in SKILL.md."
             )
+
+    # ---- Gate C (one card): side-by-side track bottoms ----
+    # Explicit contract: >=2 direct children of one container classed
+    # `.track`, geometry-confirmed as one visual row (see the 4b JS block).
+    # The short track's foot void is invisible to every other gate.
+    tm_px = getattr(args, "track_misalign_px", DEFAULT_TRACK_MISALIGN_PX)
+    tm_ratio = getattr(
+        args, "track_misalign_ratio", DEFAULT_TRACK_MISALIGN_RATIO)
+    for g in data.get("trackGroups", []):
+        gh = float(g.get("group_h", 0) or 0)
+        d = float(g.get("misalign", 0) or 0)
+        if gh <= 0 or d < max(tm_px, tm_ratio * gh):
+            continue
+        warns.append(
+            f"CARD/TRACK-MISALIGN: in the <{ascii_safe(g['box_label'])}> "
+            f"row of {g['n_tracks']} side-by-side tracks (card "
+            f"{g.get('card_index', '?')} <{ascii_safe(g['card_cls'])}>), "
+            f"the shortest track -- #{g.get('short_pos', '?')} of "
+            f"{g['n_tracks']} left-to-right, "
+            f"<{ascii_safe(g['short_label'])}> -- ends {d:.0f} px "
+            f"({d / gh * 100:.0f}% of the row's content span) above the "
+            f"tallest track's bottom -- a stranded void at its foot and a "
+            f"ragged "
+            f"card interior. Fix substance first: repair crop/mount "
+            f"geometry (a crop-lock pair with unequal ARs, an undersized "
+            f"figure), rebalance the track widths so wraps land closer, "
+            f"grow a figure or add paper-sourced content. Only a residual "
+            f"<= min(60 px, 15% of the row's content span) may then be "
+            f"feathered into ONE "
+            f"uniform row-gap on the short track (every seam <= 50 px; "
+            f"never justify-content: space-*, auto margins, or hand-tuned "
+            f"seams). See Gate C in SKILL.md."
+        )
 
     # ---- Gate C (one card): mid-card void between two stacked children ----
     iv_ratio = getattr(args, "max_card_inner_void", DEFAULT_CARD_INNER_VOID)
@@ -2932,6 +3171,8 @@ def report_polish(data: dict, args: argparse.Namespace,
     print(f"  space-between cols  : {len(data.get('cols', []))}")
     print(f"  cards checked       : {len(data.get('cards', []))}")
     print(f"  inner-void cards    : {len(data.get('innerVoids', []))}")
+    print(f"  side-by-side tracks : {len(data.get('trackGroups', []))}")
+    print(f"  crop-lock images    : {len(data.get('cropLocks', []))}")
     print(f"  tracks w/ void geom : {len(data.get('trackVoids', []))}")
     print(f"  contrast pairs (<7) : {len(data.get('contrasts', []))}")
     print(f"  case-corrupt runs   : {len(data.get('symbolCase', []))}")

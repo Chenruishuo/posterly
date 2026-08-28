@@ -400,6 +400,40 @@ def build_parser() -> argparse.ArgumentParser:
              "padded with whitespace to fake a full page",
     )
     ppl.add_argument(
+        "--max-card-trailing-px", type=float,
+        default=_polish.DEFAULT_MAX_CARD_TRAILING_PX,
+        help="CARD/TRAILING absolute companion in px (default "
+             "%(default)s; 0 disables): trailing at or above this warns "
+             "regardless of the ratio -- on a tall card of a big canvas "
+             "the ratio alone lets a physically large void through",
+    )
+    ppl.add_argument(
+        "--track-misalign-px", type=float,
+        default=_polish.DEFAULT_TRACK_MISALIGN_PX,
+        help="warn (CARD/TRACK-MISALIGN) when the content bottoms of a "
+             "card's side-by-side `.track` columns end at least "
+             "max(this many px, --track-misalign-ratio x the row's "
+             "content span) apart (default %(default)s)",
+    )
+    ppl.add_argument(
+        "--track-misalign-ratio", type=float,
+        default=_polish.DEFAULT_TRACK_MISALIGN_RATIO,
+        help="CARD/TRACK-MISALIGN relative threshold as a fraction of "
+             "the track row's content span -- tallest track's content "
+             "bottom to the tracks' common top, so padding/min-height "
+             "reservations can't dilute it (default %(default)s); the "
+             "px and ratio thresholds combine via max()",
+    )
+    ppl.add_argument(
+        "--pair-ar-tol", type=float,
+        default=_polish.DEFAULT_PAIR_AR_TOL,
+        help="warn (FIG/PAIR-GEOMETRY) when images sharing a "
+             "data-crop-lock group differ in natural aspect ratio by "
+             "more than this relative tolerance (default %(default)s; "
+             "AR-only, so the same crop exported at two DPIs stays "
+             "legal)",
+    )
+    ppl.add_argument(
         "--max-card-inner-void", type=float,
         default=_polish.DEFAULT_CARD_INNER_VOID,
         help="warn (CARD/INNER-VOID) if a card's largest gap between two "

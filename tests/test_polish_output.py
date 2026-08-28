@@ -294,6 +294,29 @@ def test_beside_text_void_fires(tmp_path, monkeypatch, capsys) -> None:
     assert rc == 0
 
 
+def test_beside_text_void_label_hygiene(tmp_path, monkeypatch, capsys) -> None:
+    """The beside-void warnings route through _fig_label like every FIG
+    warning: an inline data-URI src collapses to a stub (never the base64
+    payload) and a data-asset-id wins when present."""
+    data = {
+        "figures": [], "orphans": [], "cols": [],
+        "besideVoids": [
+            {"src": "data:image/png;base64," + "iVBOR" * 200,
+             "asset_id": "", "fig_bottom": 500.0, "fig_h": 400.0,
+             "text_bottom": 300.0, "line_h": 20.0},
+            {"src": "data:image/png;base64," + "iVBOR" * 200,
+             "asset_id": "fig_arch", "fig_bottom": 500.0, "fig_h": 400.0,
+             "text_bottom": None, "line_h": 0.0},
+        ],
+    }
+    combined, rc = _run(monkeypatch, tmp_path, capsys, data)
+    assert combined.count("FIG/BESIDE-TEXT-VOID") == 2
+    assert "'<inline data URI," in combined
+    assert "'fig_arch'" in combined
+    assert "iVBOR" not in combined
+    assert rc == 0
+
+
 def test_beside_text_void_silent_when_text_fills(
     tmp_path, monkeypatch, capsys
 ) -> None:
@@ -395,18 +418,39 @@ def test_card_trailing_blank_warns(tmp_path, monkeypatch, capsys) -> None:
 def test_card_trailing_under_threshold_silent(
     tmp_path, monkeypatch, capsys
 ) -> None:
-    """A card filled within the threshold must NOT warn -- near-zero or
-    padding-only trailing is healthy breathing room, not a band."""
+    """A card filled within BOTH thresholds (ratio and the absolute px
+    companion) must NOT warn -- near-zero or padding-only trailing is
+    healthy breathing room, not a band."""
     data = {
         "figures": [], "orphans": [], "cols": [],
         "cards": [
-            {"card_index": 0, "card_h": 1000.0, "trailing_px": 80.0},   # 8%
+            {"card_index": 0, "card_h": 1000.0, "trailing_px": 50.0},   # 5%, <60px
             {"card_index": 1, "card_h": 1000.0, "trailing_px": 0.0},    # flush
             {"card_index": 2, "card_h": 1000.0, "trailing_px": -3.0},   # rounding
         ],
     }
     combined, rc = _run(monkeypatch, tmp_path, capsys, data)
     assert "CARD/TRAILING" not in combined
+    assert rc == 0
+
+
+def test_card_trailing_absolute_floor_catches_big_card(
+    tmp_path, monkeypatch, capsys
+) -> None:
+    """On a tall card the 10% ratio alone is too forgiving: a real A0 band
+    shipped 9% = ~20 mm of blank, one point under the bar. Trailing at or
+    above the absolute px companion (default 60) must warn regardless of
+    ratio; 0 disables it again."""
+    data = {
+        "figures": [], "orphans": [], "cols": [],
+        "cards": [{"card_index": 0, "card_h": 1000.0, "trailing_px": 80.0}],
+    }
+    combined, rc = _run(monkeypatch, tmp_path, capsys, data)
+    assert "CARD/TRAILING" in combined  # 8% < 10%, but 80 px >= 60 px
+    assert rc == 0
+    combined, rc = _run(
+        monkeypatch, tmp_path, capsys, data, max_card_trailing_px=0.0)
+    assert "CARD/TRAILING" not in combined  # px floor disabled -> old rule
     assert rc == 0
 
 
