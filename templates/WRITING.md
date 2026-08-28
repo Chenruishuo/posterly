@@ -28,6 +28,7 @@ What the pass targets is the **rhetoric**, not the format: decorative evaluation
 3. **The deletion test.** Cut the suspect phrase; if the sentence loses no information, it was decoration — keep the cut.
 4. **Repeat the right word.** Calling the method "our framework", then "the proposed approach", then "this paradigm" is elegant-variation flavor. One name, used every time.
 5. **Don't over-sand.** The goal is copy that reads like the paper's authors wrote it at poster scale — not copy that visibly dodged a ban list. A deliberate parallel pair or a single em-dash that helps the line is fine; mechanical avoidance is its own fingerprint.
+6. **The fix must not inject style either.** No performed candor ("let's be honest", "说实话"), no forced casual register, no chopping ordinary sentences into fragments to fake rhythm — a de-AI edit that adds a new fingerprint is worse than the one it removed.
 
 ## English tells
 
@@ -42,6 +43,8 @@ What the pass targets is the **rhetoric**, not the format: decorative evaluation
 - **Vague attribution**: "recent studies show" with no citation on a poster that cites elsewhere.
 - **Hedge stacks**: "could potentially", "may possibly enable". One hedge, or a claim.
 - **Emphasis stacking**: *Notably / Importantly / Interestingly* more than about once per poster — the layout already does the emphasizing.
+- **Filler**: "In order to" → "To", "Due to the fact that" → "Because", "In terms of". Poster space is too expensive for idle phrases.
+- **Infomercial hooks & manufactured stakes**: "The catch?", "Plot twist:", "in a world where…", "now more than ever". Suspense framing reads worst at banner scale — state the thing.
 - **Generic closers**: "paves the way for", "opens new avenues", "an important step toward". End the last card on the concrete next thing or on the result itself.
 - **Aphorism formulas**: "X is the Y of Z" ("attention is the currency of…"). Replace with the concrete claim.
 - **Abstract-opener TL;DR**: a banner that begins "In this work, we propose…" is a paper abstract pasted at 2 m scale. The banner states the claim directly: what it does, what it wins, by how much.
@@ -60,6 +63,7 @@ What the pass targets is the **rhetoric**, not the format: decorative evaluation
 - "首先…其次…最后" —— 海报的卡片结构已经在分段,不需要口头报幕。
 - **三连排比与全员对仗**:动宾三连("提升了效率,降低了成本,增强了鲁棒性")、四字词堆砌。一处工整的对仗是修辞;每张卡的标题都是齐整四字对仗是模板腔。
 - **"通过…,实现了…,为…奠定了基础"链** —— 一句话背三个空洞动词,拆开只留有数字的那截。
+- **翻译腔**:"作为一个…"开头自我定位、"是…的"判断句连用、长定语层层嵌套——按中文语序拆成短句。
 
 **中文豁免**:学术术语照用不避(鲁棒性、显著性/统计显著、泛化、消融);海报标签体(名词短语卡标题、"数据集:"式列表)是体裁惯例不是 AI 味。
 
