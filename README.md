@@ -154,7 +154,7 @@ posterly/
 ├── SKILL.md              ← the workflow your agent follows for /posterly
 ├── tools/
 │   ├── run_gates.py      ← runs the check gates into one report
-│   ├── poster_check.py   ← preflight / measure / pack / fit-logos / polish / verify-final
+│   ├── poster_check.py   ← preflight / measure / pack / fit-logos / polish / verify-final / bundle
 │   ├── render_preview.py ← print-emulated PDF + thumbnail PNG
 │   ├── style_check.py    ← design-token gate
 │   ├── asset_check.py    ← real-figure provenance (opt-in)

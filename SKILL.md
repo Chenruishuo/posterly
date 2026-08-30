@@ -418,6 +418,14 @@ Never hand over `*_preview.png` (a 0.35× thumbnail, ~34 DPI) as the deliverable
 
 Raise the DPI only for a small canvas meant to be read close up, and know the ceiling: 300 DPI on a 60×36 is 194 MP, which trips PIL's default `MAX_IMAGE_PIXELS` guard (~179 MP) with a `DecompressionBombError` and takes minutes to rasterize.
 
+**Then, whenever the HTML itself is handed over — bundle it.** `poster.html` is only half a poster: it resolves `images/`, any vendored `fonts/`, and the MathJax CDN *relative to the working directory*. Sent on its own it opens as alt-text boxes in fallback faces, and the recipient cannot re-render it. So if the handover includes the source (a co-author who will edit it, a print shop, a customer who paid for an editable file), ship the bundle, not the raw file:
+
+```bash
+python <skill>/tools/poster_check.py bundle poster.html -o poster_standalone.html
+```
+
+Every local reference becomes a `data:` URI and MathJax becomes inline script text: one file, no network, still fully editable — the recipient edits the prose or the CSS and re-renders with `render_preview.py` to get the same sheet back. It hard-fails rather than write a bundle that still points outside itself, so a non-zero exit means a reference you need to localize first, not a warning to wave through. Keep `poster.html` as the working file — never bundle over it (the command refuses), and don't re-enter the measure loop on a multi-MB bundle. Deliver `poster_standalone.html` under whatever name the recipient expects.
+
 Then report to the user:
 - File path of PDF and of the 150-DPI PNG
 - Final spread (px) and gap-to-footer range
@@ -659,6 +667,7 @@ The five `(vendored, ARIS)` tools are documented in **§Enhanced gates & fix dis
   - `preflight` — static HTML lint (LaTeX residue, math `<`, missing images, role validation, `.figure` blocks missing their one-line `.caption`).
   - `polish` — **soft** visual gate (figure sizing by AR, broken images, typography orphans, space-between fill, card trailing / mid-card voids, `<br>`-in-flex collapse, header logos: broken / oversized / QR mismatch / title squeeze). Warns by default; `--strict` to fail. Hard-fails if the poster has no `[data-measure-role]` markup at all (silent PASS would be a worse bug). Its measurement half also rides `measure --with-polish` (same rendered page, advisory there); this standalone run remains the loop's final soft gate.
   - `verify-final` — `pdfinfo`-based PDF sanity (page count, dimensions, file size).
+  - `bundle` — freeze the poster into ONE self-contained HTML for handover: local `src=` / CSS `url()` (images, vendored fonts) become `data:` URIs and the MathJax CDN `<script>` becomes the skill's own bundled `tex-svg.js`, inline. Hard-fails rather than write a file that still points outside itself. Run last, on a green poster, and never over the workspace copy.
 - `render_preview.py` — Playwright print-emulated PDF + scaled PNG thumbnail.
 
 All scripts read `@page { size: W H }` from the input HTML so the same code handles ICML 60×36 landscape, ICLR 24×36 portrait, CVPR A0, etc. without flags.

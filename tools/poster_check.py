@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """poster_check — unified CLI for HTML academic posters.
 
-Six subcommands:
+Seven subcommands:
 
   measure        Print-emulate HTML in headless Chromium, measure all
                  ``[data-measure-role]`` elements, report column-bottom
@@ -33,6 +33,12 @@ Six subcommands:
   verify-final   Run ``pdfinfo`` on a rendered PDF; check page count,
                  dimensions match the expected canvas (``--canvas`` or
                  ``--from-html``), and file size under a limit.
+  bundle         Freeze the poster into ONE self-contained HTML for
+                 delivery: images and vendored fonts become ``data:``
+                 URIs; MathJax becomes inline script text. Hard-fails
+                 rather than emit a file that still points outside itself.
+                 Run last, on a green poster; the workspace copy stays
+                 the working file.
 
 All logic lives in the ``_posterly`` package next to this file. This
 script is a thin argparse dispatcher.
@@ -50,6 +56,7 @@ if _THIS_DIR not in sys.path:
     sys.path.insert(0, _THIS_DIR)
 
 from _posterly import budget as _budget  # noqa: E402
+from _posterly import bundle as _bundle  # noqa: E402
 from _posterly import canvas as _canvas  # noqa: E402
 from _posterly import fitlogos as _fitlogos  # noqa: E402
 from _posterly import measure as _measure  # noqa: E402
@@ -62,8 +69,8 @@ from _posterly import verify_final as _verify_final  # noqa: E402
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
         prog="poster_check",
-        description="Measure / pack / preflight / polish / verify a "
-                    "poster HTML+PDF pair.",
+        description="Measure / pack / preflight / polish / verify / "
+                    "bundle a poster HTML+PDF pair.",
     )
     sub = p.add_subparsers(dest="cmd", required=True)
 
@@ -538,6 +545,28 @@ def build_parser() -> argparse.ArgumentParser:
              "rotation (most posters should NOT need this)",
     )
     pv.set_defaults(func=_verify_final.cmd_verify_final)
+
+    # --- bundle ---------------------------------------------------------
+    pb = sub.add_parser(
+        "bundle",
+        help="freeze the poster into ONE self-contained HTML for "
+             "delivery (inline images / fonts / MathJax)",
+    )
+    pb.add_argument("html", help="path to poster.html")
+    pb.add_argument(
+        "-o", "--out", default=None,
+        help="output path (default: <stem>_standalone.html next to the "
+             "input). Never the input itself -- the workspace copy "
+             "stays the working file for the measure loop",
+    )
+    pb.add_argument(
+        "--allow-remote", action="store_true",
+        help="downgrade a remaining remote http(s) reference from a "
+             "hard failure to a warning, for the deliberate case of a "
+             "poster that wants a live URL. The output is then NOT "
+             "self-contained and the report says so",
+    )
+    pb.set_defaults(func=_bundle.cmd_bundle)
 
     return p
 
