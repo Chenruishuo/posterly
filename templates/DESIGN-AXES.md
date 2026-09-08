@@ -6,8 +6,8 @@ from that corpus — re-fetch any of them at
 `https://icml.cc/media/PosterPDFs/ICML%202026/<id>.png` if you need to see the
 construction, compositing alpha onto white.)*
 
-Every poster is composed by choosing **one option per axis** below, plus 0–2
-devices. Axes are orthogonal: no option on one axis may silently bind another
+For new posters and overall redesigns, compose by choosing **one option per axis** below, plus 0–2
+devices. Local edits that preserve the existing canvas and accepted design direction retain the existing choices; do not recompose or generate candidates for those edits (see [task paths](../SKILL.md#task-modes)). Axes are orthogonal: no option on one axis may silently bind another
 axis (that is enforced by the clash rules at the bottom, not by bundling).
 An axis choice is a **primary option plus small modifiers** — treat each axis
 as a structured object, never a single mutually-exclusive enum.
@@ -39,6 +39,8 @@ menu of *what to compose*.
   translation table below — same menu, translated geometry.
 - Ownership: this axis reserves *geometry* (e.g. a title track, a stage);
   how the title/identity is arranged inside it belongs to Axis 8.
+
+<a id="portrait-translations"></a>
 
 ### Axis 1 · portrait translations
 
@@ -108,6 +110,8 @@ technique; there is no portrait corpus yet.
 - Rendered wireframes with copy-ready grid definitions:
   `specimens/axes/axis1_layout.html` §竖版翻译.
 
+**Style-rule switches:** The style gate's rule 4 hue-count limit and rule 5 gradient restrictions apply only when the respective rule is explicitly enabled; otherwise ignore those requirements. When choosing a gradient option, apply style rule 5 and its existing exceptions only if enabled; otherwise ignore its restrictions. Categorical palettes require style rule 4 to remain disabled. This does not disable this document's separately numbered clash rules or its contrast/readability requirements.
+
 ## Axis 2 — Canvas (`base + treatment + coverage`)
 
 - **base**: white / cream (64736, 66466, 65205) / light tint (63507, 65748) /
@@ -126,7 +130,7 @@ technique; there is no portrait corpus yet.
   (shipped default; pool & derivation in SKILL.md + THEMES.md) /
   dual-semantic — two hues carry two fixed meanings poster-wide (64834
   green=language vs orange=translation) / categorical multi-role (63640,
-  65372, 66057; style rule 4 caps at two declared hue slots (accent/emph),
+  65372, 66057; only when enabled, style rule 4 caps at two declared hue slots (accent/emph); ignore that cap when disabled,
   so categorical palettes keep rule 4 disabled — posterly's default — and
   record the full palette in the poster's `DESIGN DIRECTION` block).
 - **hue relationship**: distinct centers / **same-center tonal** — emphasis by
@@ -312,6 +316,8 @@ stays normal; re-check that the new pick still serves the concept, plus the
 clash rules — nothing more.
 
 ## Anti-convergence
+
+Apply this section when composing new designs, including overall redesigns; local edits that retain an existing poster's canvas and direction do not trigger new anti-convergence choices.
 
 Consecutive posters in a wave must differ on at least two of: layout
 skeleton, canvas, frame-line, section-heading joint, masthead — and must not

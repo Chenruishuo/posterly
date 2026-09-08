@@ -45,14 +45,14 @@ Issues   = "https://github.com/Chenruishuo/posterly/issues"
 # under ~/.claude/skills/posterly/), NOT as a pip-installable Python
 # package. This file exists ONLY to:
 #   1. Declare runtime + dev Python dependencies in a single canonical
-#      place that `pip install "playwright>=1.40"` and `pytest` agree on.
+#      place that `/absolute/path/to/dedicated-env/bin/python -m pip install "playwright>=1.40"` and `pytest` agree on.
 #   2. Configure pytest's testpaths/pythonpath so the test suite Just
-#      Works from a fresh clone with `python -m pytest`.
+#      Works from a fresh clone with `/absolute/path/to/dedicated-env/bin/python -m pytest`.
 #   3. Carry project metadata (name, author, license, URLs) for the
 #      eventual GitHub release page.
 # We intentionally do NOT publish to PyPI, declare console_scripts, or
 # package the templates as package data — invoking the skill goes
-# through Claude Code (`/posterly`) or direct `python tools/...` calls.
+# through Claude Code (`/posterly`) or direct `/absolute/path/to/dedicated-env/bin/python tools/...` calls.
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

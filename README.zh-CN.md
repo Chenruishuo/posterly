@@ -90,6 +90,8 @@ p⊕sterly 能把论文制作成可直接印刷的会议海报，尺寸与你设
 
 智能体会克隆仓库、安装 Python 依赖并运行冒烟测试。手动安装步骤如下：
 
+下列 `/absolute/path/to/dedicated-env/bin/python` 是占位路径；执行前必须替换为本机已确认的专用非 base 环境解释器完整路径。工具、`-m pip` 和 `-m playwright` 必须使用同一解释器；不得使用 base 或依赖 shell 环境激活。
+
 ```bash
 # 1. Clone where your agent discovers skills — e.g. ~/.claude/skills/ for Claude Code
 #    (other agents: use their skills directory)
@@ -97,10 +99,10 @@ git clone https://github.com/Chenruishuo/posterly ~/.claude/skills/posterly
 cd ~/.claude/skills/posterly
 
 # 2. Python deps
-python -m pip install "playwright>=1.40"
-python -m playwright install chromium
+/absolute/path/to/dedicated-env/bin/python -m pip install "playwright>=1.40"
+/absolute/path/to/dedicated-env/bin/python -m playwright install chromium
 # On a fresh Linux box you may also need the system libs Chromium links against:
-#   python -m playwright install --with-deps chromium
+#   /absolute/path/to/dedicated-env/bin/python -m playwright install --with-deps chromium
 #   # or sudo apt install libnss3 libatk1.0-0 libatk-bridge2.0-0 libcups2 \
 #   #                     libdrm2 libxkbcommon0 libxcomposite1 libxdamage1 \
 #   #                     libxrandr2 libgbm1 libpango-1.0-0 libcairo2 libasound2
@@ -112,14 +114,14 @@ python -m playwright install chromium
 
 # 4. Smoke test
 cd examples/hello_world
-python ../../tools/poster_check.py preflight  poster.html
-python ../../tools/poster_check.py measure    poster.html
-python ../../tools/poster_check.py polish     poster.html
-python ../../tools/render_preview.py          poster.html
-python ../../tools/poster_check.py verify-final poster_preview.pdf --from-html poster.html
+/absolute/path/to/dedicated-env/bin/python ../../tools/poster_check.py preflight  poster.html
+/absolute/path/to/dedicated-env/bin/python ../../tools/poster_check.py measure    poster.html
+/absolute/path/to/dedicated-env/bin/python ../../tools/poster_check.py polish     poster.html
+/absolute/path/to/dedicated-env/bin/python ../../tools/render_preview.py          poster.html
+/absolute/path/to/dedicated-env/bin/python ../../tools/poster_check.py verify-final poster_preview.pdf --from-html poster.html
 
 # 5. (dev) run the test suite
-python -m pip install "pytest>=7" && python -m pytest
+/absolute/path/to/dedicated-env/bin/python -m pip install "pytest>=7" && /absolute/path/to/dedicated-env/bin/python -m pytest
 ```
 
 每条 `poster_check.py` 命令都应输出 `PASS`，`render_preview.py` 应生成 `poster_preview.pdf` 和 `poster_preview.png`。posterly 只能通过克隆仓库安装，不提供 PyPI 包；依赖项和 pytest 配置记录在 `pyproject.toml` 中。

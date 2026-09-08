@@ -7,7 +7,7 @@ Design-level fingerprints are handled by anti-convergence (DESIGN-AXES) and the 
 **When it runs** (wired into SKILL.md):
 1. **While drafting (Step 3)** — write copy with these lists in mind; copy born clean needs no sweep.
 2. **One dedicated sweep** over all copy after content fill, **before** the Step 4 measure loop — word edits are free before layout tuning and cost a re-tuned layout after (Gate B's timing rule).
-3. **Step 6.5 re-scan** — the polish loop writes new sentences ("a key advantage of…"), so the final reviewer re-checks even if the Step 3 sweep was clean.
+3. **Step 6.5 re-scan (as part of the strongly recommended final review)** — the polish loop writes new sentences ("a key advantage of…"), so when final review is performed, the reviewer re-checks even if the Step 3 sweep was clean.
 
 ## The genre carve-out — read before fixing anything
 
@@ -69,6 +69,6 @@ What the pass targets is the **rhetoric**, not the format: decorative evaluation
 
 ## Running the sweep
 
-After content fill (before the Step 4 loop): read every text node once, top-left to bottom-right, against the two lists — marking clusters, not scattered single hits. Fix each cluster by deletion or concretization per the judgment rules; re-read the fixed block once for meaning drift. After `measure` is green, any further copy fix must hold the block's line count (swap words, don't add them — SKILL.md Gate B's timing rule). The Step 6.5 reviewer item re-scans the polished copy; SKILL.md carries the reviewer prompt.
+After content fill (before the Step 4 loop): read every text node once, top-left to bottom-right, against the two lists — marking clusters, not scattered single hits. Fix each cluster by deletion or concretization per the judgment rules; re-read the fixed block once for meaning drift. After `measure` is green, any further copy fix must hold the block's line count (swap words, don't add them — SKILL.md Gate B's timing rule). When the strongly recommended Step 6.5 final review is performed, its reviewer item re-scans the polished copy; SKILL.md routes to the reviewer prompt.
 
 This pass is judgment, not a script gate — a wordlist checker would false-positive on terms of art (*robust*, *significant*, 显著) exactly where posters use them most, so no tool enforces it; the reviewer and you do.

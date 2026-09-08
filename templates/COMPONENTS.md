@@ -4,14 +4,16 @@
 > wanshuiyin) on top of posterly's own component classes, and vendored back into posterly — see
 > `../NOTICE.md`. Section references of the form *DESIGN_FINAL §N* / *IMPLEMENTATION_CONVENTIONS
 > §N* point to that upstream skill's design docs (**not shipped here**); in posterly the
-> equivalent rules live in `SKILL.md` (the visual-review loop + fix vocabulary) and the gate
-> scripts under `tools/` — treat the §refs as historical pointers, not files you can open. Any
-> remaining *Phase N* wording maps to posterly's `SKILL.md` Steps: Phase 1 → Step 1.5 (content
+> equivalent rules live in the [visual-review loop](../references/validation.md#polish-workflow),
+> [fix discipline](../references/validation.md#fix-discipline), and gate scripts under `tools/`.
+> Treat the upstream §refs as historical pointers, not files you can open; their exact
+> upstream targets remain **待确认** because those documents are not shipped here. Any
+> remaining *Phase N* wording maps to posterly's `SKILL.md` Steps: Phase 1 → Step 3.5 (content
 > audit), Phase 3 → Step 3 (scaffold), Phase 5 → Step 6 (visual / polish loop), Phase 6 → Step 6.5
 > (final review).
 
 This is the **authoritative component set** for posterly. The visual-review loop and the fix
-vocabulary (see `SKILL.md`) may only touch components listed here. A component that is not in
+vocabulary (see [fix discipline](../references/validation.md#fix-discipline)) may only touch components listed here. A component that is not in
 this catalog **does not exist** as far as the loop is concerned: see
 [New components require a checkpoint](#new-components-require-a-human-checkpoint).
 
@@ -39,21 +41,24 @@ class names did not change, so the catalog applies to posterly's templates direc
 | **Token usage** | Which `--*` tokens the component's CSS references. Component CSS may **only** name colors via `var(--…)` (style_check rule 3). |
 | **Inspected by** | Which gate(s) read this component. Tells you which gate a bad edit will trip. |
 | **Allowed fix operations** | Subset of the fix-vocabulary letters `(a)–(g)` (defined in [Fix vocabulary](#fix-vocabulary) below) legal on this component. |
-| **Anti-patterns** | Specific things the loop has been caught doing. Each maps to a HARD style/asset rule, a rubric cap, or (for the disabled rule 4/5 cases) the catalog convention noted above. |
+| **Anti-patterns** | Specific things the loop has been caught doing. Each maps to a HARD style/asset rule, a rubric cap, or an opt-in style rule 4/5 requirement that is ignored when that rule is disabled. |
 
 Gate name shorthand (DESIGN_FINAL §3–§7):
 `preflight` (structure), `style` (`style_check.py`, 14 rules), `asset` (`asset_check.py`),
 `measure` (`poster_check.py measure`, column/footer/canvas geometry),
 `polish` (`poster_check.py polish`, figure-AR / orphan / whitespace).
 
-> **posterly default — style rules 4 & 5 are OFF.** posterly runs `style_check` with rules
-> **4 (≤2 non-neutral hue families)** and **5 (no gradients)** disabled (`run_gates.py` forwards
-> `--style-disable 4,5`) — palette breadth and gradients are the author's call. So the
-> per-component "rule 4" / "rule 5" notes below describe the catalog **convention** (the templates
-> ship ≤2 hue families and flat fills, and keeping them that way is the recommended default), not
-> a hard failure — they only hard-fail if you re-enable them with `--style-disable ''`. The other
-> 12 rules (token-only colors, no inline `style=`, the font/size scale, the data-attribute,
-> variant-class and numeric-utility-class contracts) stay HARD.
+> **Style rules 4 & 5 apply only when explicitly enabled; both are OFF by default.**
+> The two-hue-family limit (rule 4) and gradient restrictions (rule 5) apply only when the
+> respective rule is enabled. Otherwise **ignore the corresponding requirements** in every
+> component entry, including anti-patterns, inspection notes, and former catalog conventions.
+> The templates' shipped hue counts and flat fills are descriptions, not requirements or a
+> recommended fallback when these rules are disabled. Do not reduce palette breadth or remove
+> gradients solely to satisfy a disabled rule. `run_gates.py` defaults to `--style-disable 4,5`;
+> retain the same switches in standalone calls (see the [switch contract](../references/validation.md#style-gate)).
+> The other 12 rules (token-only colors, no inline `style=`, the font/size scale, the data-attribute,
+> variant-class and numeric-utility-class contracts) stay HARD. Independent component structure,
+> semantic labels, contrast, and readability requirements remain in force.
 
 ---
 
@@ -68,7 +73,7 @@ Gate name shorthand (DESIGN_FINAL §3–§7):
   bottoms across columns using this).
 - **Token usage**: `--bg-card`, `--bg-card-tint`, `--bg-emphasis`, `--accent` (highlight
   left-bar / border-strong), `--border-soft`, `--text-primary`. Shadow uses a token-derived
-  rgba allowed by style rule 5 only at alpha ≤ 0.06.
+  rgba; the cited style-rule-5 alpha ≤ 0.06 restriction applies only when that rule is enabled and is ignored when disabled.
 - **Inspected by**: `measure` (card-bottom spread < 5px, intercard gap 12–50 HARD), `polish`
   (CARD/TRAILING — blank below a stretched card's content; CARD/INNER-VOID — a mid-card void
   when a bottom-pinned tail stretches in an equal-height row), `preflight`
@@ -244,14 +249,13 @@ Gate name shorthand (DESIGN_FINAL §3–§7):
 - **Required data attributes**: none.
 - **Token usage**: `.callout` → `--accent` bg, white text, `--emph` (`<strong>`); `.callout.emph`
   → `--emph` bg, `--accent-deep` text. Font-size `--fs-4`.
-- **Inspected by**: `style` (rule 5 — `.callout.emph` must be a flat fill, no `linear-gradient`;
-  rule 4 — its accent/emph are the two allowed hue families; rule 1/3 — colors via var),
+- **Inspected by**: `style` (rule 5, only if enabled — `.callout.emph` must be a flat fill, no `linear-gradient`;
+  rule 4, only if enabled — its accent/emph are the two allowed hue families; rule 1/3 — colors via var),
   `measure` (counts toward card height).
 - **Allowed fix operations**: (a), (b) add/remove a callout instance, (c) reword from paper
   source, (f) toggle `.callout` ↔ `.callout.emph`.
-- **Anti-patterns**: `linear-gradient` fill (rule 5 — convention is a flat fill; the single most
-  common de-gradient regression, hard only if rule 5 is re-enabled); a third color on a callout
-  (rule 4 — >2 hue clusters); using a
+- **Anti-patterns**: `linear-gradient` fill (a defect only when style rule 5 is enabled; ignore this restriction otherwise); a third color on a callout
+  (a defect under style rule 4 only when enabled; ignore its >2-hue limit otherwise); using a
   callout to introduce a claim not in the paper (Step 6.5 final-HTML overclaim audit).
 
 ## result-table (`table.result-table`)
@@ -272,8 +276,8 @@ Gate name shorthand (DESIGN_FINAL §3–§7):
   (content rebalance), (e) global table stylesheet (tokens). Switching which row is `.ours` is (c).
 - **Anti-patterns**: per-cell inline `style="color:#888"` for the reference row (the posterly
   originals did this; the ARIS fork replaces with `.text-muted`) — rule 2 HARD; numbers that do
-  not match the paper/results files (Step 1.5 claim→evidence audit + Step 6.5); a third highlight
-  color beyond emph-soft/accent (rule 4); **a two-column `Method | Metric` table stretched to
+  not match the paper/results files (Step 3.5 claim→evidence audit + Step 6.5); a third highlight
+  color beyond emph-soft/accent (only when style rule 4 is enabled; ignore that restriction otherwise); **a two-column `Method | Metric` table stretched to
   the card width** — it leaves a wide empty gutter and reads sparse (field-noted in
   ResearchStudio's poster wave). When the paper reports more than one metric (two datasets,
   main + ablation, Acc + F1), give the table a column per metric so it fills its width;
@@ -329,11 +333,11 @@ Gate name shorthand (DESIGN_FINAL §3–§7):
 - **Token usage**: `--bg-emphasis` (strip bg — flattened from the posterly gradient per §E.2),
   `--border-soft`, `--accent`/`--accent-deep` (title, `.num`, item left-bar, `.ts-key`),
   `--font-sans` (keys), `--font-serif` (text). Sizes `--fs-6`/`--fs-4`/`--fs-3`.
-- **Inspected by**: `measure` (footer-gap band, full-width span), `style` (rule 5 — strip bg
-  must be flat, rule 6 font pairing), `preflight`.
+- **Inspected by**: `measure` (footer-gap band, full-width span), `style` (rule 5, only if enabled — strip bg
+  must be flat; ignore that restriction otherwise, rule 6 font pairing), `preflight`.
 - **Allowed fix operations**: (a), (b) add/remove the whole strip, (c) reword takeaways from the
   paper, (e) global strip stylesheet (tokens).
-- **Anti-patterns**: `linear-gradient` strip background (rule 5 — convention is a flat fill, the de-gradient target; hard only if rule 5 is re-enabled);
+- **Anti-patterns**: `linear-gradient` strip background (a defect only when style rule 5 is enabled; ignore this restriction otherwise);
   using it on a portrait template where it competes for scarce vertical space (use the final
   conclusion card instead); inventing a takeaway not supported by the poster body (Step 6.5);
   keeping it on by default when it merely restates the body — drop the whole block instead.
@@ -520,11 +524,13 @@ this checkpoint — with an equal-cell fallback story.
 
 ## Density components (added 2026-06-05, codex-converged; user-checkpointed)
 
-> **Shared guardrail (all components below): no component-local color semantics.**
-> Semantic distinction must be conveyed by labels, order, typography, and FACT/DERIVED
-> text — never by new hues. Every CSS declaration references `--accent`/`--emph`/neutral
-> tokens only. This is what keeps a dense poster from regressing into the 30-color
-> "patched dashboard" failure class.
+> **Shared guardrail (all components below): keep semantic labels explicit and colors tokenized.**
+> Semantic distinction must remain clear from labels, order, typography, and FACT/DERIVED text.
+> **Only when style rule 4 is enabled**, do not add new hue families beyond the declared
+> `--accent`/`--emph`/neutral palette. When it is disabled, ignore that no-new-hues restriction;
+> additional hue roles may be declared through the poster's tokens and design direction.
+> This retains the protection against a "patched dashboard" without enforcing a disabled hue cap.
+> Token-only colors and consistent poster-wide semantics remain required in either mode.
 
 ### `equation-stack`
 - **Purpose**: 2–4 compact formula rows (e.g. population objective + empirical loss) —
@@ -563,8 +569,8 @@ this checkpoint — with an equal-cell fallback story.
 - **Inspected by**: asset (provenance + per-figure + total bands), polish FIG gates;
   members tagged `data-crop-lock` additionally by FIG/PAIR-GEOMETRY.
 - **Allowed fix ops**: asset fixes (re-crop), width within band, swap member figures.
-- **Anti-patterns**: pairing unrelated figures; before/after labels in extra hues (use
-  text labels with accent/emph only).
+- **Anti-patterns**: pairing unrelated figures; before/after labels in extra hues only when style rule 4 is enabled (then use
+  text labels with accent/emph only; ignore this hue restriction when disabled).
 - **Note**: duo membership does NOT imply shared crop geometry — two related but
   differently-composed figures may legitimately differ in AR. When the pair IS a set of
   geometric twins (matched panels off one composite figure), tag both
@@ -576,7 +582,7 @@ this checkpoint — with an equal-cell fallback story.
   paper values; emph-soft background marks "derived, not copied".
 - **Contract**: the table caption or setup line MUST state the derivation ("Δ = AuxDPO −
   DPO, derived"). Negative/degrading values use *italic*, never red.
-- **Inspected by**: style rule 4 (emph family), content audits (Step 1.5 / 6.5 verify arithmetic).
+- **Inspected by**: style rule 4 (emph family), content audits (Step 3.5 / 6.5 verify arithmetic).
 - **Anti-patterns**: mixing derived and verbatim values in one column; unlabeled derived data.
 
 ### `keybox--4`
@@ -592,7 +598,7 @@ or the class is inert and the 4-tile strip orphans 3+1 (`style` rule 13 hard-fai
 - **Purpose**: compact numbered procedure list — **only when the paper itself states an
   explicit algorithm/procedure**. Cite it ("Alg. 1", "the procedure of §4.2").
 - **Inspected by**: `style` (token colors, font/size scale), `measure` (aligns as a card),
-  content audits (Step 1.5 / 6.5 — the steps must be the paper's, not fabricated).
+  content audits (Step 3.5 / 6.5 — the steps must be the paper's, not fabricated).
 - **Allowed fix ops**: token edits; step-text rebalance; drop the component if the paper has
   no explicit algorithm to cite.
 - **Anti-patterns**: INVENTING steps from prose (the v31 poster fabricated a "5 steps per
@@ -602,7 +608,7 @@ or the class is inert and the 4-tile strip orphans 3+1 (`style` rule 13 hard-fai
 - **Purpose**: provenance mini-table (`.cp-id` pill + evidence + `.cp-fact`/`.cp-derived`
   badge) for numeric-heavy posters where every number should trace to a source.
 - **Contract**: use only when the poster carries ≥8 distinct numeric claims; badges are
-  text (FACT/DERIVED), accent/emph colored — no new hues.
+  text (FACT/DERIVED), accent/emph colored in the shipped component — no new hue families only when style rule 4 is enabled; ignore that hue restriction otherwise.
 - **Anti-patterns**: pills for trivial claims; turning it into a second results table.
 
 ### `logo-row` + venue-badge logo (added 2026-06-05, user-checkpointed)
@@ -743,11 +749,11 @@ or the class is inert and the 4-tile strip orphans 3+1 (`style` rule 13 hard-fai
   one). Marking eight of them also pushes total paper-image area past the **24% warn line** (~27%) —
   but that is only a soft warning; the hard PASS→FAIL flip is the per-thumbnail floor failures, not
   the total. A genuine result/method figure that *should* count belongs in a **figure-card**, not here.
-- **Token usage**: `--bg-emphasis` (flat strip bg, de-gradient per rule 5), `--border-soft`
+- **Token usage**: `--bg-emphasis` (shipped flat strip bg; flat-fill requirement applies only when style rule 5 is enabled), `--border-soft`
   (border + image frame), `--accent` (left bar + `.num` circle), `--accent-deep` (title),
   `--font-sans` (title + labels), `--text-secondary` (labels / optional subtitle). Sizes
   `--fs-6` (title) / `--fs-1` (labels).
-- **Inspected by**: `measure` (footer-gap band, full-width span), `style` (rule 5 flat bg, rule 6
+- **Inspected by**: `measure` (footer-gap band, full-width span), `style` (rule 5 flat bg only when enabled, rule 6
   fonts), `preflight` (local `src` exists; remote `src` warns). **Not** inspected by `asset` (no
   `data-source` → invisible to the provenance + area gate) and **not** size-checked by `polish` —
   its FIG/* aspect scan only walks `card` / `hero` images (banner images have a separate
@@ -755,7 +761,7 @@ or the class is inert and the 4-tile strip orphans 3+1 (`style` rule 13 hard-fai
   by the recipe's own `gs-item img` height (33u, or 52u under `vrail`). Keep that height.
 - **Allowed fix ops**: (b) add/remove the whole strip, swap / re-crop a thumbnail, toggle
   `vrail`, rebalance figure count / height, edit labels.
-- **Anti-patterns**: a `linear-gradient` strip bg (rule 5); **marking the thumbnails
+- **Anti-patterns**: a `linear-gradient` strip bg (only when style rule 5 is enabled; ignore the restriction otherwise); **marking the thumbnails
   `data-source="paper"`** (they hard-fail the asset area floor and flip the gate to FAIL — see
   *Required data attributes*); **smuggling a large result/method figure into a `gallery-strip`** —
   no gate bounds these images (`asset` can't see them, `polish` FIG/* skips `footer-strip`), so a

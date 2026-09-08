@@ -95,6 +95,8 @@ Math is typeset with MathJax rather than natively by the browser: templates use 
 
 It clones the repo, installs the Python dependencies, and runs the smoke test. The manual steps:
 
+`/absolute/path/to/dedicated-env/bin/python` below is a placeholder: replace it with the verified absolute interpreter path of your dedicated non-base environment before running any command. Always use that interpreter for tools, `-m pip`, and `-m playwright`; never use base or rely on shell activation.
+
 ```bash
 # 1. Clone where your agent discovers skills — e.g. ~/.claude/skills/ for Claude Code
 #    (other agents: use their skills directory)
@@ -102,10 +104,10 @@ git clone https://github.com/Chenruishuo/posterly ~/.claude/skills/posterly
 cd ~/.claude/skills/posterly
 
 # 2. Python deps
-python -m pip install "playwright>=1.40"
-python -m playwright install chromium
+/absolute/path/to/dedicated-env/bin/python -m pip install "playwright>=1.40"
+/absolute/path/to/dedicated-env/bin/python -m playwright install chromium
 # On a fresh Linux box you may also need the system libs Chromium links against:
-#   python -m playwright install --with-deps chromium
+#   /absolute/path/to/dedicated-env/bin/python -m playwright install --with-deps chromium
 #   # or sudo apt install libnss3 libatk1.0-0 libatk-bridge2.0-0 libcups2 \
 #   #                     libdrm2 libxkbcommon0 libxcomposite1 libxdamage1 \
 #   #                     libxrandr2 libgbm1 libpango-1.0-0 libcairo2 libasound2
@@ -117,14 +119,14 @@ python -m playwright install chromium
 
 # 4. Smoke test
 cd examples/hello_world
-python ../../tools/poster_check.py preflight  poster.html
-python ../../tools/poster_check.py measure    poster.html
-python ../../tools/poster_check.py polish     poster.html
-python ../../tools/render_preview.py          poster.html
-python ../../tools/poster_check.py verify-final poster_preview.pdf --from-html poster.html
+/absolute/path/to/dedicated-env/bin/python ../../tools/poster_check.py preflight  poster.html
+/absolute/path/to/dedicated-env/bin/python ../../tools/poster_check.py measure    poster.html
+/absolute/path/to/dedicated-env/bin/python ../../tools/poster_check.py polish     poster.html
+/absolute/path/to/dedicated-env/bin/python ../../tools/render_preview.py          poster.html
+/absolute/path/to/dedicated-env/bin/python ../../tools/poster_check.py verify-final poster_preview.pdf --from-html poster.html
 
 # 5. (dev) run the test suite
-python -m pip install "pytest>=7" && python -m pytest
+/absolute/path/to/dedicated-env/bin/python -m pip install "pytest>=7" && /absolute/path/to/dedicated-env/bin/python -m pytest
 ```
 
 The `poster_check.py` calls should print `PASS`, and `render_preview.py` should write `poster_preview.pdf` + `poster_preview.png`. posterly is clone-only (no PyPI); `pyproject.toml` holds the dependencies and pytest config.

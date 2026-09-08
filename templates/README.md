@@ -21,7 +21,7 @@ So the loop is: copy → fill content + uncomment figures → run `measure`/`pol
 |---|---|---|---|
 | **landscape_4col_neutral** | 60 × 36 in landscape | header → optional banner → **4 columns** → optional takeaways → footer | Standard ML conference poster (ICML / NeurIPS / generic). You have ~3–5 content cards per column. Mix of figures, equations, tables. The default choice. |
 | **landscape_hero_neutral** | 60 × 36 in landscape | header → **hero panel (1.5fr)** + supporting column (1fr) → optional takeaways → footer | The paper's main figure or system diagram IS the visual hook. You want one big illustration on the left and 3–4 short cards on the right. No framework banner (hero replaces it). |
-| **portrait_2col_neutral** | 24 × 36 in portrait | header → **2 columns** → footer (no banner, no takeaways strip) | ICLR / CVPR portrait spec, or any venue with portrait orientation. Vertical space is precious — banner + takeaways are dropped; final card on right column acts as a takeaways callout. 2-col is the *default* portrait skeleton, not the only one: other portrait topologies (band stack, playbill, mid-stage band, …) are in `DESIGN-AXES.md` §Axis 1 · portrait translations — build those from this template's tokens and carry its BASE DEFENSES block into the custom skeleton. |
+| **portrait_2col_neutral** | 24 × 36 in portrait | header → **2 columns** → footer (no banner, no takeaways strip) | ICLR / CVPR portrait spec, or any venue with portrait orientation. Vertical space is precious — banner + takeaways are dropped; final card on right column acts as a takeaways callout. 2-col is the *default* portrait skeleton, not the only one: other portrait topologies (band stack, playbill, mid-stage band, …) are in [DESIGN-AXES — Axis 1 portrait translations](DESIGN-AXES.md#portrait-translations) — build those from this template's tokens and carry its BASE DEFENSES block into the custom skeleton. |
 
 ## Adding a new template
 
@@ -47,4 +47,4 @@ A new template **MUST**:
 4. Use the `--u` unit system (`1.6px` screen, `1mm` print) for ALL sizing via `calc(N * var(--u))` — never bare px except for hairlines.
 5. Keep all paper-specific content as `TODO` placeholders — neutral templates only.
 
-Add a row in the table above and link it in `SKILL.md` Step 3.
+Add a row in the table above and link it in [Step 3](../SKILL.md#step-3--scaffold-content-and-identity).
