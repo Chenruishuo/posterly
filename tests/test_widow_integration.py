@@ -9,15 +9,14 @@ and the WIDTH-based runt test -- is only exercised here against a real
 headless Chromium.
 
 Determinism: the gate now flags by the last line's WIDTH (a last line filling
-< 35% of the widest line is a stranded runt), NOT by word count. So the "must
+< 50% of the widest line is a stranded runt), NOT by word count. So the "must
 flag" cases end with a word LONGER than the callout placed SECOND-TO-LAST: it
 overflows its line and forces a SHORT final marker onto a line of its own,
 where the marker fills a tiny fraction of the (penult-width) measure regardless
 of small font-metric differences across machines. The "must not flag" cases
 either fill the last line (a single long word, a wide glued tail, or a tiny
-word fused to a WIDE inline equation) or carry MEDIA (a figure/icon/table) or a
-punctuation-only equation tail on the last line. A short text tail ending in
-inline MATH (e.g. "by λ.") DOES flag -- only media/pure-equation tails are
+word fused to a WIDE inline equation) or carry MEDIA (a figure/icon/table) on the last line. A short text tail ending in
+inline MATH (e.g. "by λ.") DOES flag -- only media/display-equation tails are
 exempt. Skipped when Playwright / Chromium isn't installed.
 """
 from __future__ import annotations
@@ -93,7 +92,7 @@ _HTML = """<!DOCTYPE html>
            in the text must NOT hide a pure-text stranded last line. -->
       <div class="callout" id="f">draw <mjx-container>K</mjx-container> actions __PEN__ flagF.</div>
       <!-- G: a .caption in the 220-400 char band -- the old 220-char cap hid
-           the incident caption (231 chars); display text now caps at 400. -->
+           the incident caption (231 chars); prose now has no length cap. -->
       <div class="caption" id="g">The quick brown fox jumps over the lazy dog near the river
            bank while the camera records every motion frame for later offline
            analysis and careful manual review of all seven dynamic environments
@@ -147,23 +146,17 @@ _HTML = """<!DOCTYPE html>
            judged by its FULL visual width (text + math) and flags. The blanket
            `if (last.op) return` skip used to hide this. -->
       <div class="callout" id="p">alpha beta __PEN__ flagP&nbsp;<mjx-container>x</mjx-container>.</div>
-      <!-- Q: a last line that is PURELY a trailing equation (no text token)
-           is intentional trailing content, not a stranded word -> NO widow.
-           Distinguishes P (text + math) from a deliberate lone trailing math. -->
+      <!-- Q: inline math alone on the last line is a word-bearing runt. -->
       <div class="callout" id="q">alpha qskip __PEN__ <mjx-container>y</mjx-container></div>
       <!-- R: a single-word last line at exactly 5ch / 15ch = 33.3% of the
            measure. Above the OLD 30% cut (would NOT flag) but below the new
-           35% cut (must flag) -- pins the threshold raise. Monospace makes the
+           50% cut (must flag) -- pins the threshold raise. Monospace makes the
            5/15 ratio exact and font-metric-independent. -->
       <div class="callout mono" id="r">Rmeasurewidth15 flagR</div>
-      <!-- S: a deliberate trailing equation followed by a SENTENCE PERIOD. The
-           last line's only text token is "." (punctuation, no word), so it is
-           an intentional lone-equation tail, NOT a stranded word -> NO widow.
-           Distinguishes it from P ("flagP" is a real word). The "Sskip" word
-           sits in the penult, so it only surfaces if S wrongly flags. -->
+      <!-- S: inline math plus a sentence period is also judged as prose. -->
       <div class="callout" id="s">alpha Sskip __PEN__ <mjx-container>z</mjx-container>.</div>
       <!-- T: a tiny word ("tx") fused (&nbsp;) to a WIDE inline equation on the
-           last line. Text ALONE is < 35% of the measure, but text + math FILLS
+           last line. Text ALONE is < 50% of the measure, but text + math FILLS
            the line (> 35%) -> NO widow. Pins lastW = FULL extent (text + math):
            a regression to text-only width would wrongly flag this. "tx" is
            glued to a 170px math box; the 15ch mono penult is the measure. -->
@@ -177,7 +170,7 @@ _HTML = """<!DOCTYPE html>
            font-metric-independent, as in case R. -->
       <table class="cells"><tbody>
         <!-- U: 4 words; the 15ch penult strands a 5ch tail = 33% of the
-             measure, below the 35% cut -> FLAG (the shipped incident's shape). -->
+             measure, below the 50% cut -> FLAG (the shipped incident's shape). -->
         <tr><td>a b Umeasurewidth15 flagU</td></tr>
         <!-- V: the SAME runt geometry (4ch tail on a 15ch measure = 27%) but
              only 3 words -- under CELL_MIN_WORDS the break is column-width
@@ -247,22 +240,25 @@ def test_widow_geometry_end_to_end(tmp_path, capsys) -> None:
     # Flag: A (basic runt), D (first-segment runt), F (math early), G (caption
     # in the 220-400 band), H (tall opaque vs tolerance), I (<br> inside table),
     # J (hidden trailing svg stays pure text), K (unspaced-math token Range),
-    # L (short TWO-word last line), P (text+math last line), R (33% < new 35%
+    # L (short TWO-word last line), P (text+math last line), R (33% < new 50%
     # cut), U (a phrase in a TABLE CELL), X (a block holding prose + an inline
     # table keeps its own pass), Z (a nested table's cell), AA (a whitelisted
-    # block whose inline table holds a pool-(1) leaf). Fifteen in all.
-    assert "prose widows        : 15" in combined
+    # block whose inline table holds a pool-(1) leaf), plus Q and S
+    # (inline-math-only tails, with/without punctuation). Seventeen in all.
+    assert "prose widows        : 17" in combined
+    # Census includes clean tails too; widow assertions inspect WARN lines.
+    combined = "\n".join(ln for ln in combined.splitlines() if "WARN:" in ln)
     assert "flagA." in combined                            # A
     assert "flagD." in combined                            # D first segment
     assert "flagF." in combined                            # F math early
-    assert "flagG." in combined                            # G caption cap 400
+    assert "flagG." in combined                            # G long caption
     assert "flagH." in combined                            # H tall opaque
     assert "flagI." in combined                            # I <br> in table
     assert "flagJ." in combined                            # J hidden svg
     assert "flagK." in combined                            # K unspaced math
     assert "is L2." in combined                            # L two-word runt
     assert "flagP" in combined                             # P text + inline math
-    assert "flagR" in combined                             # R 33% < 35% cut
+    assert "flagR" in combined                             # R 33% < 50% cut
     assert "flagU" in combined                             # U phrase in a cell
     assert "WIDOW (table cell)" in combined                # ...with the cell message
     assert "flagX" in combined                             # X prose + inline table
@@ -282,13 +278,9 @@ def test_widow_geometry_end_to_end(tmp_path, capsys) -> None:
     # deliberately narrow stacked title is not a runt. Pins the data-vrail-title
     # skip (same narrow shape as case A, which DOES flag, minus the attribute).
     assert "vskip." not in combined
-    # Q: a last line that is PURELY a trailing equation (no text token) is
-    # intentional content, not a runt -> must NOT flag (the lone "qskip" is in
-    # the penult, so it would only surface if Q wrongly flagged).
-    assert "qskip" not in combined
-    # S: a trailing equation + sentence period (last-line text is "." only, no
-    # word) -> intentional lone-equation tail -> must NOT flag.
-    assert "Sskip" not in combined
+    # Q/S: inline math alone, or with punctuation, is word-bearing prose.
+    assert "qskip" in combined
+    assert "Sskip" in combined
     # T: tiny word fused to a WIDE inline equation -> text+math fills the line
     # -> must NOT flag (pins lastW = full extent, not text-only).
     assert "Tfullextentwide" not in combined

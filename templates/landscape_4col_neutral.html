@@ -618,6 +618,20 @@
     color: var(--emph-ink);   /* route through the token — accent-deep here would dodge the register swap AND fail AA on the default gold */
   }
   .callout.emph strong { color: var(--emph-ink); }
+  /* Hanging label: center the label on the full question text block.
+     <div class="callout callout--label"><span class="callout-label">Q</span><span>question text</span></div> */
+  .callout--label {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    column-gap: calc(4 * var(--u));
+    align-items: center;
+  }
+  .callout-label {
+    font-family: var(--font-sans);
+    font-weight: 700;
+    font-size: var(--fs-7);
+    line-height: 1;
+  }
 
   /* Figure container */
   .figure { margin: calc(4 * var(--u)) 0; text-align: center; }

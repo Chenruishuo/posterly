@@ -78,3 +78,11 @@ def test_logo_subtree_modifier_classes_are_exempt() -> None:
                 '<div data-color-exempt="logo">'
                 '<span class="brand--mark">x</span></div>')
     assert _rule13(html).status == "PASS"
+
+
+def test_callout_label_requires_definition() -> None:
+    body = '<div class="callout callout--label"><span class="callout-label">Q</span><span>Question text</span></div>'
+    assert _rule13(_doc('.callout { display: block; }', body)).status == "FAIL"
+    for template in (Path(__file__).resolve().parents[1] / "templates").glob("*neutral.html"):
+        html = template.read_text(encoding="utf-8").replace("</body>", body + "</body>")
+        assert _rule13(html).status == "PASS", template.name

@@ -117,15 +117,15 @@ def test_generic_widow_survives_inline_block_chip(tmp_path, capsys) -> None:
     """
     out = _run(tmp_path, capsys, _SHELL.format(css=css, header="", body=body))
     assert "WIDOW: <div class='custom-lede'>" in out
-    assert "short-tail bar" in out
+    assert "up to four tail units" in out
 
 
-def test_widow_short_tail_bar_catches_two_tokens_not_three(
+def test_widow_width_bar_catches_two_and_three_unit_tails(
         tmp_path, capsys) -> None:
     # 2026-08 xiongan miss: real widows are mostly TWO-token sentence ends
     # ("at once.", "expected length.") -- the old single-word conservative
     # bar walked straight past them, in generic blocks and >220-char prose
-    # alike. Three-word tails stay exempt (normal typography, not runts).
+    # alike. Three-word tails now receive the width bar too.
     css = """
       .custom-note { width: 400px; }
       .card p.longprose { width: 400px; }
@@ -139,13 +139,13 @@ def test_widow_short_tail_bar_catches_two_tokens_not_three(
       </div>
     """
     out = _run(tmp_path, capsys, _SHELL.format(css=css, header="", body=body))
-    # generic block, 2-token tail -> flags; 3-token tail -> exempt
-    assert out.count("WIDOW: <div class='custom-note'>") == 1
+    # Both short generic tails are below the width bar.
+    assert out.count("WIDOW: <div class='custom-note'>") == 2
     assert "('at once.')" in out
-    assert "short-tail bar" in out
-    # whitelisted prose past the 220-char cap, 2-token tail -> flags too
+    assert "('in the end.')" in out
+    # Long whitelisted prose receives the full width bar.
     assert "WIDOW: <p class='longprose'>" in out
-    assert "long running prose" in out
+    assert "long running prose" not in out
 
 
 def test_widow_short_tail_bar_not_evaded_by_nbsp_glue(
@@ -229,9 +229,10 @@ def test_contrast_severe_defect_survives_many_borderline_runs(
     assert "class='m1'" not in out and "class='m77'" not in out
     # oklch ground / oklch foreground / oklch-painted ::before: skipped as
     # unjudgeable -- no crash, no white-on-white nonsense
-    assert "class='okl'" not in out
-    assert "class='oklfg'" not in out
-    assert "class='pokl'" not in out
+    contrast = "\n".join(ln for ln in out.splitlines() if "WARN: CONTRAST:" in ln)
+    assert "class='okl'" not in contrast
+    assert "class='oklfg'" not in contrast
+    assert "class='pokl'" not in contrast
 
 
 def test_track_void_flags_spine_not_aligned_row(tmp_path, capsys) -> None:

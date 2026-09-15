@@ -239,21 +239,26 @@ Gate name shorthand (DESIGN_FINAL §3–§7):
   check, inflates PDF, fails the "real text" expectation); a per-equation px font-size override
   (rule 8 HARD); an `.eqn` box left mostly empty (no gate catches this — check by eye).
 
-## callout (`.callout`, variant `.callout.emph`)
+## callout (`.callout`, variants `.callout.emph`, `.callout--label`)
 
 - **Purpose**: An accent-filled emphasis strip for a question, theorem, or one-line takeaway —
   the "read this even if you read nothing else" line inside a card.
 - **Allowed variants**: `.callout` (solid `--accent`, white text, `<strong>` in the emphasis register) and
   `.callout.emph` (solid `--emph`, `--emph-ink` text — the ARIS fork flattens the original
-  gold *gradient* to a flat fill per §E.2). No third variant.
+  gold *gradient* to a flat fill per §E.2). `.callout--label` adds a hanging label
+  centered on the full question text block; it may also use `.emph`.
 - **Required data attributes**: none.
 - **Token usage**: `.callout` → `--accent` bg, white text, `--emph` (`<strong>`); `.callout.emph`
   → `--emph` bg, `--accent-deep` text. Font-size `--fs-4`.
+  `.callout--label` uses an auto + `minmax(0, 1fr)` grid with `4 × --u` column gap;
+  its `.callout-label` uses `--font-sans`, weight 700, `--fs-7`, and line-height 1.
+  Markup: `<div class="callout callout--label"><span class="callout-label">Q</span><span>question text</span></div>`.
 - **Inspected by**: `style` (rule 5, only if enabled — `.callout.emph` must be a flat fill, no `linear-gradient`;
   rule 4, only if enabled — its accent/emph are the two allowed hue families; rule 1/3 — colors via var),
+  `style` rule 13 (a used `.callout--label` must have its CSS rule),
   `measure` (counts toward card height).
 - **Allowed fix operations**: (a), (b) add/remove a callout instance, (c) reword from paper
-  source, (f) toggle `.callout` ↔ `.callout.emph`.
+  source, (f) toggle `.emph` and the `.callout--label` hanging-label layout.
 - **Anti-patterns**: `linear-gradient` fill (a defect only when style rule 5 is enabled; ignore this restriction otherwise); a third color on a callout
   (a defect under style rule 4 only when enabled; ignore its >2-hue limit otherwise); using a
   callout to introduce a claim not in the paper (Step 6.5 final-HTML overclaim audit).
@@ -304,6 +309,9 @@ Gate name shorthand (DESIGN_FINAL §3–§7):
 - **Required data attributes**: none.
 - **Token usage**: `.kb-item` → `--bg-emphasis` bg, `--accent` top-border; `.kb-num` →
   `--accent` (`--fs-6`, sans); `.kb-label` → `--text-secondary` (`--fs-1`, sans).
+  Default `.kb-num` to `--fs-6`, at most one step up (`--fs-7`), and never larger
+  than `.section-title`. On a restrained/editorial direction use weight 600
+  rather than 800; prominence must stay within the locked direction’s register.
 - **Inspected by**: `style` (rule 6 sans, rule 8 token sizes, rule 4 single accent family,
   **rule 13** — a `keybox--4` used in the markup must have its `.keybox.keybox--4` rule in the
   stylesheet), `polish` (Gate B typography orphans — a trailing `↑ × % ↓` glyph on `.kb-num` that

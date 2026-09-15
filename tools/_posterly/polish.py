@@ -14,7 +14,7 @@ Gates the hard alignment gate cannot see:
     lack ``white-space: nowrap``. (2) ``WIDOW``: a ``.callout`` /
     ``.body-text`` / ``.caption`` / ``.section-title`` / ``.card p`` /
     ``.card li`` / ``.fb-text`` (or a ``<br>`` segment of one) that wraps
-    so its last visual line is a stranded runt -- filling less than 35%
+    so its last visual line is a stranded runt -- filling less than 50%
     of the widest line (the framework banner ``.fb-text`` carries a higher
     ~80% bar: it must read as a filled rectangle, not merely avoid a runt).
     Judged by the last
@@ -22,11 +22,12 @@ Gates the hard alignment gate cannot see:
     two-word tail flags and a single long word filling the line does not.
     A trailing figure/icon/table keeps the last line unjudgeable, but a short
     text tail ending in inline math (``by $\\lambda$.``) is caught.
-    Long running prose (> the char cap) and GENERIC blocks -- any block-ish
+    Whitelisted prose has no length cap. GENERIC blocks -- any block-ish
     element holding worded text, discovered by geometry so custom-skeleton
-    class names are covered -- are judged by the conservative bar only: a
-    stranded tail of at most two words under the runt width. TABLE cells ride
-    that bar too, from four words up (a shorter label breaks where the column
+    class names are covered -- use the width bar for tails of at most four
+    glue units, or any tail on a paragraph with >=3 lines and >=20 text words.
+    TABLE cells keep a two-unit tail bar, from four words up
+    (a shorter label breaks where the column
     width says it must, not where the copy does). (3) ``GLUE-CHAIN``: >= 3
     words fused with ``&nbsp;`` (the lazy widow "fix") -- the unbreakable
     unit wraps early as a whole and tears a hole in the line above; stat /
@@ -219,6 +220,7 @@ DEFAULT_TALL_MAX_RATIO = 0.70
 DEFAULT_SQUARE_MIN_RATIO = 0.55
 DEFAULT_MAX_SPACE_BETWEEN_FILL = 0.05
 DEFAULT_MAX_CARD_TRAILING = 0.10
+DEFAULT_WIDOW_FILL = 0.5
 # Absolute companion to the ratio above: on a big canvas a 10% ratio lets
 # a physically large void through (a real A0 band shipped 9.0% = ~20 mm of
 # blank). Trailing >= this many px warns regardless of ratio; 0 disables.
@@ -251,8 +253,16 @@ def _eprint(*args: Any, **kw: Any) -> None:
     print(*args, file=sys.stderr, **kw)
 
 
+def parse_widow_fill(value: str) -> float:
+    """A fill threshold is a fraction of the widest typeset text line."""
+    fill = float(value)
+    if not 0 < fill <= 1:
+        raise argparse.ArgumentTypeError("--widow-fill must be in (0, 1]")
+    return fill
+
+
 _POLISH_JS = r"""
-() => {
+(options) => {
   // ---- 1) Figure sizing ----
   // For each card, list every <img> with rendered size, the card's
   // bounding width (the "budget"), and natural dimensions for AR.
@@ -817,7 +827,8 @@ _POLISH_JS = r"""
   //         Robust to inline <strong>/<code> splitting a word's rects, to
   //         `text-align: justify`, and to sub-pixel / mixed-font-size line tops.
   const widows = [];
-  const RUNT_FRAC = 0.35;   // last line < 35% of the measure = stranded runt
+  const widowCensus = [];
+  const RUNT_FRAC = options?.widowFill ?? 0.5;
   // The framework banner (.fb-text) is the poster's single most prominent text
   // block; a merely "not-a-runt" last line still reads as a ragged box there. It
   // gets a much higher bar -- aim for a near-full last line (a filled rectangle),
@@ -849,8 +860,8 @@ _POLISH_JS = r"""
   //       skeletons author their own classes (.band-lede, .mh-sub, ...), so a
   //       class whitelist goes blind exactly where wave-2's widows happened
   //       (a stranded 'Matching' in a custom masthead subtitle). Generic
-  //       blocks are judged by the CONSERVATIVE bar only (a stranded tail of
-  //       at most TWO words), so unknown block types can't flood the report.
+  //       blocks use the width bar for tails of at most FOUR glue units, or
+  //       longer prose (>=3 lines, >=20 words), to limit short-label noise.
   const candidates = [];
   const wlSet = new Set();
   // Does el hold a pool-(1) leaf in its OWN text flow? A nested table is a
@@ -961,9 +972,8 @@ _POLISH_JS = r"""
     // blanket skip -- the eb181286 "one." incident). They join the line model
     // as OPAQUE cells: their text (if any) stays out of the token stream, but
     // their rects vote in line grouping. A last line is then skipped only when
-    // it carries figure/icon/table MEDIA, or is opaque with no real WORD -- a
-    // lone trailing equation, even with a sentence period (see the last-line
-    // gate below); a text tail with a real word ending in math IS judged.
+    // it carries figure/icon/table MEDIA, or display math with no real word.
+    // Inline math counts as a word even when followed only by punctuation.
     const OPAQUE = 'mjx-container, .MathJax, math, img, svg, canvas, table';
     // Of those, FIGURE-class opaques (image / icon / canvas / table) are real
     // media, not prose: a last line trailing one is unjudgeable (its width as a
@@ -972,13 +982,6 @@ _POLISH_JS = r"""
     // the sentence, so a short text fragment ending in math ("by $\\lambda$.")
     // IS a stranded runt and must be judged.
     const MEDIA = 'img, svg, canvas, table';
-    // Display text (.caption / .callout / .fb-text) gets a higher length cap
-    // than running prose: a short stranded last line is prominent in display
-    // copy even when the block is long -- a caption under a figure, or the
-    // framework-banner blurb. The 220-char cap was exactly why an incident
-    // caption (231 chars) and a 269-char banner .fb-text (whose last line filled
-    // only 17% of the measure) were never measured.
-    const cap = (el.matches('.caption, .callout') || el.closest('.fb-text')) ? 400 : 220;
     // `closest`, not `matches`: the candidate may be a <p> inside the cell. The
     // cell must be in the candidate's OWN table, or a <caption> of a table
     // nested in a cell would count as cell content and lose its old skip.
@@ -1049,7 +1052,7 @@ _POLISH_JS = r"""
         // its vote even if a mark attribute were misplaced on its container.
         if (n.matches && n.matches(OPAQUE) && !isIdGlyphSvg(n)
             && getComputedStyle(n).visibility !== 'hidden') {
-          cur.ops.push(n);
+          cur.ops.push({el: n, at: cur.flat.length});
         }
         continue;
       }
@@ -1079,7 +1082,7 @@ _POLISH_JS = r"""
       // separator token: "alpha = 4" (no prose words), "> GRPO 3.93 > EMPO
       // 3.80." (2), and a middot-joined footer contact strip (separator
       // tokens) all stay quiet; "holds length and keeps improving." flags.
-      // Runs BEFORE the length caps below -- chains hide in long prose too.
+      // Chains are checked in long prose too.
       {
         const chainRe = /(?:\S+\u00A0+){2,}\S+/g;
         let cm;
@@ -1103,13 +1106,9 @@ _POLISH_JS = r"""
           });
         }
       }
-      // Long running prose used to be SKIPPED outright (norm.length > cap) --
-      // which is exactly how a 262-char .body-text shipped a stranded
-      // 'AIME24/25).' last line. Long prose (and every generic, unlisted-class
-      // block) is now judged by the CONSERVATIVE bar instead: a stranded tail
-      // of one or two words flags; longer tails are normal in long prose.
-      // A cell rides that same conservative bar.
-      const extremeOnly = generic || inCell || norm.length > cap;
+      // Block length does not change a runt's appearance. Only generic
+      // blocks and table cells retain a tail-unit cap for flood control.
+      const extremeOnly = generic || inCell;
       // Tokenise on \S+ (JS `\s` includes U+00A0, so `&nbsp;` is a SEPARATOR
       // here -- a glued pair is two tokens). Token COUNT no longer decides;
       // the WIDTH test below does. The recommended `&nbsp;` glue still helps,
@@ -1125,7 +1124,11 @@ _POLISH_JS = r"""
       // ONLY display math plus one trailing word ("<mjx>...</mjx> one.") is
       // treated as a one-word paragraph, not a wrap -- same verdict as case
       // "Short." (the text never wrapped, so nothing was stranded BY a wrap).
-      if (toks.length < 2) return;
+      const isInlineMath = op => !op.matches(MEDIA)
+        && !op.matches('[display="true"], [display="block"], .MathJax_Display')
+        && !op.closest('.MathJax_Display')
+        && getComputedStyle(op).display.startsWith('inline');
+      if (toks.length + para.ops.filter(o => isInlineMath(o.el)).length < 2) return;
       // WORDS, not tokens: `+` and `->` tokenise but don't read as words, so
       // `Input + state -> output` is a 3-word label, not a phrase.
       if (inCell && toks.filter(t => /[\p{L}\p{N}]/u.test(t.t)).length
@@ -1166,16 +1169,19 @@ _POLISH_JS = r"""
         }
       }
       // Opaque cells (ti = -1): vote in line grouping, mark their line, but
-      // never count as a "word". `media` distinguishes a figure/icon/table
-      // (its last line stays unjudgeable) from inline math (judged with text).
-      for (const op of para.ops) {
+      // inline math counts as word-bearing content. `media` distinguishes
+      // a figure/icon/table, whose last line stays unjudgeable.
+      for (const entry of para.ops) {
+        const op = entry.el;
         const isMedia = !!(op.matches && op.matches(MEDIA));
+        const inlineMath = isInlineMath(op);
         const rects = op.getClientRects();
         for (let i = 0; i < rects.length; i++) {
           const r = rects[i];
           if (r.width <= 0.5 || r.height <= 0.5) continue;
           cells.push({cy: (r.top + r.bottom) / 2, h: r.height, ti: -1,
-                      l: r.left, r: r.right, media: isMedia});
+                      l: r.left, r: r.right, media: isMedia,
+                      inlineMath, entry});
         }
       }
       if (cells.length < 2) return;
@@ -1200,6 +1206,7 @@ _POLISH_JS = r"""
           line.cy += (c.cy - line.cy) / line.n;
         } else {
           line = {cy: c.cy, n: 1, tis: new Set(), op: false, media: false,
+                  maths: new Set(),
                   lo: Infinity, hi: -Infinity, flo: Infinity, fhi: -Infinity};
           lines.push(line);
         }
@@ -1219,6 +1226,7 @@ _POLISH_JS = r"""
         } else {
           line.op = true;
           if (c.media) line.media = true;
+          if (c.inlineMath) line.maths.add(c.entry);
         }
       }
       if (lines.length < 2) return;                           // single visual line: nothing to widow
@@ -1239,12 +1247,9 @@ _POLISH_JS = r"""
       // this prose-runt contract -- its width as a "runt" is meaningless and a
       // trailing inline icon may be deliberate, so it stays unjudgeable.
       if (last.media) return;
-      // A last line carrying opaque content whose only text is PUNCTUATION
-      // (a lone trailing equation/figure, optionally with a sentence period:
-      // "$eq$." or "$eq$,") is intentional trailing content, not a stranded
-      // word -- skip it. A real WORD on the line (a letter/digit token, e.g.
-      // "by" in "by λ.") keeps the line judged.
-      const lastHasWord = Array.from(last.tis)
+      // Inline math is word-bearing prose, including a math-only tail with
+      // punctuation. Display equations with no prose word keep their skip.
+      const lastHasWord = last.maths.size > 0 || Array.from(last.tis)
         .some(ti => /[\p{L}\p{N}]/u.test(toks[ti].t));
       if (last.op && !lastHasWord) return;
       // Otherwise the last line is prose: pure text, OR text plus an inline
@@ -1271,14 +1276,9 @@ _POLISH_JS = r"""
       // the banner's fix advice) for what is a table label.
       const isBanner = !inCell && !!el.closest('.fb-text');
       const threshold = isBanner ? BANNER_FILL_FRAC : RUNT_FRAC;
-      // Conservative bar for long prose / generic blocks: judge only a
-      // SHORT stranded tail -- one or two text tokens on the last line, still
-      // under the runt width. Two, not one: real-world runts are mostly
-      // two-token sentence ends ("at once.", "expected length.", a URL plus
-      // an arrow) and the single-token bar walked straight past them (the
-      // xiongan footer/prop-body misses). Tails of 3+ words stay exempt:
-      // those are normal typography in long running prose and unknowable in
-      // unlisted block types -- flagging them would flood.
+      // Generic blocks get the width bar up to four tail units, or for
+      // paragraphs with >=3 lines and >=20 words; cells keep two units.
+      // Whitelisted prose has no unit cap.
       // Count in GLUE UNITS, not raw tokens: an &nbsp;-glued pair is the
       // documented widow fix, and it must not double as an escape hatch --
       // gluing "happens&nbsp;at" to pull a word down would otherwise turn a
@@ -1287,24 +1287,41 @@ _POLISH_JS = r"""
       // U+00A0 in the flat text collapse into one unit, so a glued tail is
       // still judged by the width test and clears only when it truly fills.
       const ord = Array.from(last.tis).sort((a, b) => a - b);
-      let units = ord.length;
-      for (let k = 0; k + 1 < ord.length; k++) {
-        if (ord[k + 1] !== ord[k] + 1) continue;
-        const gap = para.flat.slice(toks[ord[k]].e, toks[ord[k + 1]].s);
+      // Punctuation attached to an opaque math expression belongs to that
+      // unit, just as the period in a plain-text "word." does.
+      const unitOrd = ord.filter(ti => /[\p{L}\p{N}]/u.test(toks[ti].t)
+        || !Array.from(last.maths).some(o => o.at === toks[ti].s || o.at === toks[ti].e));
+      let units = unitOrd.length + last.maths.size;
+      for (let k = 0; k + 1 < unitOrd.length; k++) {
+        if (unitOrd[k + 1] !== unitOrd[k] + 1) continue;
+        const gap = para.flat.slice(toks[unitOrd[k]].e, toks[unitOrd[k + 1]].s);
         if (/^\u00A0+$/.test(gap)) units -= 1;
       }
-      if (extremeOnly && units > 2) return;
+      if (measure <= 0) return;
+      const tail = [
+        ...ord.map(ti => ({at: toks[ti].s, t: toks[ti].t, math: false})),
+        ...Array.from(last.maths, o => ({at: o.at,
+          t: (o.el.textContent || '').replace(/\s+/g, ' ').trim() || '[math]', math: true})),
+      ].sort((a, b) => a.at - b.at || Number(b.math) - Number(a.math))
+       .map(t => t.t).join(' ');
+      widowCensus.push({tag: el.tagName.toLowerCase(), cls: el.className || '',
+                        lines: lines.length, fill: lastW / measure, tail: tail.slice(0, 80)});
+      // A multi-line prose paragraph remains prose under a custom class.
+      // This admits explanatory notes without broadening short generic labels.
+      const genericProse = generic && !inCell && lines.length >= 3
+        && toks.filter(t => /[\p{L}\p{N}]/u.test(t.t)).length >= 20;
+      if (extremeOnly && !genericProse && units > (inCell ? 2 : 4)) return;
       if (measure > 0 && (lastW / measure) < threshold) {
         widows.push({
           tag: el.tagName.toLowerCase(),
           cls: el.className || '',
           frac: Math.floor(lastW / measure * 100),   // floor: a flagged line never displays its own threshold %
-          word: ord.map(ti => toks[ti].t).join(' ').slice(0, 40),
+          word: tail.slice(0, 40),
           lines: lines.length,
           text: (norm.length > 60) ? ('...' + norm.slice(-57)) : norm,
           banner: isBanner,   // banner -> "fill the rectangle" message; else the runt message
           mode: inCell ? 'cell'
-              : (generic ? 'generic' : (extremeOnly ? 'long' : 'std')),
+              : (generic ? 'generic' : 'std'),
         });
       }
     });
@@ -2028,7 +2045,7 @@ _POLISH_JS = r"""
 
   return {figures, cropLocks, orphans, cols, cards, trackGroups,
           innerVoids, trackVoids, flexbr,
-          besideVoids, widows, glueChains, wrapCensus, contrasts, symbolCase,
+          besideVoids, widows, widowCensus, glueChains, wrapCensus, contrasts, symbolCase,
           logos, qrs, header_w: headerW, header_h: headerH,
           header_cx: headerCx,
           header_content_left: headerContentLeft,
@@ -2040,7 +2057,7 @@ _POLISH_JS = r"""
 """
 
 
-def collect_polish_data(page):
+def collect_polish_data(page, widow_fill=DEFAULT_WIDOW_FILL):
     """Run the polish measurement JS on an already-open, already-settled
     page and return the raw result dict.
 
@@ -2050,7 +2067,7 @@ def collect_polish_data(page):
     nothing, so running it after another gate's probes on the same page
     yields identical numbers.
     """
-    return page.evaluate(_POLISH_JS)
+    return page.evaluate(_POLISH_JS, {"widowFill": widow_fill})
 
 
 def default_polish_args() -> argparse.Namespace:
@@ -2181,7 +2198,7 @@ def cmd_polish(args: argparse.Namespace) -> int:
             )
             return 1
 
-        data = collect_polish_data(page)
+        data = collect_polish_data(page, getattr(args, "widow_fill", DEFAULT_WIDOW_FILL))
         browser.close()
 
     return report_polish(data, args, html_path)
@@ -2492,7 +2509,7 @@ def report_polish(data: dict, args: argparse.Namespace,
     # The wrap-geometry sibling of the stat/num orphan above: a `.callout` /
     # `.body-text` / `.caption` / `.section-title` / `.card p` / `.card li` /
     # `.fb-text` (or a `<br>`-delimited segment of one) whose last visual line
-    # fills < ~35% of the typeset measure for ordinary prose -- the `.fb-text`
+    # fills < --widow-fill (default 50%) of the typeset measure for ordinary prose -- the `.fb-text`
     # banner uses the higher ~80% BANNER_FILL_FRAC (see the per-item `banner`
     # branch below). Judged by WIDTH, not word count, so a short TWO-word tail flags
     # while a single LONG word that fills the line does not. SKILL.md Gate B
@@ -2516,8 +2533,7 @@ def report_polish(data: dict, args: argparse.Namespace,
                 f"starving the stat boxes; (b) bump the .fb-text font size one --fs-* "
                 f"step, if it shifts the wrap (also makes the block bolder), without "
                 f"overflowing the banner or colliding with the stats; (c) expand the "
-                f"wording with a few truthful, on-message words (keep .fb-text under "
-                f"~400 chars -- past that the gate only judges a short stranded tail, not banner fill); (d) trim it to one-fewer "
+                f"wording with a few truthful, on-message words; (d) trim it to one-fewer "
                 f"full line. Keep the change proportionate -- don't push one lever to an "
                 f"extreme (e.g. a blown-up font) just to clear the gate, and never force "
                 f"it with text-align: justify / text-align-last or letter-spacing "
@@ -2546,13 +2562,9 @@ def report_polish(data: dict, args: argparse.Namespace,
             )
         else:
             mode = w.get("mode", "std")
-            if mode == "long":
-                where = (" (long running prose -- judged by the short-tail "
-                         "bar: a stranded one- or two-word last line)")
-            elif mode == "generic":
-                where = (" (unlisted block type, judged by the short-tail "
-                         "bar: a stranded one- or two-word last line is "
-                         "almost always a runt -- confirm by eye)")
+            if mode == "generic":
+                where = (" (unlisted block type: up to four tail units, "
+                         "or prose with >=3 lines and >=20 words -- confirm by eye)")
             else:
                 where = ""
             warns.append(
@@ -3188,6 +3200,14 @@ def report_polish(data: dict, args: argparse.Namespace,
     print(f"  warnings            : {len(warns)}")
     for w in warns:
         print(f"  WARN: {w}")
+
+    census = sorted(data.get("widowCensus", []), key=lambda w: w["fill"])
+    if census:
+        print(f"  last-line fill census (lowest {min(25, len(census))}/{len(census)}):")
+        for w in census[:25]:
+            cls = w['tag'] + ''.join('.' + c for c in w['cls'].split())
+            print(f"    n={w['lines']} last={w['fill']:.1%} "
+                  f"{ascii_safe(cls)} '{ascii_safe(w['tail'])}'")
 
     if args.strict and warns:
         _eprint("[polish] FAIL -- --strict and warnings present")

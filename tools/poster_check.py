@@ -328,6 +328,12 @@ def build_parser() -> argparse.ArgumentParser:
     )
     ppl.add_argument("html", help="path to poster.html")
     ppl.add_argument(
+        "--widow-fill", type=_polish.parse_widow_fill,
+        default=_polish.DEFAULT_WIDOW_FILL,
+        help="warn below this last-line fill fraction (default %(default)s); "
+             "framework banners retain their 0.80 bar",
+    )
+    ppl.add_argument(
         "--canvas", type=_canvas.parse_canvas_arg, default=None,
         help="override canvas (default: parse @page from HTML)",
     )

@@ -153,3 +153,22 @@ def test_budget_flags_omitted_by_default() -> None:
     )
     assert "--measure-budget" not in argv
     assert "--reset-budget" not in argv
+
+
+def test_polish_census_does_not_hide_warnings(tmp_path):
+    stdout = "\n".join([
+        "  WARN: WIDOW: short tail",
+        "  last-line fill census (lowest 25/25):",
+        *[f"    n=2 last={i}% div.custom 'tail'" for i in range(25)],
+        "[polish] OK (warnings only)",
+    ])
+    summary, _ = run_gates._summarize_gate("polish", 0, stdout, "", tmp_path)
+    assert "WARN: WIDOW" in summary["tail"]
+    assert "[polish] OK" in summary["tail"]
+    assert "last=" not in summary["tail"]
+
+
+def test_polish_widow_fill_passthrough(tmp_path):
+    opts = run_gates.build_parser().parse_args(["poster.html", "--widow-fill", "0.42"])
+    argv = run_gates._build_argv("polish", tmp_path, tmp_path / "poster.html", opts, tmp_path)
+    assert argv[argv.index("--widow-fill") + 1] == "0.42"

@@ -358,6 +358,8 @@ def _build_argv(
 
     if gate == "polish":
         argv = [py, str(scripts_dir / "poster_check.py"), "polish", html]
+        if getattr(opts, "widow_fill", None) is not None:
+            argv += ["--widow-fill", str(opts.widow_fill)]
         if opts.strict_polish:
             argv += ["--strict"]
         return argv
@@ -410,6 +412,14 @@ def _summarize_gate(
     # gets a marker-aware tail so its adjustments / edit-targets blocks
     # survive into the report.
     combined = (stdout + "\n" + stderr).strip()
+    if gate == "polish":
+        # The human-only fill census follows WARN lines. Exclude it from
+        # the machine summary so the verdict/warning tail is not displaced.
+        combined = "\n".join(
+            ln for ln in combined.splitlines()
+            if not ln.strip().startswith("last-line fill census (")
+            and not re.match(r"\s*n=\d+ last=", ln)
+        )
     return {
         "exit_code": returncode,
         "tail": (_measure_tail(combined) if gate == "measure"
@@ -648,6 +658,11 @@ def build_parser() -> argparse.ArgumentParser:
         "--strict-polish", action="store_true",
         help="treat polish warnings as failures "
              "(maps to poster_check.py polish --strict)",
+    )
+    from _posterly.polish import DEFAULT_WIDOW_FILL, parse_widow_fill
+    p.add_argument(
+        "--widow-fill", type=parse_widow_fill, default=DEFAULT_WIDOW_FILL,
+        help="polish last-line fill threshold (default %(default)s; banner 0.80)",
     )
     p.add_argument(
         "--tokens", default=None,
