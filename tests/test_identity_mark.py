@@ -729,9 +729,13 @@ def test_skill_woven_snippet_is_current() -> None:
     """Guard the documented woven snippet against drift: it must stay
     self-sizing (no hand-coded width/height) and carry the honesty attributes,
     so the render test below exercises the SAME shape agents are told to use."""
-    skill = (REPO_ROOT / "SKILL.md").read_text(encoding="utf-8")
-    m = re.search(r'<span data-ps-mark="woven".*?</span>', skill)
-    assert m, "woven snippet not found in SKILL.md"
+    # The snippet moved from SKILL.md into the identity section of
+    # references/design-workflow.md when SKILL.md was split into a router
+    # (2026-09); read both so the guard follows the documented home.
+    docs = [REPO_ROOT / "SKILL.md", REPO_ROOT / "references" / "design-workflow.md"]
+    text = "\n".join(d.read_text(encoding="utf-8") for d in docs if d.exists())
+    m = re.search(r'<span data-ps-mark="woven".*?</span>', text)
+    assert m, "woven snippet not found in SKILL.md / references/design-workflow.md"
     snip = m.group(0)
     assert 'data-color-exempt="logo"' in snip
     assert 'aria-hidden="true"' in snip
