@@ -113,7 +113,7 @@ Use the complete `run_gates.py` sequence after each layout change under the docu
 
 ### Step 5 / Step 6 — Render, inspect, and polish
 
-Read and execute [visual inspection](references/validation.md#visual-inspection), [polish](references/validation.md#polish-workflow), and every applicable [Gate A–G](references/visual-polish.md). Full standalone-polish coverage is required, with reuse only under the [unchanged-version rule](references/validation.md#result-reuse). Fix or explicitly accept each soft warning; hard gates remain mandatory. A green measurement does not replace visual inspection.
+Read and execute [visual inspection](references/validation.md#visual-inspection), [polish](references/validation.md#polish-workflow), and every applicable [Gate A–G](references/visual-polish.md). Full standalone-polish coverage is required, with reuse only under the [unchanged-version rule](references/validation.md#result-reuse). Fix or explicitly accept each soft warning; hard gates remain mandatory. A green measurement does not replace visual inspection. While inspecting, check that every display equation sits **centred** in its `.eqn` strip: a formula hugging the left edge with blank space to its right means either MathJax never rendered (CDN unreachable, so the raw `$$…$$` TeX shows as left-aligned text — open the standalone bundle or point the `<script>` at the local `assets/mathjax/tex-svg.js`) or an override turned the `mjx-container` / its `svg` into a block or flex item; never ship it that way.
 
 ### Step 6.5 — Final review (cross-model strongly recommended)
 
